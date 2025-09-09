@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Модель ученика
+model Student {
+  id          Int      @id @default(autoincrement())
+  fullName    String   // ФИО
+  phone       String   // Телефон родителей
+  age         Int      // Возраст
+  diagnosis   String?  // Диагноз (опционально)
+  comment     String?  // Комментарий (опционально)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Связь с занятиями
+  lessons     Lesson[]
+  
+  @@map("students")
+}
+
+// Модель занятия
+model Lesson {
+  id          Int      @id @default(autoincrement())
+  date        DateTime // Дата и время занятия
+  studentId   Int      // ID ученика
+  cost        Float    // Стоимость занятия
+  status      LessonStatus @default(SCHEDULED) // Статус занятия
+  notes       String?  // Заметки к занятию
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Связь с учеником
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@map("lessons")
+}
+
+// Статусы занятий
+enum LessonStatus {
+  SCHEDULED   // Запланировано
+  COMPLETED   // Проведено
+  CANCELLED   // Отменено
+  PAID        // Оплачено
+}
