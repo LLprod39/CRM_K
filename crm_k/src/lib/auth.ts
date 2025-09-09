@@ -6,14 +6,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export function verifyToken(token: string): AuthUser | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      userId: number;
+      email: string;
+      name?: string;
+      role: string;
+    }
     return {
       id: decoded.userId,
       email: decoded.email,
       name: decoded.name || '',
-      role: decoded.role
+      role: decoded.role as 'ADMIN' | 'USER'
     }
-  } catch (error) {
+  } catch {
     return null
   }
 }

@@ -62,8 +62,11 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Подсчитываем общую выручку
-    const totalRevenue = paidLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
+    // Подсчитываем общую выручку (70% от оплаченных уроков)
+    const totalRevenue = paidLessons.reduce((sum, lesson) => sum + (lesson.cost * 0.7), 0)
+    
+    // Подсчитываем доход от пользователя (30% от оплаченных уроков)
+    const userRevenue = paidLessons.reduce((sum, lesson) => sum + (lesson.cost * 0.3), 0)
 
     // Статистика по месяцам (закомментировано, так как не используется)
     // const monthlyStats = await prisma.lesson.groupBy({
@@ -122,15 +125,26 @@ export async function GET(request: NextRequest) {
         })
     )
 
-    // Подсчитываем задолженности (занятия со статусом COMPLETED, но не PAID)
+    // Подсчитываем задолженности (занятия со статусом UNPAID или COMPLETED)
     const debtLessons = await prisma.lesson.findMany({
       where: {
         ...baseWhere,
-        status: 'COMPLETED'
+        status: {
+          in: ['UNPAID', 'COMPLETED']
+        }
+      }
+    })
+
+    // Подсчитываем предоплаченные занятия (не учитываются в финансах)
+    const prepaidLessons = await prisma.lesson.findMany({
+      where: {
+        ...baseWhere,
+        status: 'PREPAID'
       }
     })
 
     const totalDebt = debtLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
+    const totalPrepaid = prepaidLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
 
     // Статистика по статусам
     const statusStats = await prisma.lesson.groupBy({
@@ -151,6 +165,9 @@ export async function GET(request: NextRequest) {
       dailyRevenue: period === 'day' ? totalRevenue : 0,
       completedLessons: statusStats.find(s => s.status === 'COMPLETED')?._count.id || 0,
       totalDebt,
+      totalPrepaid,
+      prepaidLessons: statusStats.find(s => s.status === 'PREPAID')?._count.id || 0,
+      userRevenue,
       topStudents: topStudents.filter(item => item.student !== null),
       statusStats: statusStats.map(stat => ({
         status: stat.status,

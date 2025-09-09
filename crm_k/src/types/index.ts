@@ -55,6 +55,9 @@ export interface FinancialStats {
   dailyRevenue: number;
   completedLessons: number;
   totalDebt: number;
+  totalPrepaid: number;
+  prepaidLessons: number;
+  userRevenue: number; // Доход от пользователя (30% от оплаченных уроков)
   topStudents: Array<{
     student: Student;
     totalPaid: number;

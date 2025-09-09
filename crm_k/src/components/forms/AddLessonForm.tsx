@@ -212,8 +212,10 @@ export default function AddLessonForm({
             >
               <option value="SCHEDULED">Запланировано</option>
               <option value="COMPLETED">Проведено</option>
-              <option value="CANCELLED">Отменено</option>
+              <option value="PREPAID">Предоплачено</option>
               <option value="PAID">Оплачено</option>
+              <option value="UNPAID">Не оплачено</option>
+              <option value="CANCELLED">Отменено</option>
             </select>
           </div>
 

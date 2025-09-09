@@ -20,6 +20,8 @@ export default function LessonsList({ lessons, onLessonClick, onEditLesson, sele
       case 'COMPLETED': return 'bg-green-100 text-green-800';
       case 'CANCELLED': return 'bg-red-100 text-red-800';
       case 'PAID': return 'bg-purple-100 text-purple-800';
+      case 'PREPAID': return 'bg-yellow-100 text-yellow-800';
+      case 'UNPAID': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -30,6 +32,8 @@ export default function LessonsList({ lessons, onLessonClick, onEditLesson, sele
       case 'COMPLETED': return 'Проведено';
       case 'CANCELLED': return 'Отменено';
       case 'PAID': return 'Оплачено';
+      case 'PREPAID': return 'Предоплачено';
+      case 'UNPAID': return 'Не оплачено';
       default: return status;
     }
   };

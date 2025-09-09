@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, AlertCircle, BarChart3 } from 'lucide-react'
+import { DollarSign, TrendingUp, AlertCircle, BarChart3, User } from 'lucide-react'
 import type { FinancialStats } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface FinancialStatsProps {
   period: string
@@ -12,6 +13,7 @@ interface FinancialStatsProps {
 export default function FinancialStats({ period }: FinancialStatsProps) {
   const [stats, setStats] = useState<FinancialStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
 
   useEffect(() => {
     fetchStats()
@@ -94,7 +96,7 @@ export default function FinancialStats({ period }: FinancialStatsProps) {
     : 0
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className={`grid grid-cols-1 md:grid-cols-2 ${user?.role === 'ADMIN' ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} gap-6`}>
       {/* Общий доход */}
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <div className="flex items-center">
@@ -130,8 +132,8 @@ export default function FinancialStats({ period }: FinancialStatsProps) {
       {/* Задолженности */}
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <div className="flex items-center">
-          <div className="p-2 bg-yellow-100 rounded-lg">
-            <AlertCircle className="w-6 h-6 text-yellow-600" />
+          <div className="p-2 bg-red-100 rounded-lg">
+            <AlertCircle className="w-6 h-6 text-red-600" />
           </div>
           <div className="ml-4">
             <p className="text-sm font-medium text-gray-600">Задолженности</p>
@@ -141,6 +143,44 @@ export default function FinancialStats({ period }: FinancialStatsProps) {
           </div>
         </div>
       </div>
+
+      {/* Предоплаченные занятия */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="flex items-center">
+          <div className="p-2 bg-yellow-100 rounded-lg">
+            <AlertCircle className="w-6 h-6 text-yellow-600" />
+          </div>
+          <div className="ml-4">
+            <p className="text-sm font-medium text-gray-600">Предоплачено</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {formatCurrency(stats.totalPrepaid || 0)}
+            </p>
+            <p className="text-xs text-gray-500">
+              {stats.prepaidLessons || 0} занятий
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Доход от пользователя (только для админа) */}
+      {user?.role === 'ADMIN' && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <User className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Доход от пользователя</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formatCurrency(stats.userRevenue || 0)}
+              </p>
+              <p className="text-xs text-gray-500">
+                30% от оплаченных уроков
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Средний чек */}
       <div className="bg-white p-6 rounded-lg shadow-sm border">

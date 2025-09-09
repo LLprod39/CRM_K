@@ -1,9 +1,23 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Начинаем заполнение базы данных тестовыми данными...')
+
+  // Создаем тестового пользователя
+  const hashedPassword = await bcrypt.hash('password123', 12)
+  const user = await prisma.user.create({
+    data: {
+      email: 'test@example.com',
+      password: hashedPassword,
+      name: 'Тестовый пользователь',
+      role: 'USER'
+    }
+  })
+
+  console.log('✅ Создан тестовый пользователь')
 
   // Создаем тестовых учеников
   const students = await Promise.all([
@@ -13,7 +27,8 @@ async function main() {
         phone: '+7 (999) 123-45-67',
         age: 8,
         diagnosis: 'ДЦП',
-        comment: 'Требует особого внимания к моторике'
+        comment: 'Требует особого внимания к моторике',
+        userId: user.id
       }
     }),
     prisma.student.create({
@@ -22,7 +37,8 @@ async function main() {
         phone: '+7 (999) 234-56-78',
         age: 10,
         diagnosis: 'Аутизм',
-        comment: 'Хорошо идет на контакт'
+        comment: 'Хорошо идет на контакт',
+        userId: user.id
       }
     }),
     prisma.student.create({
@@ -31,7 +47,8 @@ async function main() {
         phone: '+7 (999) 345-67-89',
         age: 7,
         diagnosis: 'ЗПР',
-        comment: 'Активный, любит игры'
+        comment: 'Активный, любит игры',
+        userId: user.id
       }
     }),
     prisma.student.create({
@@ -40,7 +57,8 @@ async function main() {
         phone: '+7 (999) 456-78-90',
         age: 9,
         diagnosis: 'СДВГ',
-        comment: 'Нужны частые перерывы'
+        comment: 'Нужны частые перерывы',
+        userId: user.id
       }
     }),
     prisma.student.create({
@@ -49,7 +67,8 @@ async function main() {
         phone: '+7 (999) 567-89-01',
         age: 11,
         diagnosis: 'ДЦП',
-        comment: 'Отличные результаты в развитии речи'
+        comment: 'Отличные результаты в развитии речи',
+        userId: user.id
       }
     })
   ])

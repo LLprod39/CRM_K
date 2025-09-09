@@ -110,21 +110,21 @@ export default function PaymentsList({ studentId }: PaymentsListProps) {
                     </div>
                   )}
 
-                  {payment.lessons && payment.lessons.length > 0 && (
+                  {payment.lessonIds && payment.lessonIds.length > 0 && (
                     <div className="mt-2">
                       <button
                         onClick={() => setShowDetails(showDetails === payment.id ? null : payment.id)}
                         className="flex items-center text-sm text-green-600 hover:text-green-700 font-medium"
                       >
                         <Eye className="w-4 h-4 mr-1" />
-                        {showDetails === payment.id ? 'Скрыть' : 'Показать'} уроки ({payment.lessons.length})
+                        {showDetails === payment.id ? 'Скрыть' : 'Показать'} уроки ({payment.lessonIds.length})
                       </button>
                       
                       {showDetails === payment.id && (
                         <div className="mt-2 pl-4 border-l-2 border-green-200">
-                          {payment.lessons.map((pl, index) => (
+                          {payment.lessonIds.map((lessonId, index) => (
                             <div key={index} className="text-sm text-gray-600 py-1">
-                              • {formatDate(pl.lesson.date)} - {formatAmount(pl.lesson.cost)}
+                              • Урок ID: {lessonId}
                             </div>
                           ))}
                         </div>

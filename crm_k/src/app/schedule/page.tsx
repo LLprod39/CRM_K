@@ -9,6 +9,7 @@ import LessonFilters from '@/components/ui/LessonFilters';
 import AddLessonForm from '@/components/forms/AddLessonForm';
 import EditLessonForm from '@/components/forms/EditLessonForm';
 import { printSchedule } from '@/lib/print';
+import { autoUpdateLessonStatuses } from '@/lib/lessonUtils';
 import { apiRequest } from '@/lib/api';
 
 export default function SchedulePage() {
@@ -36,6 +37,16 @@ export default function SchedulePage() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Сначала автоматически обновляем статусы прошедших занятий
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          await autoUpdateLessonStatuses(token);
+        } catch (error) {
+          console.error('Ошибка при автоматическом обновлении статусов:', error);
+        }
+      }
+
       // Загружаем занятия с фильтрами
       const lessonParams = new URLSearchParams();
       if (filters.dateFrom) lessonParams.append('dateFrom', filters.dateFrom);

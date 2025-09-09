@@ -82,6 +82,8 @@ enum LessonStatus {
   COMPLETED   // Проведено
   CANCELLED   // Отменено
   PAID        // Оплачено
+  PREPAID     // Предоплачено
+  UNPAID      // Не оплачено
 }
 
 // Модель платежа

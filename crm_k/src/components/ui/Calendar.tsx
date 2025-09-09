@@ -85,6 +85,7 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
       case 'COMPLETED': return 'bg-green-100 text-green-800';
       case 'CANCELLED': return 'bg-red-100 text-red-800';
       case 'PAID': return 'bg-purple-100 text-purple-800';
+      case 'PREPAID': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -220,12 +221,16 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
             <span>Проведено</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-100 rounded"></div>
-            <span>Отменено</span>
+            <div className="w-3 h-3 bg-yellow-100 rounded"></div>
+            <span>Предоплачено</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-purple-100 rounded"></div>
             <span>Оплачено</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-red-100 rounded"></div>
+            <span>Отменено</span>
           </div>
         </div>
       </div>

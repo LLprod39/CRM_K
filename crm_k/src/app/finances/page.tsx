@@ -12,6 +12,7 @@ import PaymentsList from '@/components/finances/PaymentsList'
 import { printElement } from '@/lib/print'
 import { Student } from '@/types'
 import { apiRequest } from '@/lib/api'
+import { autoUpdateLessonStatuses } from '@/lib/lessonUtils'
 
 export default function FinancesPage() {
   const [period, setPeriod] = useState('month')
@@ -28,11 +29,21 @@ export default function FinancesPage() {
     setDateRange({ startDate, endDate })
   }
 
-  // Загрузка списка учеников
+  // Загрузка списка учеников и обновление статусов занятий
   useEffect(() => {
     const loadStudents = async () => {
       setIsLoadingStudents(true)
       try {
+        // Сначала автоматически обновляем статусы прошедших занятий
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            await autoUpdateLessonStatuses(token);
+          } catch (error) {
+            console.error('Ошибка при автоматическом обновлении статусов:', error);
+          }
+        }
+
         const response = await apiRequest('/api/students')
         if (response.ok) {
           const data = await response.json()

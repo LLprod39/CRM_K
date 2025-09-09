@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 // PUT /api/admin/users/[id] - обновить пользователя
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authUser = getAuthUser(request)
@@ -19,7 +19,8 @@ export async function PUT(
       )
     }
 
-    const userId = parseInt(params.id)
+    const { id } = await params
+    const userId = parseInt(id)
     const { name, email, password, role } = await request.json()
 
     if (!name || !email) {
@@ -54,10 +55,15 @@ export async function PUT(
     }
 
     // Подготавливаем данные для обновления
-    const updateData: any = {
+    const updateData: {
+      name: string;
+      email: string;
+      role: 'ADMIN' | 'USER';
+      password?: string;
+    } = {
       name,
       email,
-      role: role || existingUser.role
+      role: (role as 'ADMIN' | 'USER') || existingUser.role
     }
 
     // Обновляем пароль только если он предоставлен
@@ -94,7 +100,7 @@ export async function PUT(
 // DELETE /api/admin/users/[id] - удалить пользователя
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authUser = getAuthUser(request)
@@ -105,7 +111,8 @@ export async function DELETE(
       )
     }
 
-    const userId = parseInt(params.id)
+    const { id } = await params
+    const userId = parseInt(id)
 
     // Нельзя удалить самого себя
     if (userId === authUser.id) {
