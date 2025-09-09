@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { AlertCircle, Phone, Calendar } from 'lucide-react'
 import { DebtInfo } from '@/types'
+import { apiRequest } from '@/lib/api'
 
 export default function DebtsList() {
   const [debts, setDebts] = useState<DebtInfo[]>([])
@@ -15,10 +16,12 @@ export default function DebtsList() {
   const fetchDebts = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/finances/debts')
+      const response = await apiRequest('/api/finances/debts')
       if (response.ok) {
         const data = await response.json()
         setDebts(data)
+      } else {
+        console.error('Ошибка при загрузке задолженностей:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Ошибка при загрузке задолженностей:', error)

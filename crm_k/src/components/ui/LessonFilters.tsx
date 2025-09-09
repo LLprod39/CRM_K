@@ -30,7 +30,13 @@ export default function LessonFilters({ onFiltersChange, selectedDate }: LessonF
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await fetch('/api/students');
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/students', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
         if (response.ok) {
           const data = await response.json();
           setStudents(data);

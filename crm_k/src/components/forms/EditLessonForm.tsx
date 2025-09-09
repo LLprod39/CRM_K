@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, User, DollarSign, FileText, Trash2 } from 'lucide-react';
 import { Student, Lesson, LessonStatus } from '@/types';
+import { apiRequest } from '@/lib/api';
 
 interface EditLessonFormProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ export default function EditLessonForm({
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await fetch('/api/students');
+        const response = await apiRequest('/api/students');
         if (response.ok) {
           const data = await response.json();
           setStudents(data);
@@ -71,7 +72,7 @@ export default function EditLessonForm({
     setError('');
 
     try {
-      const response = await fetch(`/api/lessons/${lesson.id}`, {
+      const response = await apiRequest(`/api/lessons/${lesson.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +111,7 @@ export default function EditLessonForm({
     setError('');
 
     try {
-      const response = await fetch(`/api/lessons/${lesson.id}`, {
+      const response = await apiRequest(`/api/lessons/${lesson.id}`, {
         method: 'DELETE',
       });
 

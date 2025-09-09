@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/ui/Navigation";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ToastProvider } from "@/contexts/ToastContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,14 +39,18 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ErrorBoundary>
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 transition-all duration-300">
-            <Navigation />
-            <main className="max-w-7xl mx-auto py-4 sm:py-6 px-3 sm:px-4 lg:px-8">
-              <div className="animate-fade-in">
-                {children}
+          <AuthProvider>
+            <ToastProvider>
+              <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 transition-all duration-300">
+                <Navigation />
+                <main className="max-w-7xl mx-auto py-4 sm:py-6 px-3 sm:px-4 lg:px-8">
+                  <div className="animate-fade-in">
+                    {children}
+                  </div>
+                </main>
               </div>
-            </main>
-          </div>
+            </ToastProvider>
+          </AuthProvider>
         </ErrorBoundary>
       </body>
     </html>

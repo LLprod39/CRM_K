@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getAuthUser } from '@/lib/auth'
 import { UpdateLessonData } from '@/types'
 
 // GET /api/lessons/[id] - получить занятие по ID
@@ -8,6 +9,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
     
@@ -21,7 +30,16 @@ export async function GET(
     const lesson = await prisma.lesson.findUnique({
       where: { id },
       include: {
-        student: true
+        student: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     })
 
@@ -29,6 +47,14 @@ export async function GET(
       return NextResponse.json(
         { error: 'Занятие не найдено' },
         { status: 404 }
+      )
+    }
+
+    // Если не админ, проверяем, что занятие принадлежит пользователю
+    if (authUser.role !== 'ADMIN' && lesson.student.userId !== authUser.id) {
+      return NextResponse.json(
+        { error: 'Доступ запрещен' },
+        { status: 403 }
       )
     }
 
@@ -48,6 +74,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
     
@@ -62,13 +96,24 @@ export async function PUT(
 
     // Проверяем, существует ли занятие
     const existingLesson = await prisma.lesson.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        student: true
+      }
     })
 
     if (!existingLesson) {
       return NextResponse.json(
         { error: 'Занятие не найдено' },
         { status: 404 }
+      )
+    }
+
+    // Если не админ, проверяем, что занятие принадлежит пользователю
+    if (authUser.role !== 'ADMIN' && existingLesson.student.userId !== authUser.id) {
+      return NextResponse.json(
+        { error: 'Доступ запрещен' },
+        { status: 403 }
       )
     }
 
@@ -116,6 +161,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
     
@@ -128,13 +181,24 @@ export async function DELETE(
 
     // Проверяем, существует ли занятие
     const existingLesson = await prisma.lesson.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        student: true
+      }
     })
 
     if (!existingLesson) {
       return NextResponse.json(
         { error: 'Занятие не найдено' },
         { status: 404 }
+      )
+    }
+
+    // Если не админ, проверяем, что занятие принадлежит пользователю
+    if (authUser.role !== 'ADMIN' && existingLesson.student.userId !== authUser.id) {
+      return NextResponse.json(
+        { error: 'Доступ запрещен' },
+        { status: 403 }
       )
     }
 

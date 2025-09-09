@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, User, DollarSign, FileText } from 'lucide-react';
 import { Student, LessonStatus } from '@/types';
+import { apiRequest } from '@/lib/api';
 
 interface AddLessonFormProps {
   isOpen: boolean;
@@ -34,10 +35,12 @@ export default function AddLessonForm({
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await fetch('/api/students');
+        const response = await apiRequest('/api/students');
         if (response.ok) {
           const data = await response.json();
           setStudents(data);
+        } else {
+          console.error('Ошибка при загрузке учеников:', response.status);
         }
       } catch (error) {
         console.error('Ошибка при загрузке учеников:', error);
@@ -71,7 +74,7 @@ export default function AddLessonForm({
     setError('');
 
     try {
-      const response = await fetch('/api/lessons', {
+      const response = await apiRequest('/api/lessons', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

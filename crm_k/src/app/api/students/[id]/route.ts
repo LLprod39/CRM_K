@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getAuthUser } from '@/lib/auth'
 import { UpdateStudentData } from '@/types'
 
 // GET /api/students/[id] - получить ученика по ID
@@ -8,6 +9,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
     
@@ -25,6 +34,12 @@ export async function GET(
           orderBy: {
             date: 'desc'
           }
+        },
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
         }
       }
     })
@@ -33,6 +48,14 @@ export async function GET(
       return NextResponse.json(
         { error: 'Ученик не найден' },
         { status: 404 }
+      )
+    }
+
+    // Если не админ, проверяем, что ученик принадлежит пользователю
+    if (authUser.role !== 'ADMIN' && student.userId !== authUser.id) {
+      return NextResponse.json(
+        { error: 'Доступ запрещен' },
+        { status: 403 }
       )
     }
 
@@ -52,6 +75,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
     
@@ -73,6 +104,14 @@ export async function PUT(
       return NextResponse.json(
         { error: 'Ученик не найден' },
         { status: 404 }
+      )
+    }
+
+    // Если не админ, проверяем, что ученик принадлежит пользователю
+    if (authUser.role !== 'ADMIN' && existingStudent.userId !== authUser.id) {
+      return NextResponse.json(
+        { error: 'Доступ запрещен' },
+        { status: 403 }
       )
     }
 
@@ -103,6 +142,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
     
@@ -122,6 +169,14 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Ученик не найден' },
         { status: 404 }
+      )
+    }
+
+    // Если не админ, проверяем, что ученик принадлежит пользователю
+    if (authUser.role !== 'ADMIN' && existingStudent.userId !== authUser.id) {
+      return NextResponse.json(
+        { error: 'Доступ запрещен' },
+        { status: 403 }
       )
     }
 

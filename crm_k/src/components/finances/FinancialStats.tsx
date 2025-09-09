@@ -20,10 +20,18 @@ export default function FinancialStats({ period }: FinancialStatsProps) {
   const fetchStats = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/finances/stats?period=${period}`)
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/finances/stats?period=${period}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
       if (response.ok) {
         const data = await response.json()
         setStats(data)
+      } else {
+        console.error('Ошибка при загрузке статистики:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Ошибка при загрузке статистики:', error)

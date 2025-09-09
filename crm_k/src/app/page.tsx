@@ -3,8 +3,12 @@
 import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiRequest } from '@/lib/api';
 
 export default function Home() {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     students: 0,
     todayLessons: 0,
@@ -15,11 +19,13 @@ export default function Home() {
   useEffect(() => {
     // Загружаем статистику
     const fetchStats = async () => {
+      if (!user) return;
+      
       try {
         const [studentsRes, lessonsRes, financesRes] = await Promise.all([
-          fetch('/api/students'),
-          fetch('/api/lessons'),
-          fetch('/api/finances/stats')
+          apiRequest('/api/students'),
+          apiRequest('/api/lessons'),
+          apiRequest('/api/finances/stats')
         ]);
 
         if (studentsRes.ok) {
@@ -41,7 +47,7 @@ export default function Home() {
           setStats(prev => ({ 
             ...prev, 
             monthlyRevenue: finances.monthlyRevenue || 0,
-            debts: finances.totalDebts || 0
+            debts: finances.totalDebt || 0
           }));
         }
       } catch (error) {
@@ -50,7 +56,7 @@ export default function Home() {
     };
 
     fetchStats();
-  }, []);
+  }, [user]);
 
   const statCards = [
     {
@@ -108,19 +114,20 @@ export default function Home() {
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Заголовок */}
-      <div className="text-center">
-        <div className="flex items-center justify-center mb-4">
-          <Sparkles className="w-8 h-8 text-blue-600 mr-3 animate-pulse" />
-          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Добро пожаловать в CRM_K
-          </h1>
+    <ProtectedRoute>
+      <div className="space-y-8">
+        {/* Заголовок */}
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-4">
+            <Sparkles className="w-8 h-8 text-blue-600 mr-3 animate-pulse" />
+            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Добро пожаловать в CRM_K
+            </h1>
+          </div>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Привет, {user?.name}! Управляйте своими учениками, расписанием и финансами
+          </p>
         </div>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Современная система управления учениками, расписанием и финансами для образовательных учреждений
-        </p>
-      </div>
 
       {/* Статистические карточки */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
@@ -217,6 +224,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

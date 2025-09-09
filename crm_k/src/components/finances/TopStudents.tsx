@@ -15,10 +15,18 @@ export default function TopStudents() {
   const fetchTopStudents = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/finances/stats')
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/finances/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
       if (response.ok) {
         const data: FinancialStats = await response.json()
         setTopStudents(data.topStudents)
+      } else {
+        console.error('Ошибка при загрузке топ учеников:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Ошибка при загрузке топ учеников:', error)

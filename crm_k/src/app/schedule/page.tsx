@@ -9,6 +9,7 @@ import LessonFilters from '@/components/ui/LessonFilters';
 import AddLessonForm from '@/components/forms/AddLessonForm';
 import EditLessonForm from '@/components/forms/EditLessonForm';
 import { printSchedule } from '@/lib/print';
+import { apiRequest } from '@/lib/api';
 
 export default function SchedulePage() {
   const [lessons, setLessons] = useState<LessonWithOptionalStudent[]>([]);
@@ -43,8 +44,8 @@ export default function SchedulePage() {
       if (filters.status) lessonParams.append('status', filters.status);
 
       const [lessonsResponse] = await Promise.all([
-        fetch(`/api/lessons?${lessonParams.toString()}`)
-        // fetch('/api/students')
+        apiRequest(`/api/lessons?${lessonParams.toString()}`)
+        // apiRequest('/api/students')
       ]);
 
       if (lessonsResponse.ok) {

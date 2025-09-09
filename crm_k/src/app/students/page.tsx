@@ -7,6 +7,7 @@ import { Student } from '@/types';
 import AddStudentForm from '@/components/forms/AddStudentForm';
 import EditStudentForm from '@/components/forms/EditStudentForm';
 import { printStudentsList } from '@/lib/print';
+import { apiRequest } from '@/lib/api';
 
 export default function StudentsPage() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function StudentsPage() {
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch('/api/students');
+      const response = await apiRequest('/api/students');
       if (response.ok) {
         const data = await response.json();
         setStudents(data);
@@ -64,8 +65,13 @@ export default function StudentsPage() {
     }
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`/api/students/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.ok) {

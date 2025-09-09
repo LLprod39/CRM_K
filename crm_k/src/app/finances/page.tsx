@@ -1,17 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DollarSign, Printer } from 'lucide-react'
 import FinancialStats from '@/components/finances/FinancialStats'
 import RevenueChart from '@/components/finances/RevenueChart'
 import DebtsList from '@/components/finances/DebtsList'
 import TopStudents from '@/components/finances/TopStudents'
 import PeriodFilters from '@/components/finances/PeriodFilters'
+import AddPaymentForm from '@/components/forms/AddPaymentForm'
+import PaymentsList from '@/components/finances/PaymentsList'
 import { printElement } from '@/lib/print'
+import { Student } from '@/types'
+import { apiRequest } from '@/lib/api'
 
 export default function FinancesPage() {
   const [period, setPeriod] = useState('month')
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' })
+  const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false)
+  const [students, setStudents] = useState<Student[]>([])
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false)
 
   const handlePeriodChange = (newPeriod: string) => {
     setPeriod(newPeriod)
@@ -19,6 +26,33 @@ export default function FinancesPage() {
 
   const handleDateRangeChange = (startDate: string, endDate: string) => {
     setDateRange({ startDate, endDate })
+  }
+
+  // Загрузка списка учеников
+  useEffect(() => {
+    const loadStudents = async () => {
+      setIsLoadingStudents(true)
+      try {
+        const response = await apiRequest('/api/students')
+        if (response.ok) {
+          const data = await response.json()
+          setStudents(data)
+        } else {
+          console.error('Ошибка при загрузке учеников:', response.status)
+        }
+      } catch (error) {
+        console.error('Ошибка при загрузке учеников:', error)
+      } finally {
+        setIsLoadingStudents(false)
+      }
+    }
+
+    loadStudents()
+  }, [])
+
+  const handlePaymentAdded = () => {
+    // Обновляем данные на странице после добавления платежа
+    window.location.reload()
   }
 
   const handleExport = async (format: 'xlsx' | 'csv') => {
@@ -72,9 +106,13 @@ export default function FinancesPage() {
             <Printer className="w-4 h-4 mr-2" />
             Печать
           </button>
-          <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 transition-all duration-200 hover:scale-105">
+          <button 
+            onClick={() => setIsPaymentFormOpen(true)}
+            disabled={isLoadingStudents}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <DollarSign className="w-4 h-4 mr-2" />
-            Добавить платеж
+            {isLoadingStudents ? 'Загрузка...' : 'Добавить платеж'}
           </button>
         </div>
       </div>
@@ -98,15 +136,26 @@ export default function FinancesPage() {
         {/* График доходов */}
         <RevenueChart period={period} />
 
-        {/* Нижняя часть с двумя колонками */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Нижняя часть с тремя колонками */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Список задолженностей */}
           <DebtsList />
 
           {/* Топ учеников по оплатам */}
           <TopStudents />
+
+          {/* История платежей */}
+          <PaymentsList />
         </div>
       </div>
+
+      {/* Форма добавления платежа */}
+      <AddPaymentForm
+        isOpen={isPaymentFormOpen}
+        onClose={() => setIsPaymentFormOpen(false)}
+        onPaymentAdded={handlePaymentAdded}
+        students={students}
+      />
     </div>
   )
 }

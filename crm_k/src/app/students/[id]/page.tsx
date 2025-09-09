@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, User, Phone, Calendar, FileText, MessageSquare, Clock, DollarSign, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { LessonStatus, StudentWithLessons } from '@/types';
+import { apiRequest } from '@/lib/api';
 
 export default function StudentProfilePage() {
   const params = useParams();
@@ -20,7 +21,7 @@ export default function StudentProfilePage() {
 
   const fetchStudent = async () => {
     try {
-      const response = await fetch(`/api/students/${params.id}`);
+      const response = await apiRequest(`/api/students/${params.id}`);
       if (response.ok) {
         const data = await response.json();
         setStudent(data);

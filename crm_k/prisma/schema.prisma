@@ -10,6 +10,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Модель пользователя
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Связь с учениками (один пользователь может иметь много учеников)
+  students  Student[]
+  
+  @@map("users")
+}
+
+// Роли пользователей
+enum UserRole {
+  ADMIN  // Администратор - видит все данные
+  USER   // Обычный пользователь - видит только своих учеников
+}
+
 // Модель ученика
 model Student {
   id          Int      @id @default(autoincrement())
@@ -18,11 +40,18 @@ model Student {
   age         Int      // Возраст
   diagnosis   String?  // Диагноз (опционально)
   comment     String?  // Комментарий (опционально)
+  userId      Int      // ID пользователя-владельца
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
+  // Связь с пользователем
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
   // Связь с занятиями
   lessons     Lesson[]
+  
+  // Связь с платежами
+  payments    Payment[]
   
   @@map("students")
 }
@@ -41,6 +70,9 @@ model Lesson {
   // Связь с учеником
   student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   
+  // Связь с платежами
+  payments    PaymentLesson[]
+  
   @@map("lessons")
 }
 
@@ -50,4 +82,37 @@ enum LessonStatus {
   COMPLETED   // Проведено
   CANCELLED   // Отменено
   PAID        // Оплачено
+}
+
+// Модель платежа
+model Payment {
+  id          Int      @id @default(autoincrement())
+  studentId   Int      // ID ученика
+  amount      Float    // Сумма платежа
+  date        DateTime // Дата платежа
+  description String?  // Описание платежа
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Связь с учеником
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  // Связь с уроками через промежуточную таблицу
+  lessons     PaymentLesson[]
+  
+  @@map("payments")
+}
+
+// Промежуточная таблица для связи платежей и уроков
+model PaymentLesson {
+  id        Int     @id @default(autoincrement())
+  paymentId Int     // ID платежа
+  lessonId  Int     // ID урока
+  
+  // Связи
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  lesson    Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  @@unique([paymentId, lessonId])
+  @@map("payment_lessons")
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { TrendingUp } from 'lucide-react'
+import { apiRequest } from '@/lib/api'
 
 interface RevenueChartProps {
   period: string
@@ -31,16 +32,24 @@ export default function RevenueChart({ period }: RevenueChartProps) {
       const startDate = new Date()
       startDate.setDate(endDate.getDate() - 30)
       
-      const response = await fetch(`/api/finances/period?period=custom&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`)
+      const response = await apiRequest(`/api/finances/period?period=custom&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`)
       
       if (response.ok) {
         // Для упрощения показываем статичные данные
         // В реальном приложении здесь был бы запрос к API для получения данных по дням
         const mockData = generateMockChartData()
         setChartData(mockData)
+      } else {
+        console.error('Ошибка при загрузке данных графика:', response.status, response.statusText)
+        // Используем моковые данные в случае ошибки
+        const mockData = generateMockChartData()
+        setChartData(mockData)
       }
     } catch (error) {
       console.error('Ошибка при загрузке данных графика:', error)
+      // Используем моковые данные в случае ошибки
+      const mockData = generateMockChartData()
+      setChartData(mockData)
     } finally {
       setLoading(false)
     }

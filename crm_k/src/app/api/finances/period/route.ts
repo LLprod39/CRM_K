@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getAuthUser } from '@/lib/auth'
 import { PeriodStats } from '@/types'
 
 // GET /api/finances/period - получить статистику за период
 export async function GET(request: NextRequest) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const period = searchParams.get('period') || 'month'
     const startDate = searchParams.get('startDate')
@@ -48,9 +57,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Базовые условия для фильтрации
+    const baseWhere = authUser.role === 'ADMIN' 
+      ? {} 
+      : {
+          student: {
+            userId: authUser.id
+          }
+        }
+
     // Получаем оплаченные занятия за период
     const paidLessons = await prisma.lesson.findMany({
       where: {
+        ...baseWhere,
         status: 'PAID',
         date: {
           gte: dateFrom,

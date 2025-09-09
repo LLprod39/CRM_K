@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { X, User, Phone, Calendar, FileText, MessageSquare } from 'lucide-react';
 import { CreateStudentData } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiRequest } from '@/lib/api';
 
 interface AddStudentFormProps {
   isOpen: boolean;
@@ -11,6 +13,7 @@ interface AddStudentFormProps {
 }
 
 export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStudentFormProps) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<CreateStudentData>({
     fullName: '',
     phone: '',
@@ -69,11 +72,8 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
     setLoading(true);
     
     try {
-      const response = await fetch('/api/students', {
+      const response = await apiRequest('/api/students', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(formData),
       });
 

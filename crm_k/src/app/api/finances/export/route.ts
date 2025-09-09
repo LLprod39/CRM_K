@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getAuthUser } from '@/lib/auth'
 import * as XLSX from 'xlsx'
 
 // GET /api/finances/export - экспорт финансовых данных в Excel
 export async function GET(request: NextRequest) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const format = searchParams.get('format') || 'xlsx' // xlsx или csv
     const startDate = searchParams.get('startDate')
@@ -18,9 +27,19 @@ export async function GET(request: NextRequest) {
       dateTo = new Date(endDate)
     }
 
+    // Базовые условия для фильтрации
+    const baseWhere = authUser.role === 'ADMIN' 
+      ? {} 
+      : {
+          student: {
+            userId: authUser.id
+          }
+        }
+
     // Получаем все занятия с информацией об учениках
     const lessons = await prisma.lesson.findMany({
       where: {
+        ...baseWhere,
         ...(dateFrom && dateTo ? {
           date: {
             gte: dateFrom,
@@ -29,7 +48,16 @@ export async function GET(request: NextRequest) {
         } : {})
       },
       include: {
-        student: true
+        student: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
       },
       orderBy: {
         date: 'desc'
@@ -44,7 +72,11 @@ export async function GET(request: NextRequest) {
       'Телефон': lesson.student.phone,
       'Стоимость': lesson.cost,
       'Статус': getStatusText(lesson.status),
-      'Заметки': lesson.notes || ''
+      'Заметки': lesson.notes || '',
+      ...(authUser.role === 'ADMIN' && {
+        'Владелец': lesson.student.user?.name || 'Неизвестно',
+        'Email владельца': lesson.student.user?.email || 'Неизвестно'
+      })
     }))
 
     // Создаем книгу Excel

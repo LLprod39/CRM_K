@@ -1,17 +1,45 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { DebtInfo } from '@/types'
+import { getAuthUser } from '@/lib/auth'
 
 // GET /api/finances/debts - получить список задолженностей
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
+    // Базовые условия для фильтрации
+    const baseWhere = authUser.role === 'ADMIN' 
+      ? {} 
+      : {
+          student: {
+            userId: authUser.id
+          }
+        }
+
     // Получаем все проведенные, но не оплаченные занятия
     const unpaidLessons = await prisma.lesson.findMany({
       where: {
+        ...baseWhere,
         status: 'COMPLETED'
       },
       include: {
-        student: true
+        student: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
       },
       orderBy: {
         date: 'desc'
@@ -28,6 +56,7 @@ export async function GET() {
         // Получаем последнюю дату оплаты для этого ученика
         const lastPaidLesson = await prisma.lesson.findFirst({
           where: {
+            ...baseWhere,
             studentId: studentId,
             status: 'PAID'
           },

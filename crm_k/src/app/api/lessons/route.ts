@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { CreateLessonData } from '@/types'
+import { getAuthUser } from '@/lib/auth'
 
 // GET /api/lessons - получить все занятия
 export async function GET(request: NextRequest) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const studentId = searchParams.get('studentId')
     const status = searchParams.get('status')
@@ -17,6 +26,9 @@ export async function GET(request: NextRequest) {
       date?: {
         gte?: Date;
         lte?: Date;
+      };
+      student?: {
+        userId?: number;
       };
     } = {}
 
@@ -38,10 +50,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Если не админ, показываем только занятия своих учеников
+    if (authUser.role !== 'ADMIN') {
+      where.student = {
+        userId: authUser.id
+      }
+    }
+
     const lessons = await prisma.lesson.findMany({
       where,
       include: {
-        student: true
+        student: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
       },
       orderBy: {
         date: 'desc'
@@ -61,6 +89,14 @@ export async function GET(request: NextRequest) {
 // POST /api/lessons - создать новое занятие
 export async function POST(request: NextRequest) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const body: CreateLessonData = await request.json()
     
     // Валидация обязательных полей
@@ -71,15 +107,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Проверяем, существует ли ученик
+    // Проверяем, существует ли ученик и принадлежит ли он пользователю
     const student = await prisma.student.findUnique({
-      where: { id: body.studentId }
+      where: { id: body.studentId },
+      include: { user: true }
     })
 
     if (!student) {
       return NextResponse.json(
         { error: 'Ученик не найден' },
         { status: 404 }
+      )
+    }
+
+    // Если не админ, проверяем, что ученик принадлежит пользователю
+    if (authUser.role !== 'ADMIN' && student.userId !== authUser.id) {
+      return NextResponse.json(
+        { error: 'Доступ запрещен' },
+        { status: 403 }
       )
     }
 
@@ -92,7 +137,16 @@ export async function POST(request: NextRequest) {
         notes: body.notes || null
       },
       include: {
-        student: true
+        student: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     })
 

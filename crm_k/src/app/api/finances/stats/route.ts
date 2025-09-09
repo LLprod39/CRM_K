@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getAuthUser } from '@/lib/auth'
 
 // GET /api/finances/stats - получить финансовую статистику
 export async function GET(request: NextRequest) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const period = searchParams.get('period') || 'all' // all, month, week, day
 
@@ -25,12 +34,23 @@ export async function GET(request: NextRequest) {
         break
     }
 
+    // Базовые условия для фильтрации
+    const baseWhere = authUser.role === 'ADMIN' 
+      ? {} 
+      : {
+          student: {
+            userId: authUser.id
+          }
+        }
+
     const whereClause = dateFrom ? {
+      ...baseWhere,
       date: {
         gte: dateFrom
       },
       status: 'PAID' as const
     } : {
+      ...baseWhere,
       status: 'PAID' as const
     }
 
@@ -66,6 +86,7 @@ export async function GET(request: NextRequest) {
     const studentStats = await prisma.lesson.groupBy({
       by: ['studentId'],
       where: {
+        ...baseWhere,
         status: 'PAID'
       },
       _sum: {
@@ -83,7 +104,15 @@ export async function GET(request: NextRequest) {
         .slice(0, 5)
         .map(async (stat) => {
           const student = await prisma.student.findUnique({
-            where: { id: stat.studentId }
+            where: { id: stat.studentId },
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true
+                }
+              }
+            }
           })
           return {
             student,
@@ -96,6 +125,7 @@ export async function GET(request: NextRequest) {
     // Подсчитываем задолженности (занятия со статусом COMPLETED, но не PAID)
     const debtLessons = await prisma.lesson.findMany({
       where: {
+        ...baseWhere,
         status: 'COMPLETED'
       }
     })
@@ -105,6 +135,7 @@ export async function GET(request: NextRequest) {
     // Статистика по статусам
     const statusStats = await prisma.lesson.groupBy({
       by: ['status'],
+      where: baseWhere,
       _count: {
         id: true
       },

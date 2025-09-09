@@ -1,10 +1,12 @@
 // Основные типы для CRM системы
-import { Student as PrismaStudent, Lesson as PrismaLesson, LessonStatus as PrismaLessonStatus } from '@prisma/client'
+import { Student as PrismaStudent, Lesson as PrismaLesson, LessonStatus as PrismaLessonStatus, User as PrismaUser, UserRole as PrismaUserRole } from '@prisma/client'
 
 // Экспортируем типы из Prisma
 export type Student = PrismaStudent
 export type Lesson = PrismaLesson
 export type LessonStatus = PrismaLessonStatus
+export type User = PrismaUser
+export type UserRole = PrismaUserRole
 
 // Тип для урока с включенным студентом
 export type LessonWithStudent = Lesson & {
@@ -94,4 +96,60 @@ export interface StudentFinancialReport {
     amount: number;
     lessonId: number;
   }>;
+}
+
+// Типы для аутентификации
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  name: string;
+  role?: UserRole;
+}
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  name: string;
+  role: UserRole;
+}
+
+export interface AuthContextType {
+  user: AuthUser | null;
+  login: (data: LoginData) => Promise<boolean>;
+  logout: () => void;
+  isLoading: boolean;
+}
+
+// Типы для платежей
+export interface Payment {
+  id: number;
+  studentId: number;
+  amount: number;
+  date: Date;
+  description?: string;
+  lessonIds?: number[]; // ID уроков, за которые произведен платеж
+  createdAt: Date;
+  updatedAt: Date;
+  student?: Student;
+}
+
+export interface CreatePaymentData {
+  studentId: number;
+  amount: number;
+  date: Date;
+  description?: string;
+  lessonIds?: number[];
+}
+
+export interface PaymentFormData {
+  studentId: number;
+  amount: string;
+  date: string;
+  description: string;
+  lessonIds: number[];
 }

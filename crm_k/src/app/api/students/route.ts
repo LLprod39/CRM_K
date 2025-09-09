@@ -1,15 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { CreateStudentData } from '@/types'
+import { getAuthUser } from '@/lib/auth'
 
 // GET /api/students - получить всех учеников
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
+    // Если админ - показываем всех учеников, иначе только своих
+    const whereClause = authUser.role === 'ADMIN' 
+      ? {} 
+      : { userId: authUser.id }
+
     const students = await prisma.student.findMany({
+      where: whereClause,
       include: {
         lessons: {
           orderBy: {
             date: 'desc'
+          }
+        },
+        user: {
+          select: {
+            name: true,
+            email: true
           }
         }
       },
@@ -31,6 +52,14 @@ export async function GET() {
 // POST /api/students - создать нового ученика
 export async function POST(request: NextRequest) {
   try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
     const body: CreateStudentData = await request.json()
     
     // Валидация обязательных полей
@@ -47,7 +76,8 @@ export async function POST(request: NextRequest) {
         phone: body.phone,
         age: body.age,
         diagnosis: body.diagnosis || null,
-        comment: body.comment || null
+        comment: body.comment || null,
+        userId: authUser.id
       }
     })
 
