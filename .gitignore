@@ -1,0 +1,116 @@
+# Зависимости
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Переменные окружения
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Логи
+logs
+*.log
+
+# Временные файлы
+.tmp/
+temp/
+
+# IDE файлы
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS файлы
+.DS_Store
+Thumbs.db
+
+# Сборка
+dist/
+build/
+*.tgz
+*.tar.gz
+
+# База данных
+*.db
+*.sqlite
+*.sqlite3
+
+# Кэш
+.cache/
+.parcel-cache/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Sphinx
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
