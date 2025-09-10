@@ -4,11 +4,12 @@ import { prisma } from '@/lib/db';
 // PUT - обновить игрушку
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { name, description, category, isAvailable } = await request.json();
-    const toyId = parseInt(params.id);
+    const { id } = await params;
+    const toyId = parseInt(id);
 
     if (!name) {
       return NextResponse.json({ error: 'Название игрушки обязательно' }, { status: 400 });
@@ -37,10 +38,11 @@ export async function PUT(
 // DELETE - удалить игрушку
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const toyId = parseInt(params.id);
+    const { id } = await params;
+    const toyId = parseInt(id);
 
     await prisma.toy.delete({
       where: { id: toyId }
