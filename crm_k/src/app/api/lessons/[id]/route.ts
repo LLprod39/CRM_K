@@ -94,6 +94,20 @@ export async function PUT(
 
     const body: UpdateLessonData = await request.json()
 
+    // Если изменяется дата, проверяем, что она не в прошлом (только для не-админов)
+    if (body.date) {
+      const lessonDate = new Date(body.date);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Сбрасываем время для сравнения только по дате
+      
+      if (lessonDate < now && authUser.role !== 'ADMIN') {
+        return NextResponse.json(
+          { error: 'Нельзя изменять дату занятия на прошедшую' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Проверяем, существует ли занятие
     const existingLesson = await prisma.lesson.findUnique({
       where: { id },

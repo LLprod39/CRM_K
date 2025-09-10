@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Calendar, User, DollarSign, FileText, Trash2 } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { Student, Lesson } from '@/types';
 import { apiRequest } from '@/lib/api';
+import { useAuth } from '@/presentation/contexts';
 
 interface EditLessonFormProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export default function EditLessonForm({
   onDelete,
   lesson 
 }: EditLessonFormProps) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     date: '',
     endTime: '',
@@ -159,29 +161,36 @@ export default function EditLessonForm({
   if (!isOpen || !lesson) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+    <div 
+      className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50 p-4 transition-all duration-300 ease-out" 
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-2xl max-h-[90vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Редактировать занятие</h2>
+          <h2 className="text-2xl font-semibold text-gray-900">
+            Редактировать занятие
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 hover:bg-gray-100 rounded-lg"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-              {error}
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <span className="font-medium">{error}</span>
             </div>
           )}
 
           {/* Дата и время */}
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-              <Calendar className="w-4 h-4 inline mr-2" />
+          <div className="space-y-2">
+            <label htmlFor="date" className="block text-sm font-medium text-gray-700">
               Дата и время
             </label>
             <input
@@ -191,14 +200,14 @@ export default function EditLessonForm({
               value={formData.date}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              min={user?.role === 'ADMIN' ? undefined : new Date().toISOString().slice(0, 16)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
           </div>
 
           {/* Ученик */}
-          <div>
-            <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-2">
-              <User className="w-4 h-4 inline mr-2" />
+          <div className="space-y-2">
+            <label htmlFor="studentId" className="block text-sm font-medium text-gray-700">
               Ученик
             </label>
             <select
@@ -207,7 +216,7 @@ export default function EditLessonForm({
               value={formData.studentId}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             >
               {students.map((student) => (
                 <option key={student.id} value={student.id}>
@@ -218,9 +227,8 @@ export default function EditLessonForm({
           </div>
 
           {/* Стоимость */}
-          <div>
-            <label htmlFor="cost" className="block text-sm font-medium text-gray-700 mb-2">
-              <DollarSign className="w-4 h-4 inline mr-2" />
+          <div className="space-y-2">
+            <label htmlFor="cost" className="block text-sm font-medium text-gray-700">
               Стоимость (тенге)
             </label>
             <input
@@ -232,27 +240,27 @@ export default function EditLessonForm({
               required
               min="0"
               step="0.01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             />
           </div>
 
           {/* Статусы */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">
               Статус занятия
             </label>
-            <div className="space-y-2">
-              <label className="flex items-center">
+            <div className="space-y-3">
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   name="isCompleted"
                   checked={formData.isCompleted}
                   onChange={handleChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                 />
-                <span className="ml-2 text-sm text-gray-700">Проведено</span>
+                <span className="ml-3 text-sm text-gray-700">Проведено</span>
               </label>
-              <label className="flex items-center">
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   name="isPaid"
@@ -260,25 +268,24 @@ export default function EditLessonForm({
                   onChange={handleChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <span className="ml-2 text-sm text-gray-700">Оплачено</span>
+                <span className="ml-3 text-sm text-gray-700">Оплачено</span>
               </label>
-              <label className="flex items-center">
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   name="isCancelled"
                   checked={formData.isCancelled}
                   onChange={handleChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                 />
-                <span className="ml-2 text-sm text-gray-700">Отменено</span>
+                <span className="ml-3 text-sm text-gray-700">Отменено</span>
               </label>
             </div>
           </div>
 
           {/* Заметки */}
-          <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-              <FileText className="w-4 h-4 inline mr-2" />
+          <div className="space-y-2">
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
               Заметки
             </label>
             <textarea
@@ -286,26 +293,26 @@ export default function EditLessonForm({
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 resize-none"
               placeholder="Дополнительная информация о занятии..."
             />
           </div>
 
           {/* Кнопки */}
-          <div className="space-y-3 pt-4">
+          <div className="space-y-4 pt-4 border-t border-gray-200">
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
               >
                 Отмена
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors duration-200 font-medium"
               >
                 {loading ? 'Сохранение...' : 'Сохранить'}
               </button>
@@ -315,7 +322,7 @@ export default function EditLessonForm({
               type="button"
               onClick={handleDelete}
               disabled={deleteLoading}
-              className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors duration-200 font-medium"
             >
               <Trash2 className="w-4 h-4" />
               {deleteLoading ? 'Удаление...' : 'Удалить занятие'}

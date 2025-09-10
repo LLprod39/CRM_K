@@ -140,6 +140,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Проверяем, что дата занятия не в прошлом (только для не-админов)
+    const lessonDate = new Date(body.date);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Сбрасываем время для сравнения только по дате
+    
+    if (lessonDate < now && authUser.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Нельзя создавать занятия задним числом' },
+        { status: 400 }
+      )
+    }
+
     // Проверяем, существует ли ученик и принадлежит ли он пользователю
     const student = await prisma.student.findUnique({
       where: { id: body.studentId },

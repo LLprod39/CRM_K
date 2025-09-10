@@ -81,7 +81,7 @@ export default function SchedulePage() {
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
-    setViewMode('list');
+    // Не переключаем режим - календарь сам покажет модальное окно
   };
 
   const handleLessonClick = (lesson: LessonWithOptionalStudent) => {

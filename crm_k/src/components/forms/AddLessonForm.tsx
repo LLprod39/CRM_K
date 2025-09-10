@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Calendar, User, DollarSign, FileText, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { Student } from '@/types';
 import { apiRequest } from '@/lib/api';
+import { useAuth } from '@/presentation/contexts';
 
 interface AddLessonFormProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export default function AddLessonForm({
   selectedDate,
   selectedStudent 
 }: AddLessonFormProps) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     date: selectedDate ? selectedDate.toISOString().slice(0, 16) : '',
     endTime: '',
@@ -77,12 +79,35 @@ export default function AddLessonForm({
     }
   }, [selectedDate, selectedStudent]);
 
+  // Проверяем, является ли выбранная дата задним числом
+  const isBackdate = formData.date && new Date(formData.date) < new Date();
+
+  // Автоматически предлагаем статусы для занятий задним числом (только для админов)
+  useEffect(() => {
+    if (isBackdate && user?.role === 'ADMIN' && !formData.isCompleted && !formData.isPaid && !formData.isCancelled) {
+      setFormData(prev => ({
+        ...prev,
+        isCompleted: true,
+        isPaid: true
+      }));
+    }
+  }, [isBackdate, user?.role]);
+
   // Валидация формы
   const validateForm = () => {
     const errors: Record<string, string> = {};
     
     if (!formData.date) {
       errors.date = 'Дата и время начала обязательны';
+    } else {
+      // Проверяем, что дата не в прошлом (только для не-админов)
+      const lessonDate = new Date(formData.date);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Сбрасываем время для сравнения только по дате
+      
+      if (lessonDate < now && user?.role !== 'ADMIN') {
+        errors.date = 'Нельзя создавать занятия задним числом';
+      }
     }
     
     if (!formData.endTime) {
@@ -193,12 +218,36 @@ export default function AddLessonForm({
             <h2 className="text-xl font-semibold text-gray-900">Добавить занятие</h2>
             <p className="text-sm text-gray-600 mt-1">Заполните информацию о новом занятии</p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {user?.role === 'ADMIN' && (
+              <button
+                type="button"
+                onClick={() => {
+                  const yesterday = new Date();
+                  yesterday.setDate(yesterday.getDate() - 1);
+                  yesterday.setHours(10, 0, 0, 0);
+                  const endTime = new Date(yesterday.getTime() + 60 * 60 * 1000);
+                  setFormData(prev => ({
+                    ...prev,
+                    date: yesterday.toISOString().slice(0, 16),
+                    endTime: endTime.toISOString().slice(0, 16),
+                    isCompleted: true,
+                    isPaid: true
+                  }));
+                }}
+                className="px-3 py-1.5 text-xs bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 transition-colors font-medium"
+                title="Быстро добавить занятие на вчера"
+              >
+                Вчера
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -223,6 +272,7 @@ export default function AddLessonForm({
                 value={formData.date}
                 onChange={handleChange}
                 required
+                min={user?.role === 'ADMIN' ? undefined : new Date().toISOString().slice(0, 16)}
                 className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
                   validationErrors.date ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -232,6 +282,19 @@ export default function AddLessonForm({
                   <AlertCircle className="w-4 h-4 mr-1" />
                   {validationErrors.date}
                 </p>
+              )}
+              {user?.role === 'ADMIN' && isBackdate && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="flex items-start">
+                    <AlertCircle className="w-4 h-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="text-blue-800 font-medium">Администратор</p>
+                      <p className="text-blue-700 mt-1">
+                        Вы можете создавать занятия задним числом. Рекомендуется отметить занятие как "Проведено" и "Оплачено" если оно уже состоялось.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
             
