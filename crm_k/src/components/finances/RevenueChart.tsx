@@ -7,6 +7,7 @@ import { apiRequest } from '@/lib/api'
 
 interface RevenueChartProps {
   period: string
+  dateRange?: { startDate: string; endDate: string }
 }
 
 interface ChartData {
@@ -15,30 +16,31 @@ interface ChartData {
   lessons: number
 }
 
-export default function RevenueChart({ period }: RevenueChartProps) {
+export default function RevenueChart({ period, dateRange }: RevenueChartProps) {
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchChartData()
-  }, [period]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [period, dateRange]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchChartData = async () => {
     try {
       setLoading(true)
       
-      // Получаем данные за последние 30 дней для графика
-      const endDate = new Date()
-      const startDate = new Date()
-      startDate.setDate(endDate.getDate() - 30)
+      // Получаем данные для графика в зависимости от периода
+      let apiUrl = `/api/finances/chart?period=${period}`
       
-      const response = await apiRequest(`/api/finances/period?period=custom&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`)
+      // Для кастомного периода добавляем даты
+      if (period === 'custom' && dateRange) {
+        apiUrl += `&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
+      }
+      
+      const response = await apiRequest(apiUrl)
       
       if (response.ok) {
-        // Для упрощения показываем статичные данные
-        // В реальном приложении здесь был бы запрос к API для получения данных по дням
-        const mockData = generateMockChartData()
-        setChartData(mockData)
+        const data = await response.json()
+        setChartData(data)
       } else {
         console.error('Ошибка при загрузке данных графика:', response.status, response.statusText)
         // Используем моковые данные в случае ошибки

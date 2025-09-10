@@ -145,7 +145,7 @@ export default function FinancesPage() {
         />
 
         {/* График доходов */}
-        <RevenueChart period={period} />
+        <RevenueChart period={period} dateRange={dateRange} />
 
         {/* Нижняя часть с тремя колонками */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

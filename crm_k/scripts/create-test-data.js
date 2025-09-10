@@ -31,6 +31,7 @@ async function createTestData() {
         age: 8,
         diagnosis: 'Тестовый диагноз',
         comment: 'Тестовый комментарий',
+        parentName: 'Тестовая Мама',
         userId: user.id
       }
     });
@@ -41,56 +42,34 @@ async function createTestData() {
     console.log('📚 Создаем тестовые занятия...');
     const now = new Date();
     
-    // Запланированное занятие (завтра)
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
-    tomorrow.setHours(10, 0, 0, 0);
-
-    await prisma.lesson.create({
-      data: {
-        date: tomorrow,
-        studentId: student.id,
-        cost: 2000,
-        isCompleted: false,
-        isPaid: false,
-        isCancelled: false,
-        notes: 'Запланированное занятие'
+    // Создаем занятия за последние 30 дней для графика
+    for (let i = 0; i < 30; i++) {
+      const lessonDate = new Date(now);
+      lessonDate.setDate(now.getDate() - i);
+      
+      // Создаем 1-3 занятия в день с разной вероятностью
+      const lessonsCount = Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0;
+      
+      for (let j = 0; j < lessonsCount; j++) {
+        const lessonTime = new Date(lessonDate);
+        lessonTime.setHours(10 + j * 2, 0, 0, 0);
+        
+        const isCompleted = Math.random() > 0.3; // 70% вероятность что занятие проведено
+        const isPaid = isCompleted && Math.random() > 0.4; // 60% вероятность что оплачено
+        
+        await prisma.lesson.create({
+          data: {
+            date: lessonTime,
+            studentId: student.id,
+            cost: 2000 + Math.floor(Math.random() * 1000), // Стоимость от 2000 до 3000
+            isCompleted,
+            isPaid,
+            isCancelled: false,
+            notes: `Тестовое занятие ${i + 1}-${j + 1}`
+          }
+        });
       }
-    });
-
-    // Проведенное занятие (вчера)
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-    yesterday.setHours(14, 0, 0, 0);
-
-    await prisma.lesson.create({
-      data: {
-        date: yesterday,
-        studentId: student.id,
-        cost: 2000,
-        isCompleted: true,
-        isPaid: false,
-        isCancelled: false,
-        notes: 'Проведенное занятие'
-      }
-    });
-
-    // Оплаченное занятие (позавчера)
-    const dayBeforeYesterday = new Date(now);
-    dayBeforeYesterday.setDate(now.getDate() - 2);
-    dayBeforeYesterday.setHours(16, 0, 0, 0);
-
-    await prisma.lesson.create({
-      data: {
-        date: dayBeforeYesterday,
-        studentId: student.id,
-        cost: 2000,
-        isCompleted: true,
-        isPaid: true,
-        isCancelled: false,
-        notes: 'Проведенное + Оплаченное занятие'
-      }
-    });
+    }
 
     console.log('✅ Тестовые занятия созданы');
 
