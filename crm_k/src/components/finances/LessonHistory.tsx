@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Calendar, Clock, User, CheckCircle } from 'lucide-react'
-import type { LessonWithStudent } from '@/types'
+import type { LessonWithStudent, Lesson } from '@/types'
+import { getLessonStatus, getLessonStatusText } from '@/types'
 
 export default function LessonHistory() {
   const [lessons, setLessons] = useState<LessonWithStudent[]>([])
@@ -24,9 +25,9 @@ export default function LessonHistory() {
       })
       if (response.ok) {
         const data = await response.json()
-        // Фильтруем только завершенные занятия (COMPLETED)
+        // Фильтруем только завершенные занятия (isCompleted)
         const completedLessons = data.filter((lesson: LessonWithStudent) => 
-          lesson.status === 'COMPLETED'
+          lesson.isCompleted
         )
         // Сортируем по дате (новые сначала)
         completedLessons.sort((a: LessonWithStudent, b: LessonWithStudent) => 
@@ -66,30 +67,28 @@ export default function LessonHistory() {
     }).format(amount)
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (lesson: Lesson) => {
+    const status = getLessonStatus(lesson);
     switch (status) {
-      case 'COMPLETED':
+      case 'completed':
         return 'bg-green-100 text-green-800'
-      case 'PAID':
+      case 'paid':
         return 'bg-blue-100 text-blue-800'
-      case 'UNPAID':
+      case 'cancelled':
         return 'bg-red-100 text-red-800'
+      case 'scheduled':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'prepaid':
+        return 'bg-purple-100 text-purple-800'
+      case 'unpaid':
+        return 'bg-orange-100 text-orange-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return 'Завершено'
-      case 'PAID':
-        return 'Оплачено'
-      case 'UNPAID':
-        return 'Не оплачено'
-      default:
-        return status
-    }
+  const getStatusText = (lesson: Lesson) => {
+    return getLessonStatusText(getLessonStatus(lesson));
   }
 
   if (loading) {
@@ -169,8 +168,8 @@ export default function LessonHistory() {
                     <h4 className="text-lg font-medium text-gray-900 truncate">
                       {lesson.student.fullName}
                     </h4>
-                    <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson.status)}`}>
-                      {getStatusText(lesson.status)}
+                    <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson)}`}>
+                      {getStatusText(lesson)}
                     </span>
                   </div>
                   <div className="mt-1 flex items-center text-sm text-gray-500">

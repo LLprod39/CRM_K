@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, User, Phone, Calendar, FileText, MessageSquare, Clock, DollarSign, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { LessonStatus, StudentWithLessons } from '@/types';
+import { StudentWithLessons, Lesson, getLessonStatus, getLessonStatusText } from '@/types';
 import { apiRequest } from '@/lib/api';
 import LessonSuggestions from '@/components/LessonSuggestions';
 
@@ -39,44 +39,41 @@ export default function StudentProfilePage() {
     }
   };
 
-  const getStatusIcon = (status: LessonStatus) => {
+  const getStatusIcon = (lesson: Lesson) => {
+    const status = getLessonStatus(lesson);
     switch (status) {
-      case 'COMPLETED':
+      case 'completed':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'CANCELLED':
+      case 'cancelled':
         return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'PAID':
+      case 'paid':
         return <DollarSign className="w-4 h-4 text-blue-500" />;
+      case 'prepaid':
+        return <DollarSign className="w-4 h-4 text-purple-500" />;
       default:
         return <Clock className="w-4 h-4 text-yellow-500" />;
     }
   };
 
-  const getStatusText = (status: LessonStatus) => {
-    switch (status) {
-      case 'SCHEDULED':
-        return 'Запланировано';
-      case 'COMPLETED':
-        return 'Проведено';
-      case 'CANCELLED':
-        return 'Отменено';
-      case 'PAID':
-        return 'Оплачено';
-      default:
-        return status;
-    }
+  const getStatusText = (lesson: Lesson) => {
+    return getLessonStatusText(getLessonStatus(lesson));
   };
 
-  const getStatusColor = (status: LessonStatus) => {
+  const getStatusColor = (lesson: Lesson) => {
+    const status = getLessonStatus(lesson);
     switch (status) {
-      case 'SCHEDULED':
+      case 'scheduled':
         return 'bg-yellow-100 text-yellow-800';
-      case 'COMPLETED':
+      case 'completed':
         return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
+      case 'cancelled':
         return 'bg-red-100 text-red-800';
-      case 'PAID':
+      case 'paid':
         return 'bg-blue-100 text-blue-800';
+      case 'prepaid':
+        return 'bg-purple-100 text-purple-800';
+      case 'unpaid':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -96,10 +93,10 @@ export default function StudentProfilePage() {
     if (!student?.lessons) return { total: 0, completed: 0, totalCost: 0, paidCost: 0 };
 
     const total = student.lessons.length;
-    const completed = student.lessons.filter(lesson => lesson.status === 'COMPLETED').length;
+    const completed = student.lessons.filter(lesson => lesson.isCompleted).length;
     const totalCost = student.lessons.reduce((sum, lesson) => sum + lesson.cost, 0);
     const paidCost = student.lessons
-      .filter(lesson => lesson.status === 'PAID')
+      .filter(lesson => lesson.isPaid)
       .reduce((sum, lesson) => sum + lesson.cost, 0);
 
     return { total, completed, totalCost, paidCost };
@@ -303,9 +300,9 @@ export default function StudentProfilePage() {
                       {lesson.cost.toLocaleString()} ₸
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson.status)}`}>
-                        {getStatusIcon(lesson.status)}
-                        <span className="ml-1">{getStatusText(lesson.status)}</span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson)}`}>
+                        {getStatusIcon(lesson)}
+                        <span className="ml-1">{getStatusText(lesson)}</span>
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
