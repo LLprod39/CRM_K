@@ -22,12 +22,15 @@ export default function EditLessonForm({
 }: EditLessonFormProps) {
   const [formData, setFormData] = useState({
     date: '',
+    endTime: '',
     studentId: '',
     cost: '',
     isCompleted: false,
     isPaid: false,
     isCancelled: false,
-    notes: ''
+    notes: '',
+    lessonType: 'individual' as 'individual' | 'group',
+    location: 'office' as 'office' | 'online' | 'home'
   });
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,14 +59,20 @@ export default function EditLessonForm({
   // Заполняем форму данными занятия
   useEffect(() => {
     if (lesson && isOpen) {
+      const startTime = new Date(lesson.date).toISOString().slice(0, 16);
+      const endTime = lesson.endTime ? new Date(lesson.endTime).toISOString().slice(0, 16) : '';
+      
       setFormData({
-        date: new Date(lesson.date).toISOString().slice(0, 16),
+        date: startTime,
+        endTime: endTime,
         studentId: lesson.studentId.toString(),
         cost: lesson.cost.toString(),
         isCompleted: lesson.isCompleted,
         isPaid: lesson.isPaid,
         isCancelled: lesson.isCancelled,
-        notes: lesson.notes || ''
+        notes: lesson.notes || '',
+        lessonType: (lesson as any).lessonType || 'individual',
+        location: (lesson as any).location || 'office'
       });
     }
   }, [lesson, isOpen]);
@@ -97,7 +106,11 @@ export default function EditLessonForm({
         onClose();
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Ошибка при обновлении занятия');
+        if (errorData.error === 'Конфликт времени') {
+          setError(`${errorData.error}: ${errorData.details}`);
+        } else {
+          setError(errorData.error || 'Ошибка при обновлении занятия');
+        }
       }
     } catch {
       setError('Ошибка при обновлении занятия');

@@ -20,6 +20,7 @@ export default function EditStudentForm({ isOpen, onClose, onSuccess, student }:
     fullName: '',
     phone: '',
     age: 0,
+    parentName: '',
     diagnosis: '',
     comment: ''
   });
@@ -34,6 +35,7 @@ export default function EditStudentForm({ isOpen, onClose, onSuccess, student }:
         fullName: student.fullName,
         phone: student.phone,
         age: student.age,
+        parentName: student.parentName,
         diagnosis: student.diagnosis || '',
         comment: student.comment || ''
       });
@@ -69,6 +71,10 @@ export default function EditStudentForm({ isOpen, onClose, onSuccess, student }:
       newErrors.phone = 'Телефон обязателен для заполнения';
     } else if (!/^[\+]?[0-9\s\-\(\)]{10,}$/.test(formData.phone)) {
       newErrors.phone = 'Введите корректный номер телефона';
+    }
+
+    if (!formData.parentName?.trim()) {
+      newErrors.parentName = 'ФИО родителя обязательно для заполнения';
     }
 
     if (!formData.age || formData.age < 1 || formData.age > 100) {
@@ -192,6 +198,28 @@ export default function EditStudentForm({ isOpen, onClose, onSuccess, student }:
             />
             {errors.age && (
               <p className="mt-1 text-sm text-red-600">{errors.age}</p>
+            )}
+          </div>
+
+          {/* Родитель */}
+          <div>
+            <label htmlFor="parentName" className="block text-sm font-medium text-gray-700 mb-1">
+              <User className="w-4 h-4 inline mr-1" />
+              ФИО родителя *
+            </label>
+            <input
+              type="text"
+              id="parentName"
+              name="parentName"
+              value={formData.parentName}
+              onChange={handleInputChange}
+              className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                errors.parentName ? 'border-red-300' : 'border-gray-300'
+              }`}
+              placeholder="Введите ФИО родителя"
+            />
+            {errors.parentName && (
+              <p className="mt-1 text-sm text-red-600">{errors.parentName}</p>
             )}
           </div>
 

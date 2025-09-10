@@ -121,6 +121,7 @@ export async function PUT(
         fullName: body.fullName,
         phone: body.phone,
         age: body.age,
+        parentName: body.parentName,
         diagnosis: body.diagnosis,
         comment: body.comment
       }

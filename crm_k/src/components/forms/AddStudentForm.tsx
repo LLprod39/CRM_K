@@ -18,6 +18,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
     fullName: '',
     phone: '',
     age: 0,
+    parentName: '',
     diagnosis: '',
     comment: ''
   });
@@ -54,6 +55,10 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
       newErrors.phone = 'Введите корректный номер телефона';
     }
 
+    if (!formData.parentName.trim()) {
+      newErrors.parentName = 'ФИО родителя обязательно для заполнения';
+    }
+
     if (!formData.age || formData.age < 1 || formData.age > 100) {
       newErrors.age = 'Возраст должен быть от 1 до 100 лет';
     }
@@ -83,6 +88,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
           fullName: '',
           phone: '',
           age: 0,
+          parentName: '',
           diagnosis: '',
           comment: ''
         });
@@ -160,6 +166,28 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
             />
             {errors.phone && (
               <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.phone}</p>
+            )}
+          </div>
+
+          {/* ФИО родителя */}
+          <div>
+            <label htmlFor="parentName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <User className="w-4 h-4 inline mr-1" />
+              ФИО родителя *
+            </label>
+            <input
+              type="text"
+              id="parentName"
+              name="parentName"
+              value={formData.parentName}
+              onChange={handleInputChange}
+              className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
+                errors.parentName ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-slate-600'
+              }`}
+              placeholder="Введите ФИО родителя или опекуна"
+            />
+            {errors.parentName && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.parentName}</p>
             )}
           </div>
 

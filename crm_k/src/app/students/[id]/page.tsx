@@ -180,6 +180,13 @@ export default function StudentProfilePage() {
                   <p className="text-sm text-gray-900">{student.age} лет</p>
                 </div>
               </div>
+              <div className="flex items-center space-x-3">
+                <User className="w-5 h-5 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Родитель</p>
+                  <p className="text-sm text-gray-900">{student.parentName}</p>
+                </div>
+              </div>
               {student.diagnosis && (
                 <div className="flex items-center space-x-3">
                   <FileText className="w-5 h-5 text-gray-400" />

@@ -62,6 +62,7 @@ export interface CreateStudentData {
   fullName: string;
   phone: string;
   age: number;
+  parentName: string;
   diagnosis?: string;
   comment?: string;
 }
@@ -72,12 +73,15 @@ export interface UpdateStudentData extends Partial<CreateStudentData> {
 
 export interface CreateLessonData {
   date: Date;
+  endTime: Date;
   studentId: number;
   cost: number;
   isCompleted?: boolean;
   isPaid?: boolean;
   isCancelled?: boolean;
   notes?: string;
+  lessonType?: 'individual' | 'group';
+  location?: 'office' | 'online' | 'home';
 }
 
 export interface UpdateLessonData extends Partial<CreateLessonData> {

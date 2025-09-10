@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const body: CreateStudentData = await request.json()
     
     // Валидация обязательных полей
-    if (!body.fullName || !body.phone || !body.age) {
+    if (!body.fullName || !body.phone || !body.age || !body.parentName) {
       return NextResponse.json(
         { error: 'Необходимо заполнить все обязательные поля' },
         { status: 400 }
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
         fullName: body.fullName,
         phone: body.phone,
         age: body.age,
+        parentName: body.parentName,
         diagnosis: body.diagnosis || null,
         comment: body.comment || null,
         userId: authUser.id

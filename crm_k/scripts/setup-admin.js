@@ -12,17 +12,17 @@ async function setupAdmin() {
 
     if (existingAdmin) {
       console.log('Админ уже существует, обновляем пароль...');
-      const hashedPassword = await bcrypt.hash('admin123', 12);
+      const hashedPassword = await bcrypt.hash('123456', 12);
       
       await prisma.user.update({
         where: { email: 'admin@crm.com' },
         data: { password: hashedPassword }
       });
       
-      console.log('✅ Пароль админа обновлен: admin123');
+      console.log('✅ Пароль админа обновлен: 123456');
     } else {
       console.log('Создаем нового админа...');
-      const hashedPassword = await bcrypt.hash('admin123', 12);
+      const hashedPassword = await bcrypt.hash('123456', 12);
       
       await prisma.user.create({
         data: {
@@ -33,7 +33,7 @@ async function setupAdmin() {
         }
       });
       
-      console.log('✅ Админ создан: admin@crm.com / admin123');
+      console.log('✅ Админ создан: admin@crm.com / 123456');
     }
 
     // Создаем тестового пользователя

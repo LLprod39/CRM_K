@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { CreateLessonData } from '@/types'
 import { getAuthUser } from '@/lib/auth'
+import { checkTimeConflicts } from '@/lib/scheduleUtils'
 
 // GET /api/lessons - получить все занятия
 export async function GET(request: NextRequest) {
@@ -160,15 +161,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Проверяем конфликты времени
+    const existingLessons = await prisma.lesson.findMany({
+      where: {
+        isCancelled: false,
+        date: {
+          gte: new Date(new Date(body.date).setHours(0, 0, 0, 0)),
+          lt: new Date(new Date(body.date).setHours(23, 59, 59, 999))
+        }
+      }
+    });
+
+    const timeConflict = checkTimeConflicts(
+      {
+        date: new Date(body.date),
+        endTime: new Date(body.endTime),
+        studentId: body.studentId
+      },
+      existingLessons
+    );
+
+    if (timeConflict.hasConflict) {
+      return NextResponse.json(
+        { 
+          error: 'Конфликт времени',
+          details: timeConflict.message,
+          conflictingLessons: timeConflict.conflictingLessons.map(lesson => ({
+            id: lesson.id,
+            date: lesson.date,
+            endTime: lesson.endTime,
+            student: lesson.student
+          }))
+        },
+        { status: 409 }
+      )
+    }
+
     const lesson = await prisma.lesson.create({
       data: {
         date: new Date(body.date),
+        endTime: new Date(body.endTime),
         studentId: body.studentId,
         cost: body.cost,
         isCompleted: body.isCompleted || false,
         isPaid: body.isPaid || false,
         isCancelled: body.isCancelled || false,
-        notes: body.notes || null
+        notes: body.notes || null,
+        lessonType: body.lessonType || 'individual',
+        location: body.location || 'office'
       },
       include: {
         student: {

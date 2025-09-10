@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Clock, User } from 'lucide-react';
 import { Lesson, LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
+import MobileCalendar from './MobileCalendar';
+import DayLessonsModal from './DayLessonsModal';
 
 interface CalendarProps {
   lessons: LessonWithOptionalStudent[];
@@ -14,6 +16,9 @@ interface CalendarProps {
 export default function Calendar({ lessons, onLessonClick, onDateClick, currentDate = new Date() }: CalendarProps) {
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+  const [showDayModal, setShowDayModal] = useState(false);
+  const [selectedDayLessons, setSelectedDayLessons] = useState<LessonWithOptionalStudent[]>([]);
+  const [selectedDayDate, setSelectedDayDate] = useState<Date>(new Date());
 
   // Получаем занятия для выбранного месяца
   const monthLessons = lessons.filter(lesson => {
@@ -77,6 +82,14 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
     const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     setSelectedDate(newDate);
     onDateClick(newDate);
+    
+    // На мобильных устройствах показываем модальное окно с занятиями дня
+    if (window.innerWidth < 768) {
+      const dayLessons = lessonsByDay[day] || [];
+      setSelectedDayLessons(dayLessons);
+      setSelectedDayDate(newDate);
+      setShowDayModal(true);
+    }
   };
 
   const getStatusColor = (lesson: Lesson) => {
@@ -147,17 +160,18 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
                   e.stopPropagation();
                   onLessonClick(lesson);
                 }}
-                title={`Ученик #${lesson.studentId} - ${new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`}
+                title={`${lesson.student?.fullName || `Ученик #${lesson.studentId}`} - ${new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${lesson.endTime ? new Date(lesson.endTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}`}
               >
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   <span className="truncate">
                     {new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                    {lesson.endTime && ` - ${new Date(lesson.endTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <User className="w-3 h-3" />
-                  <span className="truncate">Ученик #{lesson.studentId}</span>
+                  <span className="truncate">{lesson.student?.fullName || `Ученик #${lesson.studentId}`}</span>
                 </div>
               </div>
             ))}
@@ -175,71 +189,93 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border">
-      {/* Заголовок календаря */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">
-          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-        </h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="p-2 hover:bg-gray-100 rounded-md"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => navigateMonth('next')}
-            className="p-2 hover:bg-gray-100 rounded-md"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+    <>
+      {/* Десктопная версия */}
+      <div className="hidden md:block bg-white rounded-lg shadow-sm border">
+        {/* Заголовок календаря */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">
+            {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+          </h3>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="p-2 hover:bg-gray-100 rounded-md"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => navigateMonth('next')}
+              className="p-2 hover:bg-gray-100 rounded-md"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Дни недели */}
+        <div className="grid grid-cols-7 border-b border-gray-200">
+          {dayNames.map((day) => (
+            <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 bg-gray-50">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Календарная сетка */}
+        <div className="grid grid-cols-7">
+          {renderCalendarDays()}
+        </div>
+
+        {/* Легенда статусов */}
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-100 rounded"></div>
+              <span>Запланировано</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-100 rounded"></div>
+              <span>Проведено</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-yellow-100 rounded"></div>
+              <span>Предоплачено</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-purple-100 rounded"></div>
+              <span>Оплачено</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-orange-100 rounded"></div>
+              <span>Не оплачено</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-100 rounded"></div>
+              <span>Отменено</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Дни недели */}
-      <div className="grid grid-cols-7 border-b border-gray-200">
-        {dayNames.map((day) => (
-          <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 bg-gray-50">
-            {day}
-          </div>
-        ))}
+      {/* Мобильная версия */}
+      <div className="md:hidden">
+        <MobileCalendar
+          lessons={lessons}
+          onLessonClick={onLessonClick}
+          onDateClick={onDateClick}
+          currentDate={currentDate}
+        />
       </div>
 
-      {/* Календарная сетка */}
-      <div className="grid grid-cols-7">
-        {renderCalendarDays()}
-      </div>
-
-      {/* Легенда статусов */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex flex-wrap gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-100 rounded"></div>
-            <span>Запланировано</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-100 rounded"></div>
-            <span>Проведено</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-100 rounded"></div>
-            <span>Предоплачено</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-purple-100 rounded"></div>
-            <span>Оплачено</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-orange-100 rounded"></div>
-            <span>Не оплачено</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-100 rounded"></div>
-            <span>Отменено</span>
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* Модальное окно для мобильной версии */}
+      <DayLessonsModal
+        isOpen={showDayModal}
+        onClose={() => setShowDayModal(false)}
+        lessons={selectedDayLessons}
+        date={selectedDayDate}
+        onLessonClick={onLessonClick}
+      />
+    </>
   );
 }

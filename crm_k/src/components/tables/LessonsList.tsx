@@ -55,7 +55,9 @@ export default function LessonsList({ lessons, onLessonClick, onEditLesson, sele
   const filteredLessons = selectedDate 
     ? lessons.filter(lesson => {
         const lessonDate = new Date(lesson.date);
-        return lessonDate.toDateString() === selectedDate.toDateString();
+        const selectedDateOnly = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+        const lessonDateOnly = new Date(lessonDate.getFullYear(), lessonDate.getMonth(), lessonDate.getDate());
+        return lessonDateOnly.getTime() === selectedDateOnly.getTime();
       })
     : lessons;
 

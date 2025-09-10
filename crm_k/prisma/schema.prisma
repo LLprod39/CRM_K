@@ -38,6 +38,7 @@ model Student {
   fullName    String   // ФИО
   phone       String   // Телефон родителей
   age         Int      // Возраст
+  parentName  String   // ФИО родителя (обязательно)
   diagnosis   String?  // Диагноз (опционально)
   comment     String?  // Комментарий (опционально)
   userId      Int      // ID пользователя-владельца
@@ -59,13 +60,16 @@ model Student {
 // Модель занятия
 model Lesson {
   id          Int      @id @default(autoincrement())
-  date        DateTime // Дата и время занятия
+  date        DateTime // Дата и время начала занятия
+  endTime     DateTime // Дата и время окончания занятия
   studentId   Int      // ID ученика
   cost        Float    // Стоимость занятия
   isCompleted Boolean  @default(false) // Проведено ли занятие
   isPaid      Boolean  @default(false) // Оплачено ли занятие
   isCancelled Boolean  @default(false) // Отменено ли занятие
   notes       String?  // Заметки к занятию
+  lessonType  String   @default("individual") // Тип занятия: individual, group
+  location    String   @default("office") // Место проведения: office, online, home
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
