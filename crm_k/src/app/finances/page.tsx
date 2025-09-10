@@ -5,7 +5,7 @@ import { DollarSign, Printer } from 'lucide-react'
 import FinancialStats from '@/components/finances/FinancialStats'
 import RevenueChart from '@/components/finances/RevenueChart'
 import DebtsList from '@/components/finances/DebtsList'
-import TopStudents from '@/components/finances/TopStudents'
+import LessonHistory from '@/components/finances/LessonHistory'
 import PeriodFilters from '@/components/finances/PeriodFilters'
 import AddPaymentForm from '@/components/forms/AddPaymentForm'
 import PaymentsList from '@/components/finances/PaymentsList'
@@ -152,8 +152,8 @@ export default function FinancesPage() {
           {/* Список задолженностей */}
           <DebtsList />
 
-          {/* Топ учеников по оплатам */}
-          <TopStudents />
+          {/* История занятий */}
+          <LessonHistory />
 
           {/* История платежей */}
           <PaymentsList />

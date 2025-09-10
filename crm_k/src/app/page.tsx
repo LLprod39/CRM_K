@@ -121,12 +121,9 @@ export default function Home() {
           <div className="flex items-center justify-center mb-4">
             <Sparkles className="w-8 h-8 text-blue-600 mr-3 animate-pulse" />
             <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Добро пожаловать в CRM_K
+              Добро пожаловать, {user?.name}!
             </h1>
           </div>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Привет, {user?.name}! Управляйте своими учениками, расписанием и финансами
-          </p>
         </div>
 
       {/* Статистические карточки */}

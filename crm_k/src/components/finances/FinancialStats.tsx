@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp, AlertCircle, BarChart3, User } from 'lucide-react'
+import { DollarSign, AlertCircle, User } from 'lucide-react'
 import type { FinancialStats } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -82,21 +82,10 @@ export default function FinancialStats({ period }: FinancialStatsProps) {
     )
   }
 
-  const getRevenueForPeriod = () => {
-    switch (period) {
-      case 'day': return stats.dailyRevenue
-      case 'week': return stats.weeklyRevenue
-      case 'month': return stats.monthlyRevenue
-      default: return stats.totalRevenue
-    }
-  }
 
-  const averageCheck = stats.topStudents.length > 0 
-    ? stats.topStudents.reduce((sum, student) => sum + student.totalPaid, 0) / stats.topStudents.length
-    : 0
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 ${user?.role === 'ADMIN' ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} gap-6`}>
+    <div className={`grid grid-cols-1 md:grid-cols-2 ${user?.role === 'ADMIN' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
       {/* Общий доход */}
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <div className="flex items-center">
@@ -112,22 +101,6 @@ export default function FinancialStats({ period }: FinancialStatsProps) {
         </div>
       </div>
 
-      {/* Доход за период */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
-        <div className="flex items-center">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <TrendingUp className="w-6 h-6 text-blue-600" />
-          </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-600">
-              Доход за {period === 'day' ? 'день' : period === 'week' ? 'неделю' : period === 'month' ? 'месяц' : 'все время'}
-            </p>
-            <p className="text-2xl font-bold text-gray-900">
-              {formatCurrency(getRevenueForPeriod())}
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* Задолженности */}
       <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -182,20 +155,6 @@ export default function FinancialStats({ period }: FinancialStatsProps) {
         </div>
       )}
 
-      {/* Средний чек */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
-        <div className="flex items-center">
-          <div className="p-2 bg-purple-100 rounded-lg">
-            <BarChart3 className="w-6 h-6 text-purple-600" />
-          </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-600">Средний чек</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {formatCurrency(averageCheck)}
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

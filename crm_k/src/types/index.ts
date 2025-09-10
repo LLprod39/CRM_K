@@ -50,7 +50,6 @@ export interface UpdateLessonData extends Partial<CreateLessonData> {
 
 export interface FinancialStats {
   totalRevenue: number;
-  monthlyRevenue: number;
   weeklyRevenue: number;
   dailyRevenue: number;
   completedLessons: number;
@@ -58,11 +57,6 @@ export interface FinancialStats {
   totalPrepaid: number;
   prepaidLessons: number;
   userRevenue: number; // Доход от пользователя (30% от оплаченных уроков)
-  topStudents: Array<{
-    student: Student;
-    totalPaid: number;
-    lessonsCount: number;
-  }>;
   statusStats: Array<{
     status: LessonStatus;
     count: number;
@@ -83,7 +77,6 @@ export interface PeriodStats {
   endDate: Date;
   revenue: number;
   lessonsCount: number;
-  averageCheck: number;
 }
 
 export interface StudentFinancialReport {
@@ -92,7 +85,6 @@ export interface StudentFinancialReport {
   totalDebt: number;
   lessonsCompleted: number;
   lessonsPaid: number;
-  averageCheck: number;
   lastPaymentDate?: Date;
   paymentHistory: Array<{
     date: Date;

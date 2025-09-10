@@ -29,3 +29,4 @@ ALTER TABLE lessons_new RENAME TO lessons;
 CREATE INDEX lessons_studentId_idx ON lessons(studentId);
 CREATE INDEX lessons_date_idx ON lessons(date);
 CREATE INDEX lessons_status_idx ON lessons(status);
+

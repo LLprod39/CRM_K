@@ -80,15 +80,13 @@ export async function GET(request: NextRequest) {
 
     const revenue = paidLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
     const lessonsCount = paidLessons.length
-    const averageCheck = lessonsCount > 0 ? revenue / lessonsCount : 0
 
     const stats: PeriodStats = {
       period: startDate && endDate ? 'custom' : (period as 'day' | 'week' | 'month' | 'year'),
       startDate: dateFrom,
       endDate: dateTo,
       revenue,
-      lessonsCount,
-      averageCheck
+      lessonsCount
     }
 
     return NextResponse.json(stats)

@@ -85,45 +85,6 @@ export async function GET(request: NextRequest) {
     //   }
     // })
 
-    // Статистика по ученикам
-    const studentStats = await prisma.lesson.groupBy({
-      by: ['studentId'],
-      where: {
-        ...baseWhere,
-        status: 'PAID'
-      },
-      _sum: {
-        cost: true
-      },
-      _count: {
-        id: true
-      }
-    })
-
-    // Получаем информацию об учениках для статистики
-    const topStudents = await Promise.all(
-      studentStats
-        .sort((a, b) => (b._sum.cost || 0) - (a._sum.cost || 0))
-        .slice(0, 5)
-        .map(async (stat) => {
-          const student = await prisma.student.findUnique({
-            where: { id: stat.studentId },
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  email: true
-                }
-              }
-            }
-          })
-          return {
-            student,
-            totalPaid: stat._sum.cost || 0,
-            lessonsCount: stat._count.id
-          }
-        })
-    )
 
     // Подсчитываем задолженности (занятия со статусом UNPAID или COMPLETED)
     const debtLessons = await prisma.lesson.findMany({
@@ -160,7 +121,6 @@ export async function GET(request: NextRequest) {
 
     const stats = {
       totalRevenue,
-      monthlyRevenue: period === 'month' ? totalRevenue : 0,
       weeklyRevenue: period === 'week' ? totalRevenue : 0,
       dailyRevenue: period === 'day' ? totalRevenue : 0,
       completedLessons: statusStats.find(s => s.status === 'COMPLETED')?._count.id || 0,
@@ -168,7 +128,6 @@ export async function GET(request: NextRequest) {
       totalPrepaid,
       prepaidLessons: statusStats.find(s => s.status === 'PREPAID')?._count.id || 0,
       userRevenue,
-      topStudents: topStudents.filter(item => item.student !== null),
       statusStats: statusStats.map(stat => ({
         status: stat.status,
         count: stat._count.id,
