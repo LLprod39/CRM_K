@@ -1,11 +1,28 @@
 // Основные типы для CRM системы
-import { Student as PrismaStudent, Lesson as PrismaLesson, User as PrismaUser, UserRole as PrismaUserRole } from '@prisma/client'
+import { Student as PrismaStudent, Lesson as PrismaLesson, User as PrismaUser, UserRole as PrismaUserRole, Toy as PrismaToy } from '@prisma/client'
 
 // Экспортируем типы из Prisma
 export type Student = PrismaStudent
 export type Lesson = PrismaLesson
 export type User = PrismaUser
 export type UserRole = PrismaUserRole
+export type Toy = PrismaToy
+
+// Типы для предложений ИИ
+export interface AISuggestion {
+  id: number;
+  studentId: number;
+  title: string;
+  duration: string;
+  goals: string;
+  materials: string;
+  structure: string;
+  recommendations: string;
+  expectedResults: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 // Типы для статусов уроков (теперь используем булевые поля)
 export type LessonStatus = 'scheduled' | 'completed' | 'paid' | 'cancelled' | 'prepaid' | 'unpaid'

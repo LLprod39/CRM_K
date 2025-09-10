@@ -54,6 +54,9 @@ model Student {
   // Связь с платежами
   payments    Payment[]
   
+  // Связь с предложениями ИИ
+  aiSuggestions AISuggestion[]
+  
   @@map("students")
 }
 
@@ -114,4 +117,38 @@ model PaymentLesson {
   
   @@unique([paymentId, lessonId])
   @@map("payment_lessons")
+}
+
+// Модель игрушек
+model Toy {
+  id          Int      @id @default(autoincrement())
+  name        String   // Название игрушки
+  description String?  // Описание игрушки
+  category    String?  // Категория игрушки (развивающие, сенсорные, моторные и т.д.)
+  isAvailable Boolean  @default(true) // Доступна ли игрушка
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("toys")
+}
+
+// Модель предложений ИИ
+model AISuggestion {
+  id          Int      @id @default(autoincrement())
+  studentId   Int      // ID ученика
+  title       String   // Название занятия
+  duration    String   // Продолжительность
+  goals       String   // JSON массив целей
+  materials   String   // JSON массив материалов
+  structure   String   // JSON структура занятия
+  recommendations String // JSON массив рекомендаций
+  expectedResults String // JSON массив ожидаемых результатов
+  notes       String?  // Дополнительные заметки
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Связь с учеником
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@map("ai_suggestions")
 }

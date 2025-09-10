@@ -11,6 +11,7 @@ import StatsCard from '@/components/admin/StatsCard'
 import UserCard from '@/components/admin/UserCard'
 import AddUserModal from '@/components/admin/AddUserModal'
 import RecentActivity from '@/components/admin/RecentActivity'
+import ToysManagement from '@/components/admin/ToysManagement'
 import { 
   Users, 
   UserCheck, 
@@ -54,7 +55,7 @@ export default function AdminPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'lessons' | 'analytics' | 'settings'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'lessons' | 'analytics' | 'settings' | 'toys'>('overview')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterRole, setFilterRole] = useState<UserRole | 'all'>('all')
 
@@ -169,6 +170,7 @@ export default function AdminPage() {
     { id: 'overview', label: 'Обзор', icon: Home },
     { id: 'users', label: 'Пользователи', icon: Users },
     { id: 'lessons', label: 'Занятия', icon: BookOpen },
+    { id: 'toys', label: 'Игрушки', icon: Target },
     { id: 'analytics', label: 'Аналитика', icon: BarChart3 },
     { id: 'settings', label: 'Настройки', icon: Settings }
   ]
@@ -449,6 +451,7 @@ export default function AdminPage() {
                 <p className="text-gray-600">Функция в разработке</p>
               </div>
             )}
+            {activeTab === 'toys' && <ToysManagement />}
             {activeTab === 'analytics' && (
               <div className="text-center py-12">
                 <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />

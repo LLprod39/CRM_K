@@ -11,6 +11,7 @@
     "db:reset": "npx prisma migrate reset --force && npm run db:seed"
   },
   "dependencies": {
+    "@google/genai": "^1.19.0",
     "@prisma/client": "^6.15.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",

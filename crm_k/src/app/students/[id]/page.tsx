@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, User, Phone, Calendar, FileText, MessageSquare, Clock, DollarSign, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { LessonStatus, StudentWithLessons } from '@/types';
 import { apiRequest } from '@/lib/api';
+import LessonSuggestions from '@/components/LessonSuggestions';
 
 export default function StudentProfilePage() {
   const params = useParams();
@@ -251,6 +252,9 @@ export default function StudentProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Предложения занятий от ИИ */}
+      <LessonSuggestions studentId={student.id} />
 
       {/* История занятий */}
       <div className="bg-white rounded-lg shadow-sm border">
