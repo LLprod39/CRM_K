@@ -123,8 +123,8 @@ export default function ToysManagement() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Управление игрушками</h2>
         <Button 
           onClick={() => setShowAddForm(true)}
@@ -136,7 +136,7 @@ export default function ToysManagement() {
 
       {/* Форма добавления */}
       {showAddForm && (
-        <Card className="mb-6 p-6">
+        <Card className="p-4 sm:p-6">
           <h3 className="text-lg font-semibold mb-4">Добавить новую игрушку</h3>
           <form onSubmit={handleAddToy} className="space-y-4">
             <div>
@@ -181,9 +181,9 @@ export default function ToysManagement() {
       )}
 
       {/* Список игрушек */}
-      <div className="grid gap-4">
+      <div className="grid gap-4 sm:gap-6">
         {toys.map((toy) => (
-          <Card key={toy.id} className="p-4">
+          <Card key={toy.id} className="p-4 sm:p-6">
             {editingToy?.id === toy.id ? (
               <div className="space-y-3">
                 <Input

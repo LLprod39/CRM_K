@@ -1,7 +1,5 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { 
   Users, 
@@ -14,44 +12,46 @@ import {
   Shield,
   Home,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  X,
+  Target
 } from 'lucide-react'
 import { useState } from 'react'
 
 const adminNavigation = [
   { 
     name: 'Обзор', 
-    href: '/admin', 
+    tab: 'overview', 
     icon: Home,
     description: 'Главная панель управления'
   },
   { 
     name: 'Пользователи', 
-    href: '/admin/users', 
+    tab: 'users', 
     icon: Users,
     description: 'Управление пользователями'
   },
   { 
-    name: 'Статистика', 
-    href: '/admin/stats', 
-    icon: BarChart3,
-    description: 'Аналитика и отчеты'
-  },
-  { 
     name: 'Занятия', 
-    href: '/admin/lessons', 
+    tab: 'lessons', 
     icon: Calendar,
     description: 'Управление занятиями'
   },
   { 
-    name: 'Финансы', 
-    href: '/admin/finances', 
-    icon: DollarSign,
-    description: 'Финансовые отчеты'
+    name: 'Игрушки', 
+    tab: 'toys', 
+    icon: Target,
+    description: 'Управление игрушками'
+  },
+  { 
+    name: 'Аналитика', 
+    tab: 'analytics', 
+    icon: BarChart3,
+    description: 'Аналитика и отчеты'
   },
   { 
     name: 'Настройки', 
-    href: '/admin/settings', 
+    tab: 'settings', 
     icon: Settings,
     description: 'Системные настройки'
   }
@@ -61,10 +61,11 @@ interface AdminSidebarProps {
   className?: string
   isMobileOpen?: boolean
   onMobileClose?: () => void
+  activeTab?: string
+  onTabChange?: (tab: string) => void
 }
 
-export default function AdminSidebar({ className, isMobileOpen, onMobileClose }: AdminSidebarProps) {
-  const pathname = usePathname()
+export default function AdminSidebar({ className, isMobileOpen, onMobileClose, activeTab, onTabChange }: AdminSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   return (
@@ -81,10 +82,10 @@ export default function AdminSidebar({ className, isMobileOpen, onMobileClose }:
       <div className={cn(
         "bg-white border-r border-gray-200 transition-all duration-300 ease-in-out",
         "w-64 lg:w-64",
-        "fixed lg:relative z-50 lg:z-auto",
+        "fixed lg:relative z-[9999] lg:z-auto",
         "h-full max-h-screen overflow-y-auto",
         isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-        "lg:block",
+        "lg:block shadow-lg lg:shadow-none",
         className
       )}>
       {/* Заголовок */}
@@ -99,30 +100,40 @@ export default function AdminSidebar({ className, isMobileOpen, onMobileClose }:
               <p className="text-xs text-gray-500">CRM_K</p>
             </div>
           </div>
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:block p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            {isCollapsed ? (
-              <ChevronRight className="w-4 h-4" />
-            ) : (
-              <ChevronLeft className="w-4 h-4" />
-            )}
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onMobileClose}
+              className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hidden lg:block p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              {isCollapsed ? (
+                <ChevronRight className="w-4 h-4" />
+              ) : (
+                <ChevronLeft className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Навигация */}
       <nav className="p-3 sm:p-4 space-y-2">
         {adminNavigation.map((item) => {
-          const isActive = pathname === item.href
+          const isActive = activeTab === item.tab
           return (
-            <Link
+            <button
               key={item.name}
-              href={item.href}
-              onClick={onMobileClose}
+              onClick={() => {
+                onTabChange?.(item.tab)
+                onMobileClose?.()
+              }}
               className={cn(
-                "flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative",
+                "flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative w-full text-left",
                 "touch-manipulation", // Улучшает тач-события на мобильных
                 isActive
                   ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25"
@@ -159,7 +170,7 @@ export default function AdminSidebar({ className, isMobileOpen, onMobileClose }:
                   {item.name}
                 </div>
               )}
-            </Link>
+            </button>
           )
         })}
       </nav>
