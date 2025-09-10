@@ -23,16 +23,18 @@ export async function GET(request: NextRequest) {
       totalRevenue,
       recentUsers,
       recentStudents,
-      recentLessons
+      recentLessons,
+      allUsers
     ] = await Promise.all([
       prisma.user.count(),
       prisma.student.count(),
       prisma.lesson.count(),
       prisma.lesson.aggregate({
         where: {
-          status: {
-            in: ['COMPLETED', 'PAID']
-          }
+          OR: [
+            { isCompleted: true, isPaid: true },
+            { isPaid: true }
+          ]
         },
         _sum: {
           cost: true
@@ -77,8 +79,66 @@ export async function GET(request: NextRequest) {
             }
           }
         }
+      }),
+      // Получаем всех пользователей с детальной статистикой
+      prisma.user.findMany({
+        include: {
+          students: {
+            include: {
+              lessons: true,
+              payments: true
+            }
+          },
+          _count: {
+            select: {
+              students: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
       })
     ])
+
+    // Обрабатываем данные пользователей для детальной статистики
+    const usersWithStats = allUsers.map(user => {
+      const allLessons = user.students.flatMap(student => student.lessons)
+      const completedLessons = allLessons.filter(lesson => lesson.isCompleted)
+      const paidLessons = allLessons.filter(lesson => lesson.isPaid)
+      const scheduledLessons = allLessons.filter(lesson => !lesson.isCompleted && !lesson.isCancelled)
+      const cancelledLessons = allLessons.filter(lesson => lesson.isCancelled)
+      
+      const totalRevenue = allLessons
+        .filter(lesson => lesson.isPaid)
+        .reduce((sum, lesson) => sum + lesson.cost, 0)
+      
+      const totalDebt = allLessons
+        .filter(lesson => lesson.isCompleted && !lesson.isPaid)
+        .reduce((sum, lesson) => sum + lesson.cost, 0)
+      
+      const totalPrepaid = allLessons
+        .filter(lesson => lesson.isPaid && !lesson.isCompleted)
+        .reduce((sum, lesson) => sum + lesson.cost, 0)
+
+      return {
+        ...user,
+        stats: {
+          totalStudents: user._count.students,
+          totalLessons: allLessons.length,
+          completedLessons: completedLessons.length,
+          paidLessons: paidLessons.length,
+          scheduledLessons: scheduledLessons.length,
+          cancelledLessons: cancelledLessons.length,
+          totalRevenue,
+          totalDebt,
+          totalPrepaid,
+          lastActivity: allLessons.length > 0 
+            ? Math.max(...allLessons.map(l => l.createdAt.getTime()))
+            : user.createdAt.getTime()
+        }
+      }
+    })
 
     const stats = {
       totalUsers,
@@ -87,7 +147,8 @@ export async function GET(request: NextRequest) {
       totalRevenue: totalRevenue._sum.cost || 0,
       recentUsers,
       recentStudents,
-      recentLessons
+      recentLessons,
+      usersWithStats
     }
 
     return NextResponse.json(stats)

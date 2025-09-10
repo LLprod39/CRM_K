@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Calendar, User, DollarSign, FileText } from 'lucide-react';
-import { Student, LessonStatus } from '@/types';
+import { Student } from '@/types';
 import { apiRequest } from '@/lib/api';
 
 interface AddLessonFormProps {
@@ -24,7 +24,9 @@ export default function AddLessonForm({
     date: selectedDate ? selectedDate.toISOString().slice(0, 16) : '',
     studentId: selectedStudent?.id || '',
     cost: '',
-    status: 'SCHEDULED' as LessonStatus,
+    isCompleted: false,
+    isPaid: false,
+    isCancelled: false,
     notes: ''
   });
   const [students, setStudents] = useState<Student[]>([]);
@@ -95,7 +97,9 @@ export default function AddLessonForm({
           date: '',
           studentId: '',
           cost: '',
-          status: 'SCHEDULED',
+          isCompleted: false,
+          isPaid: false,
+          isCancelled: false,
           notes: ''
         });
       } else {
@@ -110,10 +114,10 @@ export default function AddLessonForm({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
 
@@ -183,7 +187,7 @@ export default function AddLessonForm({
           <div>
             <label htmlFor="cost" className="block text-sm font-medium text-gray-700 mb-2">
               <DollarSign className="w-4 h-4 inline mr-2" />
-              Стоимость (руб.)
+              Стоимость (тенге)
             </label>
             <input
               type="number"
@@ -198,25 +202,43 @@ export default function AddLessonForm({
             />
           </div>
 
-          {/* Статус */}
+          {/* Статусы */}
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-              Статус
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Статус занятия
             </label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="SCHEDULED">Запланировано</option>
-              <option value="COMPLETED">Проведено</option>
-              <option value="PREPAID">Предоплачено</option>
-              <option value="PAID">Оплачено</option>
-              <option value="UNPAID">Не оплачено</option>
-              <option value="CANCELLED">Отменено</option>
-            </select>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="isCompleted"
+                  checked={formData.isCompleted}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span className="ml-2 text-sm text-gray-700">Проведено</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="isPaid"
+                  checked={formData.isPaid}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span className="ml-2 text-sm text-gray-700">Оплачено</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="isCancelled"
+                  checked={formData.isCancelled}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span className="ml-2 text-sm text-gray-700">Отменено</span>
+              </label>
+            </div>
           </div>
 
           {/* Заметки */}

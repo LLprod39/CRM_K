@@ -86,11 +86,11 @@ async function addMoreFinancialData() {
 
     console.log('\n📈 Обновленная статистика:');
     stats.forEach(stat => {
-      console.log(`${stat.status}: ${stat._count.id} занятий, ${stat._sum.cost || 0} ₽`);
+      console.log(`${stat.status}: ${stat._count.id} занятий, ${stat._sum.cost || 0} ₸`);
     });
 
     const totalRevenue = stats.reduce((sum, stat) => sum + (stat._sum.cost || 0), 0);
-    console.log(`💰 Общая выручка: ${totalRevenue} ₽`);
+    console.log(`💰 Общая выручка: ${totalRevenue} ₸`);
 
     // Статистика по пользователям
     console.log('\n👥 Статистика по пользователям:');
@@ -111,7 +111,7 @@ async function addMoreFinancialData() {
         .filter(l => l.status === 'COMPLETED')
         .reduce((sum, l) => sum + l.cost, 0);
 
-      console.log(`${student.user.name}: ${userLessons.length} занятий, ${userRevenue} ₽ выручка, ${userDebt} ₽ долг`);
+      console.log(`${student.user.name}: ${userLessons.length} занятий, ${userRevenue} ₸ выручка, ${userDebt} ₸ долг`);
     }
 
     console.log('\n🎉 Дополнительные финансовые данные добавлены!');

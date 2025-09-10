@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar, Plus, Clock, Users, Bell, Printer } from 'lucide-react';
-import { LessonWithOptionalStudent } from '@/types';
+import { LessonWithOptionalStudent, getLessonStatus } from '@/types';
 import CalendarComponent from '@/components/ui/Calendar';
 import LessonsList from '@/components/tables/LessonsList';
 import LessonFilters from '@/components/ui/LessonFilters';
@@ -130,7 +130,7 @@ export default function SchedulePage() {
     const lessonDate = new Date(lesson.date);
     const threeDaysFromNow = new Date();
     threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
-    return lessonDate > today && lessonDate <= threeDaysFromNow && lesson.status === 'SCHEDULED';
+    return lessonDate > today && lessonDate <= threeDaysFromNow && getLessonStatus(lesson) === 'scheduled';
   }).slice(0, 3);
 
   return (

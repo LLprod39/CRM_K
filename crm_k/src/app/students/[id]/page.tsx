@@ -230,7 +230,7 @@ export default function StudentProfilePage() {
             <DollarSign className="w-8 h-8 text-yellow-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Общая стоимость</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalCost.toLocaleString()} ₽</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.totalCost.toLocaleString()} ₸</p>
             </div>
           </div>
         </div>
@@ -239,7 +239,7 @@ export default function StudentProfilePage() {
             <DollarSign className="w-8 h-8 text-green-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Оплачено</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.paidCost.toLocaleString()} ₽</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.paidCost.toLocaleString()} ₸</p>
             </div>
           </div>
         </div>
@@ -276,7 +276,7 @@ export default function StudentProfilePage() {
                       {formatDate(lesson.date)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {lesson.cost.toLocaleString()} ₽
+                      {lesson.cost.toLocaleString()} ₸
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson.status)}`}>

@@ -48,10 +48,14 @@ export async function GET(request: NextRequest) {
       date: {
         gte: dateFrom
       },
-      status: 'PAID' as const
+      isCompleted: true,
+      isPaid: true,
+      isCancelled: false
     } : {
       ...baseWhere,
-      status: 'PAID' as const
+      isCompleted: true,
+      isPaid: true,
+      isCancelled: false
     }
 
     // Получаем статистику по оплаченным занятиям
@@ -86,53 +90,60 @@ export async function GET(request: NextRequest) {
     // })
 
 
-    // Подсчитываем задолженности (занятия со статусом UNPAID или COMPLETED)
+    // Подсчитываем задолженности (проведенные, но не оплаченные занятия)
     const debtLessons = await prisma.lesson.findMany({
       where: {
         ...baseWhere,
-        status: {
-          in: ['UNPAID', 'COMPLETED']
-        }
+        isCompleted: true,
+        isPaid: false,
+        isCancelled: false
       }
     })
 
-    // Подсчитываем предоплаченные занятия (не учитываются в финансах)
+    // Подсчитываем предоплаченные занятия (не проведенные, но оплаченные)
     const prepaidLessons = await prisma.lesson.findMany({
       where: {
         ...baseWhere,
-        status: 'PREPAID'
+        isCompleted: false,
+        isPaid: true,
+        isCancelled: false
       }
     })
 
     const totalDebt = debtLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
     const totalPrepaid = prepaidLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
 
-    // Статистика по статусам
-    const statusStats = await prisma.lesson.groupBy({
-      by: ['status'],
-      where: baseWhere,
-      _count: {
-        id: true
-      },
-      _sum: {
-        cost: true
-      }
+    // Получаем все занятия для статистики по статусам
+    const allLessons = await prisma.lesson.findMany({
+      where: baseWhere
     })
+
+    // Группируем по статусам вручную
+    const statusGroups = {
+      scheduled: allLessons.filter(l => !l.isCompleted && !l.isPaid && !l.isCancelled),
+      completed: allLessons.filter(l => l.isCompleted && !l.isPaid && !l.isCancelled),
+      paid: allLessons.filter(l => l.isCompleted && l.isPaid && !l.isCancelled),
+      cancelled: allLessons.filter(l => l.isCancelled),
+      prepaid: allLessons.filter(l => !l.isCompleted && l.isPaid && !l.isCancelled),
+      unpaid: allLessons.filter(l => l.isCompleted && !l.isPaid && !l.isCancelled)
+    }
+
+    const statusStats = Object.entries(statusGroups).map(([status, lessons]) => ({
+      status: status as 'scheduled' | 'completed' | 'paid' | 'cancelled' | 'prepaid' | 'unpaid',
+      count: lessons.length,
+      totalCost: lessons.reduce((sum, lesson) => sum + lesson.cost, 0)
+    }))
 
     const stats = {
       totalRevenue,
       weeklyRevenue: period === 'week' ? totalRevenue : 0,
       dailyRevenue: period === 'day' ? totalRevenue : 0,
-      completedLessons: statusStats.find(s => s.status === 'COMPLETED')?._count.id || 0,
+      completedLessons: statusGroups.completed.length,
       totalDebt,
       totalPrepaid,
-      prepaidLessons: statusStats.find(s => s.status === 'PREPAID')?._count.id || 0,
+      prepaidLessons: statusGroups.prepaid.length,
       userRevenue,
-      statusStats: statusStats.map(stat => ({
-        status: stat.status,
-        count: stat._count.id,
-        totalCost: stat._sum.cost || 0
-      }))
+      statusStats
     }
 
     return NextResponse.json(stats)

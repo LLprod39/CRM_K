@@ -25,8 +25,7 @@ const navigation = [
 ];
 
 const adminNavigation = [
-  { name: 'Админ панель', href: '/admin', icon: Settings },
-  { name: 'Пользователи', href: '/admin/users', icon: Users },
+  { name: 'Админ панель', href: '/admin', icon: Settings, description: 'Управление системой' },
 ];
 
 export default function Navigation() {
@@ -79,7 +78,7 @@ export default function Navigation() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105',
+                    'flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 group relative',
                     isActive
                       ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
@@ -87,6 +86,9 @@ export default function Navigation() {
                 >
                   <item.icon className={cn("w-4 h-4", isActive && "animate-pulse")} />
                   <span>{item.name}</span>
+                  {isActive && (
+                    <div className="absolute right-2 w-2 h-2 bg-white rounded-full animate-pulse" />
+                  )}
                 </Link>
               );
             })}
@@ -178,7 +180,7 @@ export default function Navigation() {
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
-                    'flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 hover:scale-105 animate-slide-in',
+                    'flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 hover:scale-105 animate-slide-in group relative',
                     isActive
                       ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
@@ -186,7 +188,15 @@ export default function Navigation() {
                   style={{ animationDelay: `${(navigation.length + index) * 50}ms` }}
                 >
                   <item.icon className={cn("w-5 h-5", isActive && "animate-pulse")} />
-                  <span>{item.name}</span>
+                  <div className="flex-1">
+                    <span>{item.name}</span>
+                    {item.description && (
+                      <div className="text-xs opacity-75 mt-0.5">{item.description}</div>
+                    )}
+                  </div>
+                  {isActive && (
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                  )}
                 </Link>
               );
             })}

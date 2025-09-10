@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
     const unpaidLessons = await prisma.lesson.findMany({
       where: {
         ...baseWhere,
-        status: 'COMPLETED'
+        isCompleted: true,
+        isPaid: false,
+        isCancelled: false
       },
       include: {
         student: {
@@ -58,7 +60,9 @@ export async function GET(request: NextRequest) {
           where: {
             ...baseWhere,
             studentId: studentId,
-            status: 'PAID'
+            isCompleted: true,
+            isPaid: true,
+            isCancelled: false
           },
           orderBy: {
             date: 'desc'

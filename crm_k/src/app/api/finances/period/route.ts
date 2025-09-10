@@ -66,11 +66,13 @@ export async function GET(request: NextRequest) {
           }
         }
 
-    // Получаем оплаченные занятия за период
+    // Получаем оплаченные занятия за период (проведенные + оплаченные)
     const paidLessons = await prisma.lesson.findMany({
       where: {
         ...baseWhere,
-        status: 'PAID',
+        isCompleted: true,
+        isPaid: true,
+        isCancelled: false,
         date: {
           gte: dateFrom,
           lte: dateTo

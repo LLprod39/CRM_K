@@ -24,7 +24,7 @@ export function formatTime(time: string): string {
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
-    currency: 'RUB'
+    currency: 'KZT'
   }).format(amount);
 }
 

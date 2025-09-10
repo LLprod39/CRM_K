@@ -25,11 +25,11 @@ async function checkFinalData() {
 
     console.log('\n📚 Статистика занятий:');
     lessonStats.forEach(stat => {
-      console.log(`${stat.status}: ${stat._count.id} занятий, ${stat._sum.cost || 0} ₽`);
+      console.log(`${stat.status}: ${stat._count.id} занятий, ${stat._sum.cost || 0} ₸`);
     });
 
     const totalRevenue = lessonStats.reduce((sum, stat) => sum + (stat._sum.cost || 0), 0);
-    console.log(`💰 Общая стоимость: ${totalRevenue} ₽`);
+    console.log(`💰 Общая стоимость: ${totalRevenue} ₸`);
 
     // Статистика по пользователям
     console.log('\n👥 Детальная статистика по пользователям:');
@@ -55,8 +55,8 @@ async function checkFinalData() {
       console.log(`\n${user.name} (${user.email}):`);
       console.log(`  👶 Учеников: ${user.students.length}`);
       console.log(`  📚 Всего занятий: ${user.students.flatMap(s => s.lessons).length}`);
-      console.log(`  ✅ Оплачено: ${paidLessons.length} (${revenue} ₽)`);
-      console.log(`  ⏳ Проведено: ${completedLessons.length} (${debt} ₽ долг)`);
+      console.log(`  ✅ Оплачено: ${paidLessons.length} (${revenue} ₸)`);
+      console.log(`  ⏳ Проведено: ${completedLessons.length} (${debt} ₸ долг)`);
       console.log(`  📅 Запланировано: ${scheduledLessons.length}`);
       console.log(`  ❌ Отменено: ${cancelledLessons.length}`);
     }
@@ -86,7 +86,7 @@ async function checkFinalData() {
     }).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
     studentsWithRevenue.forEach((student, index) => {
-      console.log(`${index + 1}. ${student.name} (${student.owner}): ${student.revenue} ₽ (${student.lessons} занятий)`);
+      console.log(`${index + 1}. ${student.name} (${student.owner}): ${student.revenue} ₸ (${student.lessons} занятий)`);
     });
 
     console.log('\n🎉 Данные готовы для тестирования!');

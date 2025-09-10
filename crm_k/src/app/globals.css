@@ -335,6 +335,42 @@ h3 {
   animation: float 3s ease-in-out infinite;
 }
 
+/* Мобильные оптимизации */
+@media (max-width: 768px) {
+  /* Улучшенные тач-события */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Предотвращение зума при фокусе на input */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  
+  /* Улучшенные кнопки для мобильных */
+  button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Улучшенная прокрутка */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Предотвращение горизонтальной прокрутки */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Улучшенные модальные окна */
+  .modal-mobile {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+}
+
 /* Стили для печати */
 @media print {
   body {

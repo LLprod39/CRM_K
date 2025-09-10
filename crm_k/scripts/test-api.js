@@ -70,11 +70,39 @@ async function testAPI() {
       if (financesResponse.ok) {
         const finances = await financesResponse.json();
         console.log('✅ Финансовая статистика получена:');
-        console.log(`  - Выручка за месяц: ${finances.monthlyRevenue} ₽`);
-        console.log(`  - Общий долг: ${finances.totalDebt} ₽`);
-        console.log(`  - Топ учеников: ${finances.topStudents.length}`);
+        console.log(`  - Общая выручка: ${finances.totalRevenue} ₸`);
+        console.log(`  - Общий долг: ${finances.totalDebt} ₸`);
+        console.log(`  - Предоплата: ${finances.totalPrepaid} ₸`);
+        console.log(`  - Статистика по статусам:`);
+        finances.statusStats.forEach(stat => {
+          console.log(`    ${stat.status}: ${stat.count} занятий, ${stat.totalCost} ₸`);
+        });
       } else {
         console.log('❌ Ошибка получения финансов:', await financesResponse.text());
+      }
+
+      // Тест автоматического обновления статусов
+      console.log('\n5. Тестируем автоматическое обновление статусов...');
+      const autoUpdateResponse = await fetch('http://localhost:3000/api/lessons/auto-update-status', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (autoUpdateResponse.ok) {
+        const updateData = await autoUpdateResponse.json();
+        console.log('✅ Автоматическое обновление выполнено:');
+        console.log(`  - Обновлено занятий: ${updateData.updatedCount}`);
+        if (updateData.results && updateData.results.length > 0) {
+          console.log('  - Примеры обновлений:');
+          updateData.results.slice(0, 3).forEach(result => {
+            console.log(`    ${result.studentName}: ${result.oldStatus} -> ${result.newStatus}`);
+          });
+        }
+      } else {
+        console.log('❌ Ошибка автоматического обновления:', await autoUpdateResponse.text());
       }
 
     } else {

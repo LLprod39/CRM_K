@@ -265,7 +265,7 @@ export default function AddPaymentForm({
                             {new Date(lesson.date).toLocaleDateString('ru-RU')}
                           </span>
                           <span className="text-sm font-bold text-green-600">
-                            {lesson.cost.toLocaleString('ru-RU')} ₽
+                            {lesson.cost.toLocaleString('ru-RU')} ₸
                           </span>
                         </div>
                         {lesson.notes && (
@@ -285,7 +285,7 @@ export default function AddPaymentForm({
               {selectedAmount > 0 && (
                 <div className="mt-3 p-3 bg-green-50 rounded-lg">
                   <p className="text-sm text-green-800">
-                    <strong>Выбрано уроков на сумму: {selectedAmount.toLocaleString('ru-RU')} ₽</strong>
+                    <strong>Выбрано уроков на сумму: {selectedAmount.toLocaleString('ru-RU')} ₸</strong>
                   </p>
                 </div>
               )}
@@ -310,7 +310,7 @@ export default function AddPaymentForm({
             />
             {totalDebt > 0 && (
               <p className="mt-1 text-sm text-gray-500">
-                Общая задолженность: {totalDebt.toLocaleString('ru-RU')} ₽
+                Общая задолженность: {totalDebt.toLocaleString('ru-RU')} ₸
               </p>
             )}
           </div>

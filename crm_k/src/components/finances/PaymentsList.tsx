@@ -50,7 +50,7 @@ export default function PaymentsList({ studentId }: PaymentsListProps) {
   const formatAmount = (amount: number) => {
     return amount.toLocaleString('ru-RU', {
       style: 'currency',
-      currency: 'RUB'
+      currency: 'KZT'
     })
   }
 

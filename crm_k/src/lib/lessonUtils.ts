@@ -30,26 +30,27 @@ export async function autoUpdateLessonStatuses(token: string) {
 /**
  * Проверяет, нужно ли обновить статус занятия
  * @param lessonDate - дата занятия
- * @param currentStatus - текущий статус
+ * @param isCompleted - проведено ли занятие
+ * @param isPaid - оплачено ли занятие
+ * @param isCancelled - отменено ли занятие
  * @returns true, если статус нужно обновить
  */
-export function shouldUpdateLessonStatus(lessonDate: Date, currentStatus: string): boolean {
+export function shouldUpdateLessonStatus(lessonDate: Date, isCompleted: boolean, isPaid: boolean, isCancelled: boolean): boolean {
   const now = new Date()
   const lessonDateTime = new Date(lessonDate)
   
-  // Занятие прошло и имеет статус, который нужно обновить
-  return lessonDateTime < now && ['SCHEDULED', 'PREPAID'].includes(currentStatus)
+  // Занятие прошло, не отменено и не проведено
+  return lessonDateTime < now && !isCancelled && !isCompleted
 }
 
 /**
- * Определяет новый статус для прошедшего занятия
- * @param currentStatus - текущий статус
- * @returns новый статус
+ * Определяет новые статусы для прошедшего занятия
+ * @param isPaid - текущий статус оплаты
+ * @returns объект с новыми статусами
  */
-export function getNewStatusForPastLesson(currentStatus: string): 'COMPLETED' | 'PAID' {
-  if (currentStatus === 'PREPAID') {
-    return 'PAID'
+export function getNewStatusesForPastLesson(isPaid: boolean): { isCompleted: boolean; isPaid: boolean } {
+  return {
+    isCompleted: true, // Все прошедшие занятия становятся проведенными
+    isPaid: true // Все прошедшие занятия становятся оплаченными
   }
-  // Запланированные занятия сразу становятся оплаченными (проведено + оплачено)
-  return 'PAID'
 }

@@ -45,7 +45,7 @@ export default function FinancialStats({ period }: FinancialStatsProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
-      currency: 'RUB',
+      currency: 'KZT',
       minimumFractionDigits: 0
     }).format(amount)
   }

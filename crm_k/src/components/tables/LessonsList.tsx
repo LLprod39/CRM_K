@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Clock, User, DollarSign, Edit, Eye, Calendar } from 'lucide-react';
-import { LessonWithOptionalStudent } from '@/types';
+import { LessonWithOptionalStudent, getCombinedLessonStatus } from '@/types';
 
 interface LessonsListProps {
   lessons: LessonWithOptionalStudent[];
@@ -14,28 +14,16 @@ interface LessonsListProps {
 export default function LessonsList({ lessons, onLessonClick, onEditLesson, selectedDate }: LessonsListProps) {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'SCHEDULED': return 'bg-blue-100 text-blue-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      case 'PAID': return 'bg-purple-100 text-purple-800';
-      case 'PREPAID': return 'bg-yellow-100 text-yellow-800';
-      case 'UNPAID': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const getStatusColor = (lesson: LessonWithOptionalStudent) => {
+    if (lesson.isCancelled) return 'bg-red-100 text-red-800';
+    if (lesson.isCompleted && lesson.isPaid) return 'bg-purple-100 text-purple-800';
+    if (lesson.isCompleted && !lesson.isPaid) return 'bg-green-100 text-green-800';
+    if (!lesson.isCompleted && lesson.isPaid) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-blue-100 text-blue-800';
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'SCHEDULED': return 'Запланировано';
-      case 'COMPLETED': return 'Проведено';
-      case 'CANCELLED': return 'Отменено';
-      case 'PAID': return 'Оплачено';
-      case 'PREPAID': return 'Предоплачено';
-      case 'UNPAID': return 'Не оплачено';
-      default: return status;
-    }
+  const getStatusText = (lesson: LessonWithOptionalStudent) => {
+    return getCombinedLessonStatus(lesson);
   };
 
   const formatDate = (date: Date) => {
@@ -175,8 +163,8 @@ export default function LessonsList({ lessons, onLessonClick, onEditLesson, sele
                       {formatDateTime(lesson.date)}
                     </span>
                   </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(lesson.status)}`}>
-                    {getStatusText(lesson.status)}
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(lesson)}`}>
+                    {getStatusText(lesson)}
                   </span>
                 </div>
                 
@@ -188,7 +176,7 @@ export default function LessonsList({ lessons, onLessonClick, onEditLesson, sele
                   </div>
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4" />
-                    <span className="text-sm font-medium">{lesson.cost} ₽</span>
+                    <span className="text-sm font-medium">{lesson.cost} ₸</span>
                   </div>
                 </div>
 

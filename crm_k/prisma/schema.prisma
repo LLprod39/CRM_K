@@ -62,7 +62,9 @@ model Lesson {
   date        DateTime // Дата и время занятия
   studentId   Int      // ID ученика
   cost        Float    // Стоимость занятия
-  status      LessonStatus @default(SCHEDULED) // Статус занятия
+  isCompleted Boolean  @default(false) // Проведено ли занятие
+  isPaid      Boolean  @default(false) // Оплачено ли занятие
+  isCancelled Boolean  @default(false) // Отменено ли занятие
   notes       String?  // Заметки к занятию
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -76,15 +78,6 @@ model Lesson {
   @@map("lessons")
 }
 
-// Статусы занятий
-enum LessonStatus {
-  SCHEDULED   // Запланировано
-  COMPLETED   // Проведено
-  CANCELLED   // Отменено
-  PAID        // Оплачено
-  PREPAID     // Предоплачено
-  UNPAID      // Не оплачено
-}
 
 // Модель платежа
 model Payment {

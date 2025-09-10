@@ -75,14 +75,14 @@ export default function Home() {
     },
     {
       title: 'Доход за месяц',
-      value: `₽${stats.monthlyRevenue.toLocaleString()}`,
+      value: `₸${stats.monthlyRevenue.toLocaleString()}`,
       icon: DollarSign,
       color: 'yellow',
       href: '/finances'
     },
     {
       title: 'Задолженности',
-      value: `₽${stats.debts.toLocaleString()}`,
+      value: `₸${stats.debts.toLocaleString()}`,
       icon: TrendingUp,
       color: 'purple',
       href: '/finances'

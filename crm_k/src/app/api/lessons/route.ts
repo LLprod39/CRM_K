@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
 
     const where: {
       studentId?: number;
-      status?: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'PAID';
+      isCompleted?: boolean;
+      isPaid?: boolean;
+      isCancelled?: boolean;
       date?: {
         gte?: Date;
         lte?: Date;
@@ -36,8 +38,38 @@ export async function GET(request: NextRequest) {
       where.studentId = parseInt(studentId)
     }
 
-    if (status && ['SCHEDULED', 'COMPLETED', 'CANCELLED', 'PAID'].includes(status)) {
-      where.status = status as 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'PAID'
+    // Обработка фильтра по статусу
+    if (status) {
+      switch (status) {
+        case 'scheduled':
+          where.isCompleted = false
+          where.isPaid = false
+          where.isCancelled = false
+          break
+        case 'completed':
+          where.isCompleted = true
+          where.isPaid = false
+          where.isCancelled = false
+          break
+        case 'paid':
+          where.isCompleted = true
+          where.isPaid = true
+          where.isCancelled = false
+          break
+        case 'cancelled':
+          where.isCancelled = true
+          break
+        case 'prepaid':
+          where.isCompleted = false
+          where.isPaid = true
+          where.isCancelled = false
+          break
+        case 'unpaid':
+          where.isCompleted = true
+          where.isPaid = false
+          where.isCancelled = false
+          break
+      }
     }
 
     if (dateFrom || dateTo) {
@@ -133,7 +165,9 @@ export async function POST(request: NextRequest) {
         date: new Date(body.date),
         studentId: body.studentId,
         cost: body.cost,
-        status: body.status || 'SCHEDULED',
+        isCompleted: body.isCompleted || false,
+        isPaid: body.isPaid || false,
+        isCancelled: body.isCancelled || false,
         notes: body.notes || null
       },
       include: {

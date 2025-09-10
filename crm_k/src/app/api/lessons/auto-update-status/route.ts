@@ -25,46 +25,60 @@ export async function POST(request: NextRequest) {
         }
 
     // Находим все занятия, которые должны быть обновлены:
-    // 1. Запланированные занятия, которые уже прошли -> становятся оплаченными (проведено + оплачено)
-    // 2. Предоплаченные занятия, которые уже прошли -> становятся оплаченными
+    // 1. Запланированные занятия, которые уже прошли -> становятся проведенными + оплаченными
+    // 2. Предоплаченные занятия, которые уже прошли -> становятся проведенными (остаются оплаченными)
     const lessonsToUpdate = await prisma.lesson.findMany({
       where: {
         ...baseWhere,
         date: {
           lt: now // Занятие уже прошло
         },
-        status: {
-          in: ['SCHEDULED', 'PREPAID'] // Только запланированные и предоплаченные
-        }
+        isCancelled: false, // Не отмененные
+        OR: [
+          // Запланированные занятия (не проведены и не оплачены)
+          { isCompleted: false, isPaid: false },
+          // Предоплаченные занятия (не проведены, но оплачены)
+          { isCompleted: false, isPaid: true }
+        ]
       },
       include: {
         student: true
       }
     })
 
-    console.log(`Найдено ${lessonsToUpdate.length} занятий для обновления:`, lessonsToUpdate.map(l => ({ id: l.id, status: l.status, date: l.date })))
+    console.log(`Найдено ${lessonsToUpdate.length} занятий для обновления:`, lessonsToUpdate.map(l => ({ 
+      id: l.id, 
+      isCompleted: l.isCompleted, 
+      isPaid: l.isPaid, 
+      isCancelled: l.isCancelled,
+      date: l.date 
+    })))
 
     let updatedCount = 0
     const results = []
 
     for (const lesson of lessonsToUpdate) {
-      let newStatus: 'COMPLETED' | 'PAID'
+      // Определяем новые значения статусов
+      const newIsCompleted = true // Все прошедшие занятия становятся проведенными
+      const newIsPaid = lesson.isPaid || !lesson.isPaid // Если было предоплачено - остается оплаченным, если было запланировано - становится оплаченным
       
-      // Если занятие было предоплачено, то оно становится оплаченным
-      // Если было запланировано, то сразу становится оплаченным (проведено + оплачено)
-      if (lesson.status === 'PREPAID') {
-        newStatus = 'PAID'
-      } else {
-        // Запланированные занятия сразу становятся оплаченными
-        newStatus = 'PAID'
-      }
+      const oldStatus = lesson.isCancelled ? 'cancelled' : 
+                       lesson.isCompleted && lesson.isPaid ? 'paid' :
+                       lesson.isCompleted && !lesson.isPaid ? 'completed' :
+                       !lesson.isCompleted && lesson.isPaid ? 'prepaid' :
+                       'scheduled'
+      
+      const newStatus = newIsCompleted && newIsPaid ? 'paid' : 
+                       newIsCompleted && !newIsPaid ? 'completed' :
+                       'scheduled'
 
       try {
-        console.log(`Обновляем занятие ${lesson.id}: ${lesson.status} -> ${newStatus}`)
+        console.log(`Обновляем занятие ${lesson.id}: ${oldStatus} -> ${newStatus}`)
         await prisma.lesson.update({
           where: { id: lesson.id },
           data: { 
-            status: newStatus,
+            isCompleted: newIsCompleted,
+            isPaid: newIsPaid,
             updatedAt: new Date()
           }
         })
@@ -73,7 +87,7 @@ export async function POST(request: NextRequest) {
         results.push({
           lessonId: lesson.id,
           studentName: lesson.student.fullName,
-          oldStatus: lesson.status,
+          oldStatus: oldStatus,
           newStatus: newStatus,
           lessonDate: lesson.date
         })

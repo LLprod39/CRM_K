@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       'Ученик': lesson.student.fullName,
       'Телефон': lesson.student.phone,
       'Стоимость': lesson.cost,
-      'Статус': getStatusText(lesson.status),
+      'Статус': getCombinedStatusText(lesson),
       'Заметки': lesson.notes || '',
       ...(authUser.role === 'ADMIN' && {
         'Владелец': lesson.student.user?.name || 'Неизвестно',
@@ -102,10 +102,11 @@ export async function GET(request: NextRequest) {
       ['Показатель', 'Значение'],
       ['Общее количество занятий', lessons.length],
       ['Общая сумма', lessons.reduce((sum, lesson) => sum + lesson.cost, 0)],
-      ['Оплаченные занятия', lessons.filter(l => l.status === 'PAID').length],
-      ['Проведенные занятия', lessons.filter(l => l.status === 'COMPLETED').length],
-      ['Отмененные занятия', lessons.filter(l => l.status === 'CANCELLED').length],
-      ['Запланированные занятия', lessons.filter(l => l.status === 'SCHEDULED').length]
+      ['Оплаченные занятия', lessons.filter(l => l.isCompleted && l.isPaid && !l.isCancelled).length],
+      ['Проведенные занятия', lessons.filter(l => l.isCompleted && !l.isPaid && !l.isCancelled).length],
+      ['Отмененные занятия', lessons.filter(l => l.isCancelled).length],
+      ['Запланированные занятия', lessons.filter(l => !l.isCompleted && !l.isPaid && !l.isCancelled).length],
+      ['Предоплаченные занятия', lessons.filter(l => !l.isCompleted && l.isPaid && !l.isCancelled).length]
     ]
 
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData)
@@ -135,12 +136,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function getStatusText(status: string): string {
-  const statusMap: { [key: string]: string } = {
-    'SCHEDULED': 'Запланировано',
-    'COMPLETED': 'Проведено',
-    'CANCELLED': 'Отменено',
-    'PAID': 'Оплачено'
-  }
-  return statusMap[status] || status
+function getCombinedStatusText(lesson: any): string {
+  const statuses = []
+  if (lesson.isCompleted) statuses.push('Проведено')
+  if (lesson.isPaid) statuses.push('Оплачено')
+  if (lesson.isCancelled) statuses.push('Отменено')
+  
+  if (statuses.length === 0) return 'Запланировано'
+  return statuses.join(' + ')
 }

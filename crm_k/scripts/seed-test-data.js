@@ -182,7 +182,6 @@ async function seedTestData() {
 
     // Создаем занятия для каждого ученика
     console.log('📚 Создаем занятия...');
-    const lessonStatuses = ['SCHEDULED', 'COMPLETED', 'PAID', 'CANCELLED'];
     const costs = [1500, 2000, 2500, 3000];
     const notes = [
       'Отличная работа!',
@@ -205,9 +204,14 @@ async function seedTestData() {
         date.setDate(date.getDate() - Math.floor(Math.random() * 90)); // Последние 3 месяца
         date.setHours(9 + Math.floor(Math.random() * 8), Math.random() < 0.5 ? 0 : 30, 0, 0);
 
-        const status = lessonStatuses[Math.floor(Math.random() * lessonStatuses.length)];
         const cost = costs[Math.floor(Math.random() * costs.length)];
         const note = notes[Math.floor(Math.random() * notes.length)];
+
+        // Определяем статусы на основе даты и случайности
+        const isPast = date < new Date();
+        const isCompleted = isPast && Math.random() < 0.8; // 80% прошедших занятий проведены
+        const isPaid = isCompleted && Math.random() < 0.7; // 70% проведенных занятий оплачены
+        const isCancelled = !isCompleted && Math.random() < 0.1; // 10% будущих занятий отменены
 
         const existingLesson = await prisma.lesson.findFirst({
           where: {
@@ -222,7 +226,9 @@ async function seedTestData() {
               date: date,
               studentId: student.id,
               cost: cost,
-              status: status,
+              isCompleted: isCompleted,
+              isPaid: isPaid,
+              isCancelled: isCancelled,
               notes: Math.random() < 0.7 ? note : null
             }
           });
@@ -234,19 +240,28 @@ async function seedTestData() {
     console.log(`✅ Создано занятий: ${totalLessons}`);
 
     // Выводим статистику
-    const stats = await prisma.lesson.groupBy({
-      by: ['status'],
-      _count: { id: true },
-      _sum: { cost: true }
-    });
+    const allLessons = await prisma.lesson.findMany();
+    
+    // Группируем по статусам вручную
+    const statusGroups = {
+      scheduled: allLessons.filter(l => !l.isCompleted && !l.isPaid && !l.isCancelled),
+      completed: allLessons.filter(l => l.isCompleted && !l.isPaid && !l.isCancelled),
+      paid: allLessons.filter(l => l.isCompleted && l.isPaid && !l.isCancelled),
+      cancelled: allLessons.filter(l => l.isCancelled),
+      prepaid: allLessons.filter(l => !l.isCompleted && l.isPaid && !l.isCancelled),
+      unpaid: allLessons.filter(l => l.isCompleted && !l.isPaid && !l.isCancelled)
+    };
 
     console.log('\n📈 Статистика занятий:');
-    stats.forEach(stat => {
-      console.log(`${stat.status}: ${stat._count.id} занятий, ${stat._sum.cost || 0} ₽`);
+    Object.entries(statusGroups).forEach(([status, lessons]) => {
+      const totalCost = lessons.reduce((sum, lesson) => sum + lesson.cost, 0);
+      console.log(`${status}: ${lessons.length} занятий, ${totalCost} ₸`);
     });
 
-    const totalRevenue = stats.reduce((sum, stat) => sum + (stat._sum.cost || 0), 0);
-    console.log(`💰 Общая выручка: ${totalRevenue} ₽`);
+    const totalRevenue = allLessons
+      .filter(l => l.isCompleted && l.isPaid && !l.isCancelled)
+      .reduce((sum, lesson) => sum + lesson.cost, 0);
+    console.log(`💰 Общая выручка (проведенные + оплаченные): ${totalRevenue} ₸`);
 
     console.log('\n🎉 Тестовые данные успешно созданы!');
     console.log('\n📋 Учетные данные для входа:');

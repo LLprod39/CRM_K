@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Clock, User } from 'lucide-react';
-import { Lesson, LessonWithOptionalStudent } from '@/types';
+import { Lesson, LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
 
 interface CalendarProps {
   lessons: LessonWithOptionalStudent[];
@@ -79,13 +79,15 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
     onDateClick(newDate);
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (lesson: Lesson) => {
+    const status = getLessonStatus(lesson);
     switch (status) {
-      case 'SCHEDULED': return 'bg-blue-100 text-blue-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      case 'PAID': return 'bg-purple-100 text-purple-800';
-      case 'PREPAID': return 'bg-yellow-100 text-yellow-800';
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'paid': return 'bg-purple-100 text-purple-800';
+      case 'prepaid': return 'bg-yellow-100 text-yellow-800';
+      case 'unpaid': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -140,7 +142,7 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
             {dayLessons.slice(0, 2).map((lesson) => (
               <div
                 key={lesson.id}
-                className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 ${getStatusColor(lesson.status)}`}
+                className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 ${getStatusColor(lesson)}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onLessonClick(lesson);
@@ -227,6 +229,10 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-purple-100 rounded"></div>
             <span>Оплачено</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-orange-100 rounded"></div>
+            <span>Не оплачено</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-red-100 rounded"></div>

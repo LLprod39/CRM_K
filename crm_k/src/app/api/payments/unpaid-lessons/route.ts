@@ -54,11 +54,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Получаем неоплаченные уроки (статус COMPLETED)
+    // Получаем неоплаченные уроки (проведенные, но не оплаченные)
     const unpaidLessons = await prisma.lesson.findMany({
       where: {
         studentId: studentIdNum,
-        status: 'COMPLETED'
+        isCompleted: true,
+        isPaid: false,
+        isCancelled: false
       },
       orderBy: {
         date: 'desc'

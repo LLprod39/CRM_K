@@ -378,7 +378,7 @@ export const printSchedule = (lessons: Array<{
                 <td>${index + 1}</td>
                 <td>${lessonDate.toLocaleString('ru-RU')}</td>
                 <td>${lesson.student?.fullName || 'Неизвестно'}</td>
-                <td>₽${lesson.cost}</td>
+                <td>₸${lesson.cost}</td>
                 <td class="status-${lesson.status.toLowerCase()}">${statusText}</td>
               </tr>
             `;

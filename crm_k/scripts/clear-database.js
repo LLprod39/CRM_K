@@ -1,56 +1,49 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
 async function clearDatabase() {
   try {
-    console.log('🧹 Начинаю очистку базы данных...');
-    
+    console.log('🧹 Очистка базы данных...');
+
     // Удаляем все данные в правильном порядке (с учетом внешних ключей)
-    console.log('📚 Удаляю связи платежей и уроков...');
+    console.log('🗑️ Удаляем все платежи...');
     await prisma.paymentLesson.deleteMany();
-    
-    console.log('💰 Удаляю платежи...');
     await prisma.payment.deleteMany();
-    
-    console.log('📅 Удаляю уроки...');
+
+    console.log('🗑️ Удаляем все занятия...');
     await prisma.lesson.deleteMany();
-    
-    console.log('👥 Удаляю учеников...');
+
+    console.log('🗑️ Удаляем всех учеников...');
     await prisma.student.deleteMany();
+
+    console.log('🗑️ Удаляем всех пользователей...');
+    await prisma.user.deleteMany();
+
+    // Создаем только админа с паролем 123456
+    console.log('👤 Создаем администратора...');
+    const hashedPassword = await bcrypt.hash('123456', 12);
     
-    console.log('👤 Удаляю всех пользователей кроме админа...');
-    // Удаляем всех пользователей кроме админа
-    const adminUser = await prisma.user.findFirst({
-      where: { role: 'ADMIN' }
+    const admin = await prisma.user.create({
+      data: {
+        email: 'admin@crm.com',
+        password: hashedPassword,
+        name: 'Администратор',
+        role: 'ADMIN'
+      }
     });
-    
-    if (adminUser) {
-      // Удаляем всех пользователей кроме админа
-      await prisma.user.deleteMany({
-        where: {
-          id: { not: adminUser.id }
-        }
-      });
-      console.log(`✅ Админ сохранен: ${adminUser.email}`);
-    } else {
-      console.log('⚠️  Админ не найден в базе данных');
-    }
-    
-    console.log('✅ База данных успешно очищена!');
-    
-    // Показываем статистику
-    const userCount = await prisma.user.count();
-    const studentCount = await prisma.student.count();
-    const lessonCount = await prisma.lesson.count();
-    const paymentCount = await prisma.payment.count();
-    
-    console.log('\n📊 Статистика после очистки:');
-    console.log(`👤 Пользователи: ${userCount}`);
-    console.log(`👥 Ученики: ${studentCount}`);
-    console.log(`📅 Уроки: ${lessonCount}`);
-    console.log(`💰 Платежи: ${paymentCount}`);
-    
+
+    console.log('✅ Администратор создан:');
+    console.log(`   Email: ${admin.email}`);
+    console.log(`   Пароль: 123456`);
+    console.log(`   Роль: ${admin.role}`);
+
+    console.log('\n🎉 База данных очищена! Остался только администратор.');
+    console.log('\n📋 Учетные данные для входа:');
+    console.log('Email: admin@crm.com');
+    console.log('Пароль: 123456');
+
   } catch (error) {
     console.error('❌ Ошибка при очистке базы данных:', error);
   } finally {

@@ -5,35 +5,36 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { apiRequest } from '@/lib/api'
-import Card from '@/components/ui/Card'
-import Button from '@/components/ui/Button'
-import { User, Student, Lesson, UserRole } from '@/types'
+import { User, Student, Lesson, UserRole, AdminStats, UserWithStats } from '@/types'
+import AdminSidebar from '@/components/admin/AdminSidebar'
+import StatsCard from '@/components/admin/StatsCard'
+import UserCard from '@/components/admin/UserCard'
+import AddUserModal from '@/components/admin/AddUserModal'
+import RecentActivity from '@/components/admin/RecentActivity'
 import { 
   Users, 
   UserCheck, 
   Calendar, 
   DollarSign, 
   TrendingUp,
-  AlertCircle,
-  CheckCircle,
-  Clock
+  Activity,
+  Plus,
+  RefreshCw,
+  BarChart3,
+  Settings,
+  Menu,
+  X
 } from 'lucide-react'
-
-interface AdminStats {
-  totalUsers: number;
-  totalStudents: number;
-  totalLessons: number;
-  totalRevenue: number;
-  recentUsers: User[];
-  recentStudents: Student[];
-  recentLessons: Lesson[];
-}
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showAddUserModal, setShowAddUserModal] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== 'ADMIN')) {
@@ -46,11 +47,15 @@ export default function AdminPage() {
     }
   }, [user, isLoading, router])
 
-  const fetchAdminStats = async () => {
+  const fetchAdminStats = async (showRefresh = false) => {
     if (!user) return;
     
     try {
-      setLoading(true)
+      if (showRefresh) {
+        setIsRefreshing(true)
+      } else {
+        setLoading(true)
+      }
       const response = await apiRequest('/api/admin/stats')
       if (response.ok) {
         const data = await response.json()
@@ -60,13 +65,76 @@ export default function AdminPage() {
       console.error('Ошибка загрузки статистики:', error)
     } finally {
       setLoading(false)
+      setIsRefreshing(false)
     }
+  }
+
+  const handleUserSubmit = async (userData: {
+    name: string
+    email: string
+    password: string
+    role: UserRole
+  }) => {
+    try {
+      const response = await apiRequest('/api/admin/users', {
+        method: editingUser ? 'PUT' : 'POST',
+        body: JSON.stringify({
+          ...userData,
+          id: editingUser?.id
+        })
+      })
+
+      if (response.ok) {
+        await fetchAdminStats()
+        setShowAddUserModal(false)
+        setEditingUser(null)
+      }
+    } catch (error) {
+      console.error('Ошибка сохранения пользователя:', error)
+    }
+  }
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user)
+    setShowAddUserModal(true)
+  }
+
+  const handleDeleteUser = async (userId: number) => {
+    if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) return
+
+    try {
+      const response = await apiRequest(`/api/admin/users/${userId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        await fetchAdminStats()
+      }
+    } catch (error) {
+      console.error('Ошибка удаления пользователя:', error)
+    }
+  }
+
+  const handleAddUser = () => {
+    setEditingUser(null)
+    setShowAddUserModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowAddUserModal(false)
+    setEditingUser(null)
   }
 
   if (isLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Activity className="w-8 h-8 text-white" />
+          </div>
+          <div className="text-lg font-medium text-gray-900">Загрузка админ панели...</div>
+          <div className="text-sm text-gray-500 mt-1">Пожалуйста, подождите</div>
+        </div>
       </div>
     )
   }
@@ -77,195 +145,158 @@ export default function AdminPage() {
 
   return (
     <ProtectedRoute requiredRole="ADMIN">
-      <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Админ панель</h1>
-          <p className="text-gray-600 mt-2">
-            Управление всеми пользователями, учениками и данными системы
-          </p>
-        </div>
-        <Button
-          onClick={fetchAdminStats}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          Обновить данные
-        </Button>
-      </div>
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Боковая панель */}
+        <AdminSidebar 
+          isMobileOpen={isMobileMenuOpen}
+          onMobileClose={() => setIsMobileMenuOpen(false)}
+        />
 
-      {/* Статистика */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Пользователи</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {stats?.totalUsers || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <UserCheck className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Ученики</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {stats?.totalStudents || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <Calendar className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Занятия</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {stats?.totalLessons || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Доход</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {stats?.totalRevenue?.toLocaleString() || 0} ₽
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Таблицы данных */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Последние пользователи */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Последние пользователи</h3>
-            <Users className="w-5 h-5 text-gray-400" />
-          </div>
-          <div className="space-y-3">
-            {stats?.recentUsers?.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        {/* Основной контент */}
+        <div className="flex-1 flex flex-col">
+          {/* Заголовок */}
+          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                {/* Мобильное меню */}
+                <button
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                
                 <div>
-                  <p className="font-medium text-gray-900">{user.name}</p>
-                  <p className="text-sm text-gray-600">{user.email}</p>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Обзор системы</h1>
+                  <p className="text-gray-600 mt-1 text-sm sm:text-base">
+                    Мониторинг и управление CRM системой
+                  </p>
                 </div>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  user.role === 'ADMIN' 
-                    ? 'bg-red-100 text-red-800' 
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {user.role === 'ADMIN' ? 'Админ' : 'Пользователь'}
-                </span>
               </div>
-            )) || (
-              <p className="text-gray-500 text-center py-4">Нет данных</p>
-            )}
+              
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <button
+                  onClick={() => fetchAdminStats(true)}
+                  disabled={isRefreshing}
+                  className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm touch-manipulation"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Обновить</span>
+                </button>
+                <button
+                  onClick={handleAddUser}
+                  className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors text-sm touch-manipulation"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Добавить пользователя</span>
+                </button>
+              </div>
+            </div>
           </div>
-        </Card>
 
-        {/* Последние ученики */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Последние ученики</h3>
-            <UserCheck className="w-5 h-5 text-gray-400" />
-          </div>
-          <div className="space-y-3">
-            {stats?.recentStudents?.map((student) => (
-              <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{student.fullName}</p>
-                  <p className="text-sm text-gray-600">{student.phone}</p>
+          {/* Контент */}
+          <div className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
+            {/* Статистические карточки */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <StatsCard
+                title="Пользователи"
+                value={stats?.totalUsers || 0}
+                icon={Users}
+                color="blue"
+                description="Всего пользователей в системе"
+              />
+              <StatsCard
+                title="Ученики"
+                value={stats?.totalStudents || 0}
+                icon={UserCheck}
+                color="green"
+                description="Зарегистрированных учеников"
+              />
+              <StatsCard
+                title="Занятия"
+                value={stats?.totalLessons || 0}
+                icon={Calendar}
+                color="purple"
+                description="Всего занятий проведено"
+              />
+              <StatsCard
+                title="Доход"
+                value={`${stats?.totalRevenue?.toLocaleString() || 0} ₸`}
+                icon={DollarSign}
+                color="yellow"
+                description="Общий доход системы"
+              />
+            </div>
+
+            {/* Основной контент в две колонки */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              {/* Пользователи - занимает 2 колонки */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+                  <div className="p-4 sm:p-6 border-b border-gray-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center">
+                          <Users className="w-5 h-5 mr-2 text-blue-600" />
+                          Пользователи системы
+                        </h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Управление пользователями и их статистика
+                        </p>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {stats?.usersWithStats?.length || 0} пользователей
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 sm:p-6">
+                    {stats?.usersWithStats && stats.usersWithStats.length > 0 ? (
+                      <div className="space-y-4">
+                        {stats.usersWithStats.map((userWithStats) => (
+                          <UserCard
+                            key={userWithStats.id}
+                            user={userWithStats}
+                            onEdit={handleEditUser}
+                            onDelete={handleDeleteUser}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Users className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Нет пользователей</h3>
+                        <p className="text-gray-500 mb-4">Добавьте первого пользователя, чтобы начать работу</p>
+                        <button
+                          onClick={handleAddUser}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors touch-manipulation"
+                        >
+                          Добавить пользователя
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <span className="text-sm text-gray-500">
-                  {student.age} лет
-                </span>
               </div>
-            )) || (
-              <p className="text-gray-500 text-center py-4">Нет данных</p>
-            )}
+
+              {/* Последние занятия - занимает 1 колонку */}
+              <div className="lg:col-span-1">
+                <RecentActivity lessons={stats?.recentLessons || []} />
+              </div>
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
 
-      {/* Последние занятия */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Последние занятия</h3>
-          <Calendar className="w-5 h-5 text-gray-400" />
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Дата</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Ученик</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Стоимость</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Статус</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats?.recentLessons?.map((lesson) => (
-                <tr key={lesson.id} className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-sm text-gray-900">
-                    {new Date(lesson.date).toLocaleDateString('ru-RU')}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-900">
-                    {lesson.studentId}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-900">
-                    {lesson.cost} ₽
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-                      lesson.status === 'COMPLETED' 
-                        ? 'bg-green-100 text-green-800'
-                        : lesson.status === 'PAID'
-                        ? 'bg-blue-100 text-blue-800'
-                        : lesson.status === 'CANCELLED'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {lesson.status === 'COMPLETED' && <CheckCircle className="w-3 h-3 mr-1" />}
-                      {lesson.status === 'PAID' && <DollarSign className="w-3 h-3 mr-1" />}
-                      {lesson.status === 'CANCELLED' && <AlertCircle className="w-3 h-3 mr-1" />}
-                      {lesson.status === 'SCHEDULED' && <Clock className="w-3 h-3 mr-1" />}
-                      {lesson.status === 'COMPLETED' && 'Проведено'}
-                      {lesson.status === 'PAID' && 'Оплачено'}
-                      {lesson.status === 'CANCELLED' && 'Отменено'}
-                      {lesson.status === 'SCHEDULED' && 'Запланировано'}
-                    </span>
-                  </td>
-                </tr>
-              )) || (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-gray-500">
-                    Нет данных
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-      </div>
+      {/* Модальное окно добавления/редактирования пользователя */}
+      <AddUserModal
+        isOpen={showAddUserModal}
+        onClose={handleCloseModal}
+        onSubmit={handleUserSubmit}
+        editingUser={editingUser}
+      />
     </ProtectedRoute>
   )
 }

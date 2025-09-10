@@ -70,7 +70,7 @@ async function fixStudentDistribution() {
         .filter(l => l.status === 'COMPLETED')
         .reduce((sum, l) => sum + l.cost, 0);
 
-      console.log(`${user.name}: ${userStudents.length} учеников, ${userLessons.length} занятий, ${userRevenue} ₽ выручка, ${userDebt} ₽ долг`);
+      console.log(`${user.name}: ${userStudents.length} учеников, ${userLessons.length} занятий, ${userRevenue} ₸ выручка, ${userDebt} ₸ долг`);
     }
 
     console.log('\n🎉 Распределение учеников исправлено!');

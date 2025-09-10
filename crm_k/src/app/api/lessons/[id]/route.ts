@@ -137,7 +137,9 @@ export async function PUT(
         date: body.date ? new Date(body.date) : undefined,
         studentId: body.studentId,
         cost: body.cost,
-        status: body.status,
+        isCompleted: body.isCompleted,
+        isPaid: body.isPaid,
+        isCancelled: body.isCancelled,
         notes: body.notes
       },
       include: {

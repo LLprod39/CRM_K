@@ -1,12 +1,46 @@
 // Основные типы для CRM системы
-import { Student as PrismaStudent, Lesson as PrismaLesson, LessonStatus as PrismaLessonStatus, User as PrismaUser, UserRole as PrismaUserRole } from '@prisma/client'
+import { Student as PrismaStudent, Lesson as PrismaLesson, User as PrismaUser, UserRole as PrismaUserRole } from '@prisma/client'
 
 // Экспортируем типы из Prisma
 export type Student = PrismaStudent
 export type Lesson = PrismaLesson
-export type LessonStatus = PrismaLessonStatus
 export type User = PrismaUser
 export type UserRole = PrismaUserRole
+
+// Типы для статусов уроков (теперь используем булевые поля)
+export type LessonStatus = 'scheduled' | 'completed' | 'paid' | 'cancelled' | 'prepaid' | 'unpaid'
+
+// Утилиты для работы со статусами
+export function getLessonStatus(lesson: Lesson): LessonStatus {
+  if (lesson.isCancelled) return 'cancelled'
+  if (lesson.isCompleted && lesson.isPaid) return 'paid'
+  if (lesson.isCompleted && !lesson.isPaid) return 'completed'
+  if (!lesson.isCompleted && lesson.isPaid) return 'prepaid'
+  if (!lesson.isCompleted && !lesson.isPaid) return 'scheduled'
+  return 'unpaid'
+}
+
+export function getLessonStatusText(status: LessonStatus): string {
+  const statusMap = {
+    scheduled: 'Запланировано',
+    completed: 'Проведено',
+    paid: 'Оплачено',
+    cancelled: 'Отменено',
+    prepaid: 'Предоплачено',
+    unpaid: 'Не оплачено'
+  }
+  return statusMap[status] || 'Неизвестно'
+}
+
+export function getCombinedLessonStatus(lesson: Lesson): string {
+  const statuses = []
+  if (lesson.isCompleted) statuses.push('Проведено')
+  if (lesson.isPaid) statuses.push('Оплачено')
+  if (lesson.isCancelled) statuses.push('Отменено')
+  
+  if (statuses.length === 0) return 'Запланировано'
+  return statuses.join(' + ')
+}
 
 // Тип для урока с включенным студентом
 export type LessonWithStudent = Lesson & {
@@ -40,7 +74,9 @@ export interface CreateLessonData {
   date: Date;
   studentId: number;
   cost: number;
-  status?: LessonStatus;
+  isCompleted?: boolean;
+  isPaid?: boolean;
+  isCancelled?: boolean;
   notes?: string;
 }
 
@@ -147,4 +183,34 @@ export interface PaymentFormData {
   date: string;
   description: string;
   lessonIds: number[];
+}
+
+// Типы для админ панели
+export interface UserStats {
+  totalStudents: number;
+  totalLessons: number;
+  completedLessons: number;
+  paidLessons: number;
+  scheduledLessons: number;
+  cancelledLessons: number;
+  totalRevenue: number;
+  totalDebt: number;
+  totalPrepaid: number;
+  lastActivity: number;
+}
+
+export interface UserWithStats extends User {
+  stats: UserStats;
+  students: Student[];
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  totalStudents: number;
+  totalLessons: number;
+  totalRevenue: number;
+  recentUsers: User[];
+  recentStudents: Student[];
+  recentLessons: Lesson[];
+  usersWithStats: UserWithStats[];
 }
