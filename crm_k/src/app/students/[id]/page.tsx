@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, User, Phone, Calendar, FileText, MessageSquare, Clock, DollarSign, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Clock, AlertCircle, User, Phone, MessageSquare, CheckCircle, DollarSign } from 'lucide-react';
 import { StudentWithLessons, Lesson, getLessonStatus, getLessonStatusText } from '@/types';
 import { apiRequest } from '@/lib/api';
 import LessonSuggestions from '@/components/LessonSuggestions';
+import Card from '@/components/ui/Card';
 
 export default function StudentProfilePage() {
   const params = useParams();
@@ -40,19 +41,8 @@ export default function StudentProfilePage() {
   };
 
   const getStatusIcon = (lesson: Lesson) => {
-    const status = getLessonStatus(lesson);
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'cancelled':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'paid':
-        return <DollarSign className="w-4 h-4 text-blue-500" />;
-      case 'prepaid':
-        return <DollarSign className="w-4 h-4 text-purple-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-    }
+    // Иконки убраны для минималистичного дизайна
+    return null;
   };
 
   const getStatusText = (lesson: Lesson) => {
@@ -161,7 +151,7 @@ export default function StudentProfilePage() {
       </div>
 
       {/* Основная информация */}
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Основная информация</h2>
         </div>
@@ -171,8 +161,8 @@ export default function StudentProfilePage() {
               <div className="flex items-center space-x-3">
                 <User className="w-5 h-5 text-gray-400" />
                 <div>
-                  <p className="text-sm font-medium text-gray-500">ФИО</p>
-                  <p className="text-sm text-gray-900">{student.fullName}</p>
+                  <p className="text-sm font-medium text-gray-500">ФИО Родителя</p>
+                  <p className="text-sm text-gray-900">{student.parentName}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -185,22 +175,15 @@ export default function StudentProfilePage() {
             </div>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
-                <Calendar className="w-5 h-5 text-gray-400" />
+                <User className="w-5 h-5 text-gray-400" />
                 <div>
                   <p className="text-sm font-medium text-gray-500">Возраст</p>
                   <p className="text-sm text-gray-900">{student.age} лет</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <User className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Родитель</p>
-                  <p className="text-sm text-gray-900">{student.parentName}</p>
-                </div>
-              </div>
               {student.diagnosis && (
                 <div className="flex items-center space-x-3">
-                  <FileText className="w-5 h-5 text-gray-400" />
+                  <User className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium text-gray-500">Диагноз</p>
                     <p className="text-sm text-gray-900">{student.diagnosis}</p>
@@ -225,7 +208,7 @@ export default function StudentProfilePage() {
 
       {/* Статистика занятий */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <Card className="p-6">
           <div className="flex items-center">
             <Clock className="w-8 h-8 text-blue-500" />
             <div className="ml-4">
@@ -233,8 +216,8 @@ export default function StudentProfilePage() {
               <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        </Card>
+        <Card className="p-6">
           <div className="flex items-center">
             <CheckCircle className="w-8 h-8 text-green-500" />
             <div className="ml-4">
@@ -242,8 +225,8 @@ export default function StudentProfilePage() {
               <p className="text-2xl font-semibold text-gray-900">{stats.completed}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        </Card>
+        <Card className="p-6">
           <div className="flex items-center">
             <DollarSign className="w-8 h-8 text-yellow-500" />
             <div className="ml-4">
@@ -251,8 +234,8 @@ export default function StudentProfilePage() {
               <p className="text-2xl font-semibold text-gray-900">{stats.totalCost.toLocaleString()} ₸</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        </Card>
+        <Card className="p-6">
           <div className="flex items-center">
             <DollarSign className="w-8 h-8 text-green-500" />
             <div className="ml-4">
@@ -260,14 +243,14 @@ export default function StudentProfilePage() {
               <p className="text-2xl font-semibold text-gray-900">{stats.paidCost.toLocaleString()} ₸</p>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Предложения занятий от ИИ */}
       <LessonSuggestions studentId={student.id} />
 
       {/* История занятий */}
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">История занятий</h2>
         </div>
