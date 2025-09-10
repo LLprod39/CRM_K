@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '@/presentation/hooks';
 
 interface LessonSuggestionsProps {
   studentId: number;

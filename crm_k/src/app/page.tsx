@@ -4,7 +4,7 @@ import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles } from 'l
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/presentation/contexts';
 import { apiRequest } from '@/lib/api';
 
 export default function Home() {

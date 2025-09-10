@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { X, User, Phone, Calendar, FileText, MessageSquare } from 'lucide-react';
 import { CreateStudentData } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/presentation/contexts';
 import { apiRequest } from '@/lib/api';
 
 interface AddStudentFormProps {

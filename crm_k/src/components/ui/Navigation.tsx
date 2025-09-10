@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 import { 
   Users, 
   Calendar, 
@@ -15,7 +15,7 @@ import {
   Settings
 } from 'lucide-react';
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/presentation/contexts';
 
 const navigation = [
   { name: 'Главная', href: '/', icon: Home },

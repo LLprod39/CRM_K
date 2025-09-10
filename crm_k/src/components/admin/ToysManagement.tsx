@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Card from '@/components/ui/Card';
-import { useToast } from '@/hooks/useToast';
+import { useToast } from '@/presentation/hooks';
 
 interface Toy {
   id: number;
