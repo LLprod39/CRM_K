@@ -82,6 +82,7 @@ export interface CreateStudentData {
   parentName: string;
   diagnosis?: string;
   comment?: string;
+  photoUrl?: string;
 }
 
 export interface UpdateStudentData extends Partial<CreateStudentData> {

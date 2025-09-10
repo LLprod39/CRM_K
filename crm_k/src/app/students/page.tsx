@@ -250,9 +250,17 @@ export default function StudentsPage() {
                   >
                     <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3 group-hover:scale-110 transition-transform duration-200">
-                          {student.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </div>
+                        {student.photoUrl ? (
+                          <img
+                            src={student.photoUrl}
+                            alt={student.fullName}
+                            className="w-10 h-10 rounded-full object-cover mr-3 group-hover:scale-110 transition-transform duration-200 border-2 border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3 group-hover:scale-110 transition-transform duration-200">
+                            {student.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </div>
+                        )}
                         <div>
                           <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                             {student.fullName}

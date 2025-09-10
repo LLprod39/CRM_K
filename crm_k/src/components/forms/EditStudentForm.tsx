@@ -5,6 +5,7 @@ import { X, User, Phone, Calendar, FileText, MessageSquare } from 'lucide-react'
 import { Student, UpdateStudentData } from '@/types';
 import { useAuth } from '@/presentation/contexts';
 import { apiRequest } from '@/lib/api';
+import PhotoUpload from './PhotoUpload';
 
 interface EditStudentFormProps {
   isOpen: boolean;
@@ -22,7 +23,8 @@ export default function EditStudentForm({ isOpen, onClose, onSuccess, student }:
     age: 0,
     parentName: '',
     diagnosis: '',
-    comment: ''
+    comment: '',
+    photoUrl: ''
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -37,7 +39,8 @@ export default function EditStudentForm({ isOpen, onClose, onSuccess, student }:
         age: student.age,
         parentName: student.parentName,
         diagnosis: student.diagnosis || '',
-        comment: student.comment || ''
+        comment: student.comment || '',
+        photoUrl: student.photoUrl || ''
       });
       setErrors({});
     }
@@ -237,6 +240,15 @@ export default function EditStudentForm({ isOpen, onClose, onSuccess, student }:
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               placeholder="Например: Аутизм, ЗПР, ДЦП"
+            />
+          </div>
+
+          {/* Фото ученика */}
+          <div>
+            <PhotoUpload
+              studentId={student.id}
+              currentPhotoUrl={formData.photoUrl}
+              onPhotoChange={(photoUrl) => setFormData(prev => ({ ...prev, photoUrl: photoUrl || '' }))}
             />
           </div>
 

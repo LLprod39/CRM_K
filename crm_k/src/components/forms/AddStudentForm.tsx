@@ -7,6 +7,7 @@ import { useAuth } from '@/presentation/contexts';
 import { apiRequest } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import PhotoUpload from './PhotoUpload';
 
 interface AddStudentFormProps {
   isOpen: boolean;
@@ -22,7 +23,8 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
     age: 0,
     parentName: '',
     diagnosis: '',
-    comment: ''
+    comment: '',
+    photoUrl: ''
   });
   const [lessonData, setLessonData] = useState<CreateLessonData>({
     date: new Date(),
@@ -136,7 +138,8 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
           age: 0,
           parentName: '',
           diagnosis: '',
-          comment: ''
+          comment: '',
+          photoUrl: ''
         });
         setLessonData({
           date: new Date(),
@@ -292,6 +295,14 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
                     placeholder="Например: Аутизм, ЗПР, ДЦП"
                     icon={<FileText className="w-4 h-4" />}
                     helperText="Медицинский диагноз или особенности развития"
+                  />
+                </div>
+
+                {/* Фото ученика */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
+                  <PhotoUpload
+                    currentPhotoUrl={formData.photoUrl}
+                    onPhotoChange={(photoUrl) => setFormData(prev => ({ ...prev, photoUrl: photoUrl || '' }))}
                   />
                 </div>
 

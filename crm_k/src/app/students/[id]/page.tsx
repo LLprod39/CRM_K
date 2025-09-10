@@ -144,9 +144,22 @@ export default function StudentProfilePage() {
         >
           <ArrowLeft className="w-6 h-6" />
         </button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{student.fullName}</h1>
-          <p className="mt-1 text-gray-600">Профиль ученика</p>
+        <div className="flex items-center space-x-4">
+          {student.photoUrl ? (
+            <img
+              src={student.photoUrl}
+              alt={student.fullName}
+              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+            />
+          ) : (
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
+              {student.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
+            </div>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{student.fullName}</h1>
+            <p className="mt-1 text-gray-600">Профиль ученика</p>
+          </div>
         </div>
       </div>
 

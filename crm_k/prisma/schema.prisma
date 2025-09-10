@@ -41,6 +41,7 @@ model Student {
   parentName  String   // ФИО родителя (обязательно)
   diagnosis   String?  // Диагноз (опционально)
   comment     String?  // Комментарий (опционально)
+  photoUrl    String?  // URL фото ученика (опционально)
   userId      Int      // ID пользователя-владельца
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
