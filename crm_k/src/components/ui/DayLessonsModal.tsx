@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, CheckCircle, AlertCircle, Clock, History } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Clock, History, ArrowUpDown, Filter } from 'lucide-react';
 import { LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
 
 interface DayLessonsModalProps {
@@ -20,6 +20,10 @@ export default function DayLessonsModal({
   onLessonClick 
 }: DayLessonsModalProps) {
   console.log('DayLessonsModal: isOpen =', isOpen, 'lessons =', lessons.length);
+  const [sortField, setSortField] = useState<'time' | 'student' | 'status' | 'cost'>('time');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  
   if (!isOpen) return null;
 
   const getStatusColor = (lesson: LessonWithOptionalStudent) => {
@@ -85,6 +89,69 @@ export default function DayLessonsModal({
     }
   };
 
+  // Функции для сортировки и фильтрации
+  const handleSort = (field: 'time' | 'student' | 'status' | 'cost') => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortedAndFilteredLessons = () => {
+    let filtered = lessons;
+    
+    // Фильтрация по статусу
+    if (statusFilter !== 'all') {
+      filtered = lessons.filter(lesson => getLessonStatus(lesson) === statusFilter);
+    }
+    
+    // Сортировка
+    return filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortField) {
+        case 'time':
+          aValue = new Date(a.date).getTime();
+          bValue = new Date(b.date).getTime();
+          break;
+        case 'student':
+          aValue = a.student?.fullName || `Ученик #${a.studentId}`;
+          bValue = b.student?.fullName || `Ученик #${b.studentId}`;
+          break;
+        case 'status':
+          aValue = getLessonStatus(a);
+          bValue = getLessonStatus(b);
+          break;
+        case 'cost':
+          aValue = a.cost || 0;
+          bValue = b.cost || 0;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+      case 'scheduled': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'paid': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'prepaid': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'unpaid': return 'bg-orange-100 text-orange-800 border-orange-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const sortedLessons = getSortedAndFilteredLessons();
+
   return (
     <div 
       className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-[9999] p-4" 
@@ -92,7 +159,7 @@ export default function DayLessonsModal({
       onClick={onClose}
     >
       <div 
-        className="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-3xl max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-7xl max-h-[95vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Заголовок */}
@@ -148,8 +215,37 @@ export default function DayLessonsModal({
           </button>
         </div>
 
+        {/* Фильтры и сортировка */}
+        {lessons.length > 0 && (
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gray-500" />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">Все статусы</option>
+                    <option value="scheduled">Запланировано</option>
+                    <option value="completed">Завершено</option>
+                    <option value="cancelled">Отменено</option>
+                    <option value="paid">Оплачено</option>
+                    <option value="prepaid">Предоплачено</option>
+                    <option value="unpaid">Не оплачено</option>
+                  </select>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Показано: {sortedLessons.length} из {lessons.length} занятий
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Контент */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
           {lessons.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -182,94 +278,148 @@ export default function DayLessonsModal({
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {lessons
-                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                .map((lesson, index) => (
-                <div
-                  key={lesson.id}
-                  className={`p-4 rounded-lg border cursor-pointer hover:shadow-lg transition-all duration-200 bg-white hover:bg-gray-50 hover:scale-[1.02] ${getStatusColor(lesson)}`}
-                  onClick={() => {
-                    onLessonClick(lesson);
-                    onClose();
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-lg bg-gray-100">
-                        {getStatusIcon(lesson)}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th 
+                      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('time')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Время
+                        <ArrowUpDown className="w-3 h-3" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm text-gray-900">
-                            {getLessonStatusText(getLessonStatus(lesson))}
+                    </th>
+                    <th 
+                      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('student')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Ученик
+                        <ArrowUpDown className="w-3 h-3" />
+                      </div>
+                    </th>
+                    <th 
+                      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('status')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Статус
+                        <ArrowUpDown className="w-3 h-3" />
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Тип
+                    </th>
+                    <th 
+                      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('cost')}
+                    >
+                      <div className="flex items-center gap-2">
+                        Стоимость
+                        <ArrowUpDown className="w-3 h-3" />
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Длительность
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Заметки
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {sortedLessons.map((lesson) => {
+                    const status = getLessonStatus(lesson);
+                    const isBackdate = new Date(lesson.date) < new Date();
+                    
+                    return (
+                      <tr 
+                        key={lesson.id}
+                        className="hover:bg-gray-50 cursor-pointer transition-colors duration-150"
+                        onClick={() => {
+                          onLessonClick(lesson);
+                          onClose();
+                        }}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-col">
+                            <div className="text-sm font-medium text-gray-900">
+                              {formatTime(lesson.date)}
+                            </div>
+                            {lesson.endTime && (
+                              <div className="text-xs text-gray-500">
+                                до {formatTime(lesson.endTime)}
+                              </div>
+                            )}
+                            {isBackdate && (
+                              <div className="flex items-center gap-1 mt-1">
+                                <History className="w-3 h-3 text-orange-500" />
+                                <span className="text-xs text-orange-600">Задним числом</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-8 w-8">
+                              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                <span className="text-sm font-medium text-blue-800">
+                                  {(lesson.student?.fullName || `#${lesson.studentId}`).charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-medium text-gray-900">
+                                {lesson.student?.fullName || `Ученик #${lesson.studentId}`}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                ID: {lesson.id}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(status)}`}>
+                            {getStatusIcon(lesson)}
+                            {getLessonStatusText(status)}
                           </span>
-                          {new Date(lesson.date) < new Date() && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-orange-100 text-orange-700 rounded">
-                              <History className="w-3 h-3" />
-                              Задним числом
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          ID: {lesson.id}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-lg text-gray-900">
-                        {formatTime(lesson.date)}
-                        {lesson.endTime && ` - ${formatTime(lesson.endTime)}`}
-                      </div>
-                      {lesson.endTime && (
-                        <div className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-full mt-1">
-                          {formatDuration(lesson.date, lesson.endTime)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="font-medium text-gray-900">
-                        {lesson.student?.fullName || `Ученик #${lesson.studentId}`}
-                      </span>
-                      <span className="text-xs text-gray-500 bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                        Нажмите для редактирования
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm text-gray-600">Стоимость:</span>
-                        <span className="font-medium text-gray-900">{lesson.cost} ₸</span>
-                      </div>
-                      
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm text-gray-600">Тип занятия:</span>
-                      <span className="font-medium text-gray-900">{getLessonTypeText(lesson.lessonType || 'individual')}</span>
-                    </div>
-
-                    {lesson.notes && (
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm font-medium text-gray-600">Заметки:</span>
-                        <p className="text-gray-700 mt-1 text-sm leading-relaxed">{lesson.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {getLessonTypeText(lesson.lessonType || 'individual')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {lesson.cost} ₸
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {lesson.endTime ? formatDuration(lesson.date, lesson.endTime) : '-'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                          <div className="truncate" title={lesson.notes || ''}>
+                            {lesson.notes || '-'}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
 
         {/* Подвал */}
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
               <span>Нажмите на занятие для редактирования</span>
+              {lessons.length > 0 && (
+                <span className="ml-4">
+                  • Всего занятий: {lessons.length}
+                  {sortedLessons.length !== lessons.length && ` • Показано: ${sortedLessons.length}`}
+                </span>
+              )}
             </div>
             <button
               onClick={onClose}
