@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Plus, Search, Edit, Trash2, Eye, Printer } from 'lucide-react';
+import { Users, Plus, Search, Edit, Trash2, Printer, X } from 'lucide-react';
 import { Student } from '@/types';
 import AddStudentForm from '@/components/forms/AddStudentForm';
 import EditStudentForm from '@/components/forms/EditStudentForm';
@@ -195,21 +195,21 @@ export default function StudentsPage() {
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200/50">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
+            <thead className="bg-gradient-to-r from-gray-50/80 to-gray-100/40">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  ФИО
+                <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Ученик
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Телефон
+                <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Контакты
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Возраст
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Диагноз
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Действия
                 </th>
               </tr>
@@ -217,26 +217,26 @@ export default function StudentsPage() {
             <tbody className="bg-white divide-y divide-gray-200/50">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center">
-                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Users className="h-10 w-10 text-gray-400" />
+                  <td colSpan={5} className="px-6 py-20 text-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                      <Users className="h-12 w-12 text-gray-400" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
                       {students.length === 0 ? 'Нет учеников' : 'Ученики не найдены'}
                     </h3>
-                    <p className="text-gray-500 mb-6">
+                    <p className="text-gray-500 mb-8 max-w-md mx-auto">
                       {students.length === 0 
-                        ? 'Начните с добавления первого ученика.'
+                        ? 'Начните с добавления первого ученика в систему.'
                         : 'Попробуйте изменить параметры поиска или фильтры.'
                       }
                     </p>
                     {students.length === 0 && (
                       <button 
                         onClick={() => setIsAddFormOpen(true)}
-                        className="inline-flex items-center px-6 py-3 border border-transparent shadow-lg text-sm font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 hover:scale-105"
+                        className="inline-flex items-center px-8 py-4 border border-transparent shadow-lg text-base font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 hover:scale-105 hover:shadow-xl"
                       >
-                        <Plus className="w-5 h-5 mr-2" />
-                        Добавить ученика
+                        <Plus className="w-6 h-6 mr-3" />
+                        Добавить первого ученика
                       </button>
                     )}
                   </td>
@@ -245,67 +245,68 @@ export default function StudentsPage() {
                 filteredStudents.map((student, index) => (
                   <tr 
                     key={student.id} 
-                    className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-transparent transition-all duration-200 group animate-fade-in"
+                    className="hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-transparent transition-all duration-300 group animate-fade-in cursor-pointer border-b border-gray-100/50"
                     style={{ animationDelay: `${index * 50}ms` }}
+                    onClick={() => handleView(student)}
                   >
-                    <td className="px-6 py-5 whitespace-nowrap">
-                      <div className="flex items-center">
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="flex items-center space-x-4">
                         {student.photoUrl ? (
-                          <img
-                            src={student.photoUrl}
-                            alt={student.fullName}
-                            className="w-10 h-10 rounded-full object-cover mr-3 group-hover:scale-110 transition-transform duration-200 border-2 border-gray-200"
-                          />
+                          <div className="relative">
+                            <img
+                              src={student.photoUrl}
+                              alt={student.fullName}
+                              className="w-12 h-12 rounded-full object-cover group-hover:scale-105 transition-transform duration-300 border-2 border-gray-100 shadow-sm"
+                            />
+                            <div className="absolute inset-0 rounded-full bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          </div>
                         ) : (
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3 group-hover:scale-110 transition-transform duration-200">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm group-hover:scale-105 transition-transform duration-300 shadow-sm">
                             {student.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </div>
                         )}
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
                             {student.fullName}
                           </div>
                           {student.comment && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
+                            <div className="text-sm text-gray-500 truncate max-w-xs mt-1">
                               {student.comment}
                             </div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-900 font-medium">
-                      {student.phone}
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+                        {student.phone}
+                      </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-900 font-medium">
-                      {student.age} лет
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+                        {student.age} лет
+                      </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap">
+                    <td className="px-6 py-6 whitespace-nowrap">
                       {student.diagnosis ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800">
+                        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200">
                           {student.diagnosis}
                         </span>
                       ) : (
-                        <span className="text-sm text-gray-400">—</span>
+                        <span className="text-sm text-gray-400 italic">—</span>
                       )}
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleView(student)}
-                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-lg transition-all duration-200 hover:scale-110"
-                          title="Просмотр"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleEdit(student)}
-                          className="p-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-100 rounded-lg transition-all duration-200 hover:scale-110"
+                          className="p-2.5 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-sm border border-transparent hover:border-indigo-200"
                           title="Редактировать"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-100 rounded-lg transition-all duration-200 hover:scale-110"
+                          className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-sm border border-transparent hover:border-red-200"
                           title="Удалить"
                           onClick={() => handleDelete(student.id)}
                         >
@@ -338,6 +339,7 @@ export default function StudentsPage() {
         onSuccess={handleEditSuccess}
         student={selectedStudent}
       />
+
     </div>
   );
 }

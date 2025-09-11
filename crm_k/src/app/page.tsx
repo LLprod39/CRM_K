@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles } from 'lucide-react';
+import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -25,7 +25,7 @@ export default function Home() {
         const [studentsRes, lessonsRes, financesRes] = await Promise.all([
           apiRequest('/api/students'),
           apiRequest('/api/lessons'),
-          apiRequest('/api/finances/stats')
+          apiRequest('/api/finances/stats?period=month')
         ]);
 
         if (studentsRes.ok) {
@@ -46,7 +46,7 @@ export default function Home() {
           const finances = await financesRes.json();
           setStats(prev => ({ 
             ...prev, 
-            monthlyRevenue: finances.monthlyRevenue || 0,
+            monthlyRevenue: finances.totalRevenue || 0,
             debts: finances.totalDebt || 0
           }));
         }
@@ -76,15 +76,15 @@ export default function Home() {
     {
       title: 'Доход за месяц',
       value: `₸${stats.monthlyRevenue.toLocaleString()}`,
-      icon: DollarSign,
+      icon: TrendingUp,
       color: 'yellow',
       href: '/finances'
     },
     {
       title: 'Задолженности',
       value: `₸${stats.debts.toLocaleString()}`,
-      icon: TrendingUp,
-      color: 'purple',
+      icon: AlertCircle,
+      color: 'red',
       href: '/finances'
     }
   ];
@@ -119,7 +119,6 @@ export default function Home() {
         {/* Заголовок */}
         <div className="text-center">
           <div className="flex items-center justify-center mb-4">
-            <Sparkles className="w-8 h-8 text-blue-600 mr-3 animate-pulse" />
             <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Добро пожаловать, {user?.name}!
             </h1>
