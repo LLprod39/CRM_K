@@ -9,7 +9,6 @@ export interface LessonDTO {
   isCancelled: boolean;
   notes?: string;
   lessonType: 'individual' | 'group';
-  location: 'office' | 'online' | 'home';
   createdAt: string;
   updatedAt: string;
 }
@@ -24,7 +23,6 @@ export interface CreateLessonDTO {
   isCancelled?: boolean;
   notes?: string;
   lessonType?: 'individual' | 'group';
-  location?: 'office' | 'online' | 'home';
 }
 
 export interface UpdateLessonDTO extends Partial<CreateLessonDTO> {

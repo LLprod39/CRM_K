@@ -76,14 +76,6 @@ export default function DayLessonsModal({
     return `${hours}ч ${minutes}м`;
   };
 
-  const getLocationText = (location: string) => {
-    switch (location) {
-      case 'office': return 'В офисе';
-      case 'online': return 'Онлайн';
-      case 'home': return 'На дому';
-      default: return location;
-    }
-  };
 
   const getLessonTypeText = (lessonType: string) => {
     switch (lessonType) {
@@ -250,10 +242,6 @@ export default function DayLessonsModal({
                         <span className="font-medium text-gray-900">{lesson.cost} ₸</span>
                       </div>
                       
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm text-gray-600">Место:</span>
-                        <span className="font-medium text-gray-900">{getLocationText(lesson.location || 'office')}</span>
-                      </div>
                     </div>
 
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">

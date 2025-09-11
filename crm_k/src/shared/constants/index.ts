@@ -57,11 +57,6 @@ export const LESSON_TYPES = {
   GROUP: 'group',
 } as const;
 
-export const LESSON_LOCATIONS = {
-  OFFICE: 'office',
-  ONLINE: 'online',
-  HOME: 'home',
-} as const;
 
 export const USER_ROLES = {
   ADMIN: 'ADMIN',

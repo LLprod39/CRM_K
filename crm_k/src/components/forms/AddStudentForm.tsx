@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, User, Phone, Calendar, FileText, MessageSquare, UserPlus, Sparkles, Clock, DollarSign, MapPin, BookOpen } from 'lucide-react';
+import { X, User, Phone, Calendar, FileText, MessageSquare, UserPlus, Sparkles, Clock, DollarSign, BookOpen } from 'lucide-react';
 import { CreateStudentData, CreateLessonData } from '@/types';
 import { useAuth } from '@/presentation/contexts';
 import { apiRequest } from '@/lib/api';
@@ -35,8 +35,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
     isPaid: false,
     isCancelled: false,
     notes: '',
-    lessonType: 'individual',
-    location: 'office'
+    lessonType: 'individual'
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -150,8 +149,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
           isPaid: false,
           isCancelled: false,
           notes: '',
-          lessonType: 'individual',
-          location: 'office'
+          lessonType: 'individual'
         });
         setErrors({});
         setCreateLesson(false);
@@ -174,7 +172,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden animate-scale-in border border-gray-200/50">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-scale-in border border-gray-200/50">
         {/* Заголовок в стиле сайта */}
         <div className="bg-white/95 backdrop-blur-sm p-6 border-b border-gray-200/50">
           <div className="flex items-center justify-between">
@@ -225,18 +223,42 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
           <form onSubmit={handleSubmit} className="space-y-5">
             {step === 'student' ? (
               <>
-                {/* ФИО */}
+                {/* Фото ученика */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
-                  <Input
-                    label="ФИО ученика"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    placeholder="Введите полное имя"
-                    error={errors.fullName}
-                    icon={<User className="w-4 h-4" />}
-                    required
+                  <PhotoUpload
+                    currentPhotoUrl={formData.photoUrl}
+                    onPhotoChange={(photoUrl) => setFormData(prev => ({ ...prev, photoUrl: photoUrl || '' }))}
                   />
+                </div>
+
+                {/* ФИО ученика и родителя */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Input
+                        label="ФИО ученика"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        placeholder="Введите полное имя"
+                        error={errors.fullName}
+                        icon={<User className="w-4 h-4" />}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        label="ФИО родителя/опекуна"
+                        name="parentName"
+                        value={formData.parentName}
+                        onChange={handleInputChange}
+                        placeholder="Введите ФИО родителя или опекуна"
+                        error={errors.parentName}
+                        icon={<User className="w-4 h-4" />}
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Телефон */}
@@ -254,56 +276,36 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
                   />
                 </div>
 
-                {/* ФИО родителя */}
+                {/* Возраст и диагноз */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
-                  <Input
-                    label="ФИО родителя/опекуна"
-                    name="parentName"
-                    value={formData.parentName}
-                    onChange={handleInputChange}
-                    placeholder="Введите ФИО родителя или опекуна"
-                    error={errors.parentName}
-                    icon={<User className="w-4 h-4" />}
-                    required
-                  />
-                </div>
-
-                {/* Возраст */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
-                  <Input
-                    label="Возраст"
-                    name="age"
-                    type="number"
-                    value={formData.age || ''}
-                    onChange={handleInputChange}
-                    placeholder="Возраст в годах"
-                    error={errors.age}
-                    icon={<Calendar className="w-4 h-4" />}
-                    min="1"
-                    max="100"
-                    required
-                  />
-                </div>
-
-                {/* Диагноз */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
-                  <Input
-                    label="Диагноз (необязательно)"
-                    name="diagnosis"
-                    value={formData.diagnosis}
-                    onChange={handleInputChange}
-                    placeholder="Например: Аутизм, ЗПР, ДЦП"
-                    icon={<FileText className="w-4 h-4" />}
-                    helperText="Медицинский диагноз или особенности развития"
-                  />
-                </div>
-
-                {/* Фото ученика */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
-                  <PhotoUpload
-                    currentPhotoUrl={formData.photoUrl}
-                    onPhotoChange={(photoUrl) => setFormData(prev => ({ ...prev, photoUrl: photoUrl || '' }))}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Input
+                        label="Возраст"
+                        name="age"
+                        type="number"
+                        value={formData.age || ''}
+                        onChange={handleInputChange}
+                        placeholder="Возраст в годах"
+                        error={errors.age}
+                        icon={<Calendar className="w-4 h-4" />}
+                        min="1"
+                        max="100"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        label="Диагноз (необязательно)"
+                        name="diagnosis"
+                        value={formData.diagnosis}
+                        onChange={handleInputChange}
+                        placeholder="Например: Аутизм, ЗПР, ДЦП"
+                        icon={<FileText className="w-4 h-4" />}
+                        helperText="Медицинский диагноз или особенности развития"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Комментарий */}
@@ -419,23 +421,6 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
                   </div>
                 </div>
 
-                {/* Место проведения */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <MapPin className="w-4 h-4 inline mr-2" />
-                    Место проведения
-                  </label>
-                  <select
-                    name="lesson_location"
-                    value={lessonData.location}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  >
-                    <option value="office">В офисе</option>
-                    <option value="online">Онлайн</option>
-                    <option value="home">На дому</option>
-                  </select>
-                </div>
 
                 {/* Заметки к занятию */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">

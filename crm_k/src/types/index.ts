@@ -99,7 +99,6 @@ export interface CreateLessonData {
   isCancelled?: boolean;
   notes?: string;
   lessonType?: 'individual' | 'group';
-  location?: 'office' | 'online' | 'home';
 }
 
 export interface UpdateLessonData extends Partial<CreateLessonData> {

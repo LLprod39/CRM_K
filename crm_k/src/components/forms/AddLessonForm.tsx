@@ -31,8 +31,7 @@ export default function AddLessonForm({
     isPaid: false,
     isCancelled: false,
     notes: '',
-    lessonType: 'individual' as 'individual' | 'group',
-    location: 'office' as 'office' | 'online' | 'home'
+    lessonType: 'individual' as 'individual' | 'group'
   });
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
@@ -172,8 +171,7 @@ export default function AddLessonForm({
           isPaid: false,
           isCancelled: false,
           notes: '',
-          lessonType: 'individual',
-          location: 'office'
+          lessonType: 'individual'
         });
         setValidationErrors({});
       } else {
@@ -373,52 +371,32 @@ export default function AddLessonForm({
             </div>
           </div>
 
-          {/* Стоимость и место проведения */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="cost" className="block text-sm font-medium text-gray-700 mb-2">
-                <DollarSign className="w-4 h-4 inline mr-2" />
-                Стоимость (тенге)
-              </label>
-              <input
-                type="number"
-                id="cost"
-                name="cost"
-                value={formData.cost}
-                onChange={handleChange}
-                required
-                min="0"
-                step="0.01"
-                className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                  validationErrors.cost ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="0.00"
-              />
-              {validationErrors.cost && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {validationErrors.cost}
-                </p>
-              )}
-            </div>
-            
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                <FileText className="w-4 h-4 inline mr-2" />
-                Место проведения
-              </label>
-              <select
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="office">В офисе</option>
-                <option value="online">Онлайн</option>
-                <option value="home">На дому</option>
-              </select>
-            </div>
+          {/* Стоимость */}
+          <div>
+            <label htmlFor="cost" className="block text-sm font-medium text-gray-700 mb-2">
+              <DollarSign className="w-4 h-4 inline mr-2" />
+              Стоимость (тенге)
+            </label>
+            <input
+              type="number"
+              id="cost"
+              name="cost"
+              value={formData.cost}
+              onChange={handleChange}
+              required
+              min="0"
+              step="0.01"
+              className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                validationErrors.cost ? 'border-red-300' : 'border-gray-300'
+              }`}
+              placeholder="0.00"
+            />
+            {validationErrors.cost && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {validationErrors.cost}
+              </p>
+            )}
           </div>
 
           {/* Статусы */}

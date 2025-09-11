@@ -31,8 +31,7 @@ export default function EditLessonForm({
     isPaid: false,
     isCancelled: false,
     notes: '',
-    lessonType: 'individual' as 'individual' | 'group',
-    location: 'office' as 'office' | 'online' | 'home'
+    lessonType: 'individual' as 'individual' | 'group'
   });
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,8 +72,7 @@ export default function EditLessonForm({
         isPaid: lesson.isPaid,
         isCancelled: lesson.isCancelled,
         notes: lesson.notes || '',
-        lessonType: (lesson as any).lessonType || 'individual',
-        location: (lesson as any).location || 'office'
+        lessonType: (lesson as any).lessonType || 'individual'
       });
     }
   }, [lesson, isOpen]);

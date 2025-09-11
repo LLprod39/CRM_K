@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
             id: lesson.id,
             date: lesson.date,
             endTime: lesson.endTime,
-            student: lesson.student
+            studentId: lesson.studentId
           }))
         },
         { status: 409 }
@@ -219,8 +219,7 @@ export async function POST(request: NextRequest) {
         isPaid: body.isPaid || false,
         isCancelled: body.isCancelled || false,
         notes: body.notes || null,
-        lessonType: body.lessonType || 'individual',
-        location: body.location || 'office'
+        lessonType: body.lessonType || 'individual'
       },
       include: {
         student: {

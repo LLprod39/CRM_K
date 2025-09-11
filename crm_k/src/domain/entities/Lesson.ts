@@ -9,7 +9,6 @@ export interface Lesson {
   isCancelled: boolean;
   notes?: string;
   lessonType: 'individual' | 'group';
-  location: 'office' | 'online' | 'home';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,7 +23,6 @@ export interface CreateLessonData {
   isCancelled?: boolean;
   notes?: string;
   lessonType?: 'individual' | 'group';
-  location?: 'office' | 'online' | 'home';
 }
 
 export interface UpdateLessonData extends Partial<CreateLessonData> {
@@ -34,9 +32,9 @@ export interface UpdateLessonData extends Partial<CreateLessonData> {
 export type LessonStatus = 'scheduled' | 'completed' | 'paid' | 'cancelled' | 'prepaid' | 'unpaid';
 
 export interface LessonWithStudent extends Lesson {
-  student: Student;
+  student: any; // Student type will be imported from types
 }
 
 export interface LessonWithOptionalStudent extends Lesson {
-  student?: Student;
+  student?: any; // Student type will be imported from types
 }
