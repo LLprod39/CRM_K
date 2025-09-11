@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Calendar, Clock, Plus, Minus } from 'lucide-react';
 
 interface DateTimePickerProps {
@@ -50,6 +50,7 @@ export default function DateTimePicker({
   const [duration, setDuration] = useState(defaultDuration);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const lastValueRef = useRef<string>('');
+  const isUpdatingFromParentRef = useRef<boolean>(false);
 
   // Функция валидации
   const validateDateTime = (dateValue: string, timeValue: string, durationValue: number) => {
@@ -104,6 +105,13 @@ export default function DateTimePicker({
     return errors;
   };
 
+  // Стабилизированная функция onChange
+  const stableOnChange = useCallback((newValue: string) => {
+    if (!isUpdatingFromParentRef.current) {
+      onChange(newValue);
+    }
+  }, [onChange]);
+
   // Инициализация значений
   useEffect(() => {
     if (value) {
@@ -113,10 +121,18 @@ export default function DateTimePicker({
       
       // Обновляем только если значения действительно изменились
       if (date !== newDate) {
+        isUpdatingFromParentRef.current = true;
         setDate(newDate);
+        setTimeout(() => {
+          isUpdatingFromParentRef.current = false;
+        }, 0);
       }
       if (time !== newTime) {
+        isUpdatingFromParentRef.current = true;
         setTime(newTime);
+        setTimeout(() => {
+          isUpdatingFromParentRef.current = false;
+        }, 0);
       }
     } else if (!date || !time) {
       // Устанавливаем значения по умолчанию только если они не установлены
@@ -124,11 +140,11 @@ export default function DateTimePicker({
       setDate(now.toISOString().slice(0, 10));
       setTime(now.toTimeString().slice(0, 5));
     }
-  }, [value, date, time]);
+  }, [value]); // Убираем date и time из зависимостей чтобы избежать циклических обновлений
 
   // Обновление родительского компонента при изменении даты/времени
   useEffect(() => {
-    if (date && time) {
+    if (date && time && !isUpdatingFromParentRef.current) {
       // Создаем дату в локальном часовом поясе, чтобы избежать смещения
       const [year, month, day] = date.split('-').map(Number);
       const [hours, minutes] = time.split(':').map(Number);
@@ -139,10 +155,10 @@ export default function DateTimePicker({
       // Проверяем, что время действительно изменилось и не является циклическим обновлением
       if (lastValueRef.current !== newValue && value !== newValue) {
         lastValueRef.current = newValue;
-        onChange(newValue);
+        stableOnChange(newValue);
       }
     }
-  }, [date, time, value, onChange]);
+  }, [date, time, stableOnChange, value]); // Добавляем value обратно для корректной проверки
 
   const handleDateChange = (newDate: string) => {
     setDate(newDate);
@@ -317,9 +333,6 @@ export default function DateTimePicker({
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <div className="text-sm text-blue-800">
             <span className="font-medium">Время окончания:</span> {getEndTime()}
-          </div>
-          <div className="text-xs text-blue-600 mt-1">
-            Длительность: {duration} минут
           </div>
         </div>
       )}
