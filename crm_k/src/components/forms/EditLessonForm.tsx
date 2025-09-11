@@ -95,8 +95,11 @@ export default function EditLessonForm({
           date: new Date(formData.date),
           studentId: parseInt(formData.studentId),
           cost: parseFloat(formData.cost),
-          isCompleted: formData.isCompleted,
-          isPaid: formData.isPaid,
+          // Для обычных пользователей отправляем только статус отмены
+          ...(user?.role === 'ADMIN' ? {
+            isCompleted: formData.isCompleted,
+            isPaid: formData.isPaid
+          } : {}),
           isCancelled: formData.isCancelled,
           notes: formData.notes
         }),
@@ -191,7 +194,7 @@ export default function EditLessonForm({
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
             <DateTimePicker
               value={formData.date}
-              onChange={(value) => {
+              onChange={(value: string) => {
                 const startTime = new Date(value);
                 const newDateString = startTime.toISOString().slice(0, 16);
                 
@@ -257,26 +260,33 @@ export default function EditLessonForm({
               Статус занятия
             </label>
             <div className="space-y-3">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="isCompleted"
-                  checked={formData.isCompleted}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                />
-                <span className="ml-3 text-sm text-gray-700">Проведено</span>
-              </label>
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="isPaid"
-                  checked={formData.isPaid}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-3 text-sm text-gray-700">Оплачено</span>
-              </label>
+              {/* Показываем чекбоксы для проведения и оплаты только админам */}
+              {user?.role === 'ADMIN' && (
+                <>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isCompleted"
+                      checked={formData.isCompleted}
+                      onChange={handleChange}
+                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-3 text-sm text-gray-700">Проведено</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isPaid"
+                      checked={formData.isPaid}
+                      onChange={handleChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-3 text-sm text-gray-700">Оплачено</span>
+                  </label>
+                </>
+              )}
+              
+              {/* Чекбокс отмены доступен всем пользователям */}
               <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -287,6 +297,7 @@ export default function EditLessonForm({
                 />
                 <span className="ml-3 text-sm text-gray-700">Отменено</span>
               </label>
+              
             </div>
           </div>
 

@@ -8,12 +8,12 @@ import DayLessonsModal from './DayLessonsModal';
 
 interface CalendarProps {
   lessons: LessonWithOptionalStudent[];
-  onLessonClick: (lesson: LessonWithOptionalStudent) => void;
   onDateClick: (date: Date) => void;
+  onLessonClick: (lesson: LessonWithOptionalStudent) => void;
   currentDate?: Date;
 }
 
-export default function Calendar({ lessons, onLessonClick, onDateClick, currentDate = new Date() }: CalendarProps) {
+export default function Calendar({ lessons, onDateClick, onLessonClick, currentDate = new Date() }: CalendarProps) {
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
   const [showDayModal, setShowDayModal] = useState(false);
@@ -184,12 +184,8 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
               return (
                 <div
                   key={lesson.id}
-                  className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 ${getStatusColor(lesson)}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onLessonClick(lesson);
-                  }}
-                  title={`${lesson.student?.fullName || `Ученик #${lesson.studentId}`} - ${new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${lesson.endTime ? new Date(lesson.endTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}${isBackdate ? ' (задним числом)' : ''}`}
+                  className={`text-xs p-1 rounded ${getStatusColor(lesson)}`}
+                  title={`Ученик #${lesson.studentId} - ${new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${lesson.endTime ? new Date(lesson.endTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}${isBackdate ? ' (задним числом)' : ''}`}
                 >
                   <div className="flex items-center gap-1">
                     {isBackdate ? <History className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
@@ -199,7 +195,7 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
                   </div>
                   <div className="flex items-center gap-1">
                     <User className="w-2.5 h-2.5" />
-                    <span className="truncate text-xs">{lesson.student?.fullName || `Ученик #${lesson.studentId}`}</span>
+                    <span className="truncate text-xs">Ученик #{lesson.studentId}</span>
                   </div>
                 </div>
               );
@@ -298,13 +294,12 @@ export default function Calendar({ lessons, onLessonClick, onDateClick, currentD
       <div className="md:hidden">
         <MobileCalendar
           lessons={lessons}
-          onLessonClick={onLessonClick}
           onDateClick={onDateClick}
           currentDate={currentDate}
         />
       </div>
 
-      {/* Модальное окно для мобильной версии */}
+      {/* Модальное окно для занятий дня */}
       <DayLessonsModal
         isOpen={showDayModal}
         onClose={() => setShowDayModal(false)}

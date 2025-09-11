@@ -188,7 +188,7 @@ export default function DayLessonsModal({
                 .map((lesson, index) => (
                 <div
                   key={lesson.id}
-                  className={`p-4 rounded-lg border cursor-pointer hover:shadow-md transition-all duration-200 bg-white hover:bg-gray-50 ${getStatusColor(lesson)}`}
+                  className={`p-4 rounded-lg border cursor-pointer hover:shadow-lg transition-all duration-200 bg-white hover:bg-gray-50 hover:scale-[1.02] ${getStatusColor(lesson)}`}
                   onClick={() => {
                     onLessonClick(lesson);
                     onClose();
@@ -234,6 +234,9 @@ export default function DayLessonsModal({
                       <span className="font-medium text-gray-900">
                         {lesson.student?.fullName || `Ученик #${lesson.studentId}`}
                       </span>
+                      <span className="text-xs text-gray-500 bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                        Нажмите для редактирования
+                      </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -266,7 +269,7 @@ export default function DayLessonsModal({
         <div className="p-6 border-t border-gray-200 bg-gray-50">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              <span>Нажмите на занятие для подробной информации</span>
+              <span>Нажмите на занятие для редактирования</span>
             </div>
             <button
               onClick={onClose}

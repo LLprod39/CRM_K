@@ -23,6 +23,7 @@ import {
 import { Lesson, Student, User as UserType } from '@/types'
 import { apiRequest } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/presentation/contexts'
 
 interface LessonsManagementProps {
   className?: string
@@ -35,12 +36,28 @@ interface LessonWithDetails extends Lesson {
 }
 
 export default function LessonsManagement({ className }: LessonsManagementProps) {
+  const { user } = useAuth()
   const [lessons, setLessons] = useState<LessonWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'paid' | 'scheduled' | 'cancelled'>('all')
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [selectedLesson, setSelectedLesson] = useState<LessonWithDetails | null>(null)
+
+  // Проверяем, что пользователь является админом
+  if (user?.role !== 'ADMIN') {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Доступ запрещен</h3>
+          <p className="text-gray-500">У вас нет прав для просмотра этой страницы</p>
+        </div>
+      </div>
+    )
+  }
 
   useEffect(() => {
     fetchLessons()

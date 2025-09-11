@@ -7,15 +7,15 @@ import DayLessonsModal from './DayLessonsModal';
 
 interface MobileCalendarProps {
   lessons: LessonWithOptionalStudent[];
-  onLessonClick: (lesson: LessonWithOptionalStudent) => void;
   onDateClick: (date: Date) => void;
+  onLessonClick?: (lesson: LessonWithOptionalStudent) => void;
   currentDate?: Date;
 }
 
 export default function MobileCalendar({ 
   lessons, 
-  onLessonClick, 
   onDateClick, 
+  onLessonClick, 
   currentDate = new Date() 
 }: MobileCalendarProps) {
   const [selectedDate, setSelectedDate] = useState(currentDate);
@@ -255,13 +255,15 @@ export default function MobileCalendar({
       </div>
 
       {/* Модальное окно для мобильной версии */}
-      <DayLessonsModal
-        isOpen={showDayModal}
-        onClose={() => setShowDayModal(false)}
-        lessons={selectedDayLessons}
-        date={selectedDayDate}
-        onLessonClick={onLessonClick}
-      />
+      {onLessonClick && (
+        <DayLessonsModal
+          isOpen={showDayModal}
+          onClose={() => setShowDayModal(false)}
+          lessons={selectedDayLessons}
+          date={selectedDayDate}
+          onLessonClick={onLessonClick}
+        />
+      )}
     </div>
   );
 }

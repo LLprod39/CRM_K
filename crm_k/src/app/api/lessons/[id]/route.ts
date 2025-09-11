@@ -131,6 +131,24 @@ export async function PUT(
       )
     }
 
+    // Если не админ, ограничиваем изменение статуса - можно менять только на отменено
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, что пользователь пытается изменить только статус отмены
+      const isOnlyChangingCancelled = (
+        (body.isCompleted === undefined || body.isCompleted === existingLesson.isCompleted) &&
+        (body.isPaid === undefined || body.isPaid === existingLesson.isPaid) &&
+        (body.isCancelled !== undefined && body.isCancelled !== existingLesson.isCancelled)
+      )
+
+      // Если пользователь пытается изменить другие статусы, запрещаем
+      if (!isOnlyChangingCancelled && (body.isCompleted !== undefined || body.isPaid !== undefined)) {
+        return NextResponse.json(
+          { error: 'Вы можете изменить только статус отмены занятия' },
+          { status: 403 }
+        )
+      }
+    }
+
     // Если изменяется studentId, проверяем существование ученика
     if (body.studentId && body.studentId !== existingLesson.studentId) {
       const student = await prisma.student.findUnique({

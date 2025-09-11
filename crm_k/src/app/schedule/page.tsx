@@ -81,7 +81,7 @@ export default function SchedulePage() {
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
-    // Не переключаем режим - календарь сам покажет модальное окно
+    // Календарь сам покажет модальное окно с занятиями на выбранный день
   };
 
   const handleLessonClick = (lesson: LessonWithOptionalStudent) => {
@@ -145,7 +145,15 @@ export default function SchedulePage() {
         </div>
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3">
           <button 
-            onClick={() => printSchedule(lessons, selectedDate)}
+            onClick={() => {
+              const lessonsForPrint = lessons.map(lesson => ({
+                date: lesson.date,
+                student: lesson.student ? { fullName: lesson.student.fullName } : undefined,
+                cost: lesson.cost,
+                status: getLessonStatus(lesson)
+              }));
+              printSchedule(lessonsForPrint, selectedDate);
+            }}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-xl shadow-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 hover:scale-105"
           >
             <Printer className="w-4 h-4 mr-2" />
