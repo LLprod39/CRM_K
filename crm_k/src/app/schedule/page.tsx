@@ -32,7 +32,7 @@ export default function SchedulePage() {
   // Загружаем данные
   useEffect(() => {
     fetchData();
-  }, [filters]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filters, viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     setLoading(true);
@@ -47,12 +47,14 @@ export default function SchedulePage() {
         }
       }
 
-      // Загружаем занятия с фильтрами
+      // Загружаем занятия - в режиме календаря без фильтров, в режиме списка с фильтрами
       const lessonParams = new URLSearchParams();
-      if (filters.dateFrom) lessonParams.append('dateFrom', filters.dateFrom);
-      if (filters.dateTo) lessonParams.append('dateTo', filters.dateTo);
-      if (filters.studentId) lessonParams.append('studentId', filters.studentId);
-      if (filters.status) lessonParams.append('status', filters.status);
+      if (viewMode === 'list') {
+        if (filters.dateFrom) lessonParams.append('dateFrom', filters.dateFrom);
+        if (filters.dateTo) lessonParams.append('dateTo', filters.dateTo);
+        if (filters.studentId) lessonParams.append('studentId', filters.studentId);
+        if (filters.status) lessonParams.append('status', filters.status);
+      }
 
       const [lessonsResponse] = await Promise.all([
         apiRequest(`/api/lessons?${lessonParams.toString()}`)
@@ -65,7 +67,7 @@ export default function SchedulePage() {
       }
 
       // if (studentsResponse.ok) {
-      //   const studentsData = await studentsResponse.json();
+      //   const studentsData = await response.json();
       //   setStudents(studentsData);
       // }
     } catch (error) {
@@ -202,11 +204,13 @@ export default function SchedulePage() {
         </div>
       )}
 
-      {/* Фильтры */}
-      <LessonFilters 
-        onFiltersChange={handleFiltersChange}
-        selectedDate={selectedDate}
-      />
+      {/* Фильтры - только в режиме списка */}
+      {viewMode === 'list' && (
+        <LessonFilters 
+          onFiltersChange={handleFiltersChange}
+          selectedDate={selectedDate}
+        />
+      )}
 
       {/* Основной контент */}
       {loading ? (
