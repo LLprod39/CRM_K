@@ -93,6 +93,7 @@ export interface CreateLessonData {
   date: Date;
   endTime: Date;
   studentId: number;
+  studentIds?: number[]; // Для групповых занятий
   cost: number;
   isCompleted?: boolean;
   isPaid?: boolean;

@@ -133,9 +133,24 @@ export async function POST(request: NextRequest) {
     const body: CreateLessonData = await request.json()
     
     // Валидация обязательных полей
-    if (!body.date || !body.studentId || !body.cost) {
+    if (!body.date || !body.cost) {
       return NextResponse.json(
         { error: 'Необходимо заполнить все обязательные поля' },
+        { status: 400 }
+      )
+    }
+
+    // Для индивидуальных занятий нужен studentId, для групповых - studentIds
+    if (body.lessonType === 'individual' && !body.studentId) {
+      return NextResponse.json(
+        { error: 'Для индивидуального занятия необходимо выбрать ученика' },
+        { status: 400 }
+      )
+    }
+
+    if (body.lessonType === 'group' && (!body.studentIds || body.studentIds.length === 0)) {
+      return NextResponse.json(
+        { error: 'Для группового занятия необходимо выбрать хотя бы одного ученика' },
         { status: 400 }
       )
     }
@@ -152,28 +167,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Проверяем, существует ли ученик и принадлежит ли он пользователю
-    const student = await prisma.student.findUnique({
-      where: { id: body.studentId },
+    // Определяем список учеников для проверки
+    const studentIds = body.lessonType === 'group' ? body.studentIds! : [body.studentId!];
+    
+    // Проверяем, существуют ли все ученики и принадлежат ли они пользователю
+    const students = await prisma.student.findMany({
+      where: { 
+        id: { in: studentIds }
+      },
       include: { user: true }
     })
 
-    if (!student) {
+    if (students.length !== studentIds.length) {
       return NextResponse.json(
-        { error: 'Ученик не найден' },
+        { error: 'Один или несколько учеников не найдены' },
         { status: 404 }
       )
     }
 
-    // Если не админ, проверяем, что ученик принадлежит пользователю
-    if (authUser.role !== 'ADMIN' && student.userId !== authUser.id) {
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      )
+    // Если не админ, проверяем, что все ученики принадлежат пользователю
+    if (authUser.role !== 'ADMIN') {
+      const unauthorizedStudents = students.filter(student => student.userId !== authUser.id);
+      if (unauthorizedStudents.length > 0) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен к одному или нескольким ученикам' },
+          { status: 403 }
+        )
+      }
     }
 
-    // Проверяем конфликты времени
+    // Проверяем конфликты времени для каждого ученика
     const existingLessons = await prisma.lesson.findMany({
       where: {
         isCancelled: false,
@@ -184,58 +207,97 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    const timeConflict = checkTimeConflicts(
-      {
-        date: new Date(body.date),
-        endTime: new Date(body.endTime),
-        studentId: body.studentId
-      },
-      existingLessons
-    );
-
-    if (timeConflict.hasConflict) {
-      return NextResponse.json(
-        { 
-          error: 'Конфликт времени',
-          details: timeConflict.message,
-          conflictingLessons: timeConflict.conflictingLessons.map(lesson => ({
-            id: lesson.id,
-            date: lesson.date,
-            endTime: lesson.endTime,
-            studentId: lesson.studentId
-          }))
+    // Проверяем конфликты для каждого ученика
+    for (const studentId of studentIds) {
+      const timeConflict = checkTimeConflicts(
+        {
+          date: new Date(body.date),
+          endTime: new Date(body.endTime),
+          studentId: studentId
         },
-        { status: 409 }
-      )
+        existingLessons
+      );
+
+      if (timeConflict.hasConflict) {
+        return NextResponse.json(
+          { 
+            error: 'Конфликт времени',
+            details: timeConflict.message,
+            conflictingLessons: timeConflict.conflictingLessons.map(lesson => ({
+              id: lesson.id,
+              date: lesson.date,
+              endTime: lesson.endTime,
+              studentId: lesson.studentId
+            }))
+          },
+          { status: 409 }
+        )
+      }
     }
 
-    const lesson = await prisma.lesson.create({
-      data: {
-        date: new Date(body.date),
-        endTime: new Date(body.endTime),
-        studentId: body.studentId,
-        cost: body.cost,
-        isCompleted: body.isCompleted || false,
-        isPaid: body.isPaid || false,
-        isCancelled: body.isCancelled || false,
-        notes: body.notes || null,
-        lessonType: body.lessonType || 'individual'
-      },
-      include: {
-        student: {
-          include: {
-            user: {
-              select: {
-                name: true,
-                email: true
+    if (body.lessonType === 'group') {
+      // Для групповых занятий создаем отдельное занятие для каждого ученика
+      const lessons = await Promise.all(
+        studentIds.map(studentId =>
+          prisma.lesson.create({
+            data: {
+              date: new Date(body.date),
+              endTime: new Date(body.endTime),
+              studentId: studentId,
+              cost: body.cost,
+              isCompleted: body.isCompleted || false,
+              isPaid: body.isPaid || false,
+              isCancelled: body.isCancelled || false,
+              notes: body.notes || null,
+              lessonType: 'group'
+            },
+            include: {
+              student: {
+                include: {
+                  user: {
+                    select: {
+                      name: true,
+                      email: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+        )
+      );
+
+      return NextResponse.json(lessons, { status: 201 })
+    } else {
+      // Для индивидуальных занятий создаем одно занятие
+      const lesson = await prisma.lesson.create({
+        data: {
+          date: new Date(body.date),
+          endTime: new Date(body.endTime),
+          studentId: body.studentId!,
+          cost: body.cost,
+          isCompleted: body.isCompleted || false,
+          isPaid: body.isPaid || false,
+          isCancelled: body.isCancelled || false,
+          notes: body.notes || null,
+          lessonType: 'individual'
+        },
+        include: {
+          student: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true
+                }
               }
             }
           }
         }
-      }
-    })
+      });
 
-    return NextResponse.json(lesson, { status: 201 })
+      return NextResponse.json(lesson, { status: 201 })
+    }
   } catch (error) {
     console.error('Ошибка при создании занятия:', error)
     return NextResponse.json(

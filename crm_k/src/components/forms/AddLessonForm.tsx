@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Calendar, User, DollarSign, FileText, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, Calendar, User, DollarSign, FileText, Clock, AlertCircle, CheckCircle, Users } from 'lucide-react';
 import { Student } from '@/types';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/presentation/contexts';
-import DateTimePicker from '@/components/ui/DateTimePicker';
+import DateTimePicker from '../ui/DateTimePicker';
+import StudentSearch from '@/components/ui/StudentSearch';
 
 interface AddLessonFormProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ export default function AddLessonForm({
     lessonType: 'individual' as 'individual' | 'group'
   });
   const [students, setStudents] = useState<Student[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -86,6 +88,7 @@ export default function AddLessonForm({
         ...prev,
         studentId: selectedStudent.id.toString()
       }));
+      setSelectedStudents([selectedStudent]);
     }
   }, [selectedDate, selectedStudent]);
 
@@ -132,8 +135,14 @@ export default function AddLessonForm({
       }
     }
     
-    if (!formData.studentId) {
-      errors.studentId = 'Выберите ученика';
+    if (formData.lessonType === 'individual') {
+      if (!formData.studentId) {
+        errors.studentId = 'Выберите ученика';
+      }
+    } else {
+      if (selectedStudents.length === 0) {
+        errors.studentId = 'Выберите хотя бы одного ученика для группового занятия';
+      }
     }
     
     if (!formData.cost || parseFloat(formData.cost) <= 0) {
@@ -155,18 +164,21 @@ export default function AddLessonForm({
     setError('');
 
     try {
+      const requestData = {
+        ...formData,
+        date: new Date(formData.date),
+        endTime: new Date(formData.endTime),
+        studentId: formData.lessonType === 'individual' ? parseInt(String(formData.studentId)) : selectedStudents[0]?.id,
+        studentIds: formData.lessonType === 'group' ? selectedStudents.map(s => s.id) : undefined,
+        cost: parseFloat(formData.cost)
+      };
+
       const response = await apiRequest('/api/lessons', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          date: new Date(formData.date),
-          endTime: new Date(formData.endTime),
-          studentId: parseInt(String(formData.studentId)),
-          cost: parseFloat(formData.cost)
-        }),
+        body: JSON.stringify(requestData),
       });
 
       if (response.ok) {
@@ -184,6 +196,7 @@ export default function AddLessonForm({
           notes: '',
           lessonType: 'individual'
         });
+        setSelectedStudents([]);
         setValidationErrors({});
       } else {
         const errorData = await response.json();
@@ -217,15 +230,35 @@ export default function AddLessonForm({
     }
   };
 
+  const handleStudentSelectionChange = (students: Student[]) => {
+    setSelectedStudents(students);
+    
+    // Для индивидуальных занятий обновляем studentId
+    if (formData.lessonType === 'individual' && students.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        studentId: students[0].id.toString()
+      }));
+    }
+    
+    // Очищаем ошибку валидации
+    if (validationErrors.studentId) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.studentId;
+        return newErrors;
+      });
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Добавить занятие</h2>
-            <p className="text-sm text-gray-600 mt-1">Заполните информацию о новом занятии</p>
+            <h2 className="text-lg font-semibold text-gray-900">Добавить занятие</h2>
           </div>
           <div className="flex items-center gap-2">
             {user?.role === 'ADMIN' && (
@@ -254,7 +287,7 @@ export default function AddLessonForm({
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -320,54 +353,62 @@ export default function AddLessonForm({
             )}
           </div>
 
-          {/* Ученик и тип занятия */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-2">
-                <User className="w-4 h-4 inline mr-2" />
-                Ученик
-              </label>
-              <select
-                id="studentId"
-                name="studentId"
-                value={formData.studentId}
-                onChange={handleChange}
-                required
-                className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                  validationErrors.studentId ? 'border-red-300' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Выберите ученика</option>
-                {students.map((student) => (
-                  <option key={student.id} value={student.id}>
-                    {student.fullName} ({student.age} лет)
-                  </option>
-                ))}
-              </select>
-              {validationErrors.studentId && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {validationErrors.studentId}
-                </p>
+          {/* Тип занятия */}
+          <div>
+            <label htmlFor="lessonType" className="block text-sm font-medium text-gray-700 mb-2">
+              <FileText className="w-4 h-4 inline mr-2" />
+              Тип занятия
+            </label>
+            <select
+              id="lessonType"
+              name="lessonType"
+              value={formData.lessonType}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="individual">Индивидуальное</option>
+              <option value="group">Групповое</option>
+            </select>
+          </div>
+
+          {/* Выбор учеников */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {formData.lessonType === 'individual' ? (
+                <>
+                  <User className="w-4 h-4 inline mr-2" />
+                  Ученик
+                </>
+              ) : (
+                <>
+                  <Users className="w-4 h-4 inline mr-2" />
+                  Ученики для группового занятия
+                </>
               )}
-            </div>
-            
-            <div>
-              <label htmlFor="lessonType" className="block text-sm font-medium text-gray-700 mb-2">
-                <FileText className="w-4 h-4 inline mr-2" />
-                Тип занятия
-              </label>
-              <select
-                id="lessonType"
-                name="lessonType"
-                value={formData.lessonType}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="individual">Индивидуальное</option>
-                <option value="group">Групповое</option>
-              </select>
-            </div>
+            </label>
+            <StudentSearch
+              students={students}
+              selectedStudents={selectedStudents}
+              onSelectionChange={handleStudentSelectionChange}
+              placeholder={
+                formData.lessonType === 'individual' 
+                  ? "Поиск ученика..." 
+                  : "Поиск учеников для группового занятия..."
+              }
+              multiple={formData.lessonType === 'group'}
+              className={validationErrors.studentId ? 'border-red-300' : ''}
+            />
+            {validationErrors.studentId && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {validationErrors.studentId}
+              </p>
+            )}
+            {formData.lessonType === 'group' && selectedStudents.length > 0 && (
+              <p className="mt-2 text-sm text-gray-600">
+                Выбрано учеников: {selectedStudents.length}
+              </p>
+            )}
           </div>
 
           {/* Стоимость */}
@@ -398,55 +439,57 @@ export default function AddLessonForm({
             )}
           </div>
 
-          {/* Статусы */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Статус занятия
-            </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <label className="flex items-center p-3 bg-white rounded-md border border-gray-200 hover:bg-blue-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="isCompleted"
-                  checked={formData.isCompleted}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                />
-                <div className="ml-3">
-                  <span className="text-sm font-medium text-gray-700">Проведено</span>
-                  <p className="text-xs text-gray-500">Занятие уже проведено</p>
-                </div>
+          {/* Статусы - только для администраторов */}
+          {user?.role === 'ADMIN' && (
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Статус занятия
               </label>
-              
-              <label className="flex items-center p-3 bg-white rounded-md border border-gray-200 hover:bg-blue-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="isPaid"
-                  checked={formData.isPaid}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <div className="ml-3">
-                  <span className="text-sm font-medium text-gray-700">Оплачено</span>
-                  <p className="text-xs text-gray-500">Оплата получена</p>
-                </div>
-              </label>
-              
-              <label className="flex items-center p-3 bg-white rounded-md border border-gray-200 hover:bg-red-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="isCancelled"
-                  checked={formData.isCancelled}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                />
-                <div className="ml-3">
-                  <span className="text-sm font-medium text-gray-700">Отменено</span>
-                  <p className="text-xs text-gray-500">Занятие отменено</p>
-                </div>
-              </label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <label className="flex items-center p-3 bg-white rounded-md border border-gray-200 hover:bg-blue-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isCompleted"
+                    checked={formData.isCompleted}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  />
+                  <div className="ml-3">
+                    <span className="text-sm font-medium text-gray-700">Проведено</span>
+                    <p className="text-xs text-gray-500">Занятие уже проведено</p>
+                  </div>
+                </label>
+                
+                <label className="flex items-center p-3 bg-white rounded-md border border-gray-200 hover:bg-blue-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isPaid"
+                    checked={formData.isPaid}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <div className="ml-3">
+                    <span className="text-sm font-medium text-gray-700">Оплачено</span>
+                    <p className="text-xs text-gray-500">Оплата получена</p>
+                  </div>
+                </label>
+                
+                <label className="flex items-center p-3 bg-white rounded-md border border-gray-200 hover:bg-red-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isCancelled"
+                    checked={formData.isCancelled}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                  />
+                  <div className="ml-3">
+                    <span className="text-sm font-medium text-gray-700">Отменено</span>
+                    <p className="text-xs text-gray-500">Занятие отменено</p>
+                  </div>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Заметки */}
           <div>
