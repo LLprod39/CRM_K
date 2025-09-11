@@ -86,6 +86,11 @@ export default function SchedulePage() {
     // Календарь сам покажет модальное окно с занятиями на выбранный день
   };
 
+  const handleAddLesson = (date: Date) => {
+    setSelectedDate(date);
+    setShowAddForm(true);
+  };
+
   const handleLessonClick = (lesson: LessonWithOptionalStudent) => {
     setSelectedLesson(lesson);
     setShowEditForm(true);
@@ -228,6 +233,7 @@ export default function SchedulePage() {
           lessons={lessons}
           onLessonClick={handleLessonClick}
           onDateClick={handleDateClick}
+          onAddLesson={handleAddLesson}
           currentDate={selectedDate}
         />
       ) : (

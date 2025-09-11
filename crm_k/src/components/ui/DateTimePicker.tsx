@@ -114,33 +114,40 @@ export default function DateTimePicker({
 
   // Инициализация значений
   useEffect(() => {
-    if (value) {
-      const dateTime = new Date(value);
-      const newDate = dateTime.toISOString().slice(0, 10);
-      const newTime = dateTime.toTimeString().slice(0, 5);
-      
-      // Обновляем только если значения действительно изменились
-      if (date !== newDate) {
+    if (value && value !== lastValueRef.current) {
+      // Если значение уже в правильном формате (YYYY-MM-DDTHH:MM), используем его напрямую
+      if (value.includes('T') && value.length === 16) {
+        const [datePart, timePart] = value.split('T');
+        isUpdatingFromParentRef.current = true;
+        setDate(datePart);
+        setTime(timePart);
+        lastValueRef.current = value;
+        
+        setTimeout(() => {
+          isUpdatingFromParentRef.current = false;
+        }, 0);
+      } else {
+        // Если это ISO строка, парсим её
+        const dateTime = new Date(value);
+        const newDate = dateTime.toISOString().slice(0, 10);
+        const newTime = dateTime.toTimeString().slice(0, 5);
+        
         isUpdatingFromParentRef.current = true;
         setDate(newDate);
-        setTimeout(() => {
-          isUpdatingFromParentRef.current = false;
-        }, 0);
-      }
-      if (time !== newTime) {
-        isUpdatingFromParentRef.current = true;
         setTime(newTime);
+        lastValueRef.current = value;
+        
         setTimeout(() => {
           isUpdatingFromParentRef.current = false;
         }, 0);
       }
-    } else if (!date || !time) {
+    } else if (!value && (!date || !time)) {
       // Устанавливаем значения по умолчанию только если они не установлены
       const now = new Date();
       setDate(now.toISOString().slice(0, 10));
       setTime(now.toTimeString().slice(0, 5));
     }
-  }, [value]); // Убираем date и time из зависимостей чтобы избежать циклических обновлений
+  }, [value]);
 
   // Обновление родительского компонента при изменении даты/времени
   useEffect(() => {
@@ -150,34 +157,44 @@ export default function DateTimePicker({
       const [hours, minutes] = time.split(':').map(Number);
       
       const newDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
-      const newValue = newDateTime.toISOString();
       
-      // Проверяем, что время действительно изменилось и не является циклическим обновлением
-      if (lastValueRef.current !== newValue && value !== newValue) {
+      // Форматируем в локальном формате ISO без UTC смещения
+      const newValue = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      
+      // Проверяем, что время действительно изменилось
+      if (lastValueRef.current !== newValue) {
         lastValueRef.current = newValue;
         stableOnChange(newValue);
       }
     }
-  }, [date, time, stableOnChange, value]); // Добавляем value обратно для корректной проверки
+  }, [date, time, stableOnChange]);
 
   const handleDateChange = (newDate: string) => {
-    setDate(newDate);
-    validateDateTime(newDate, time, duration);
+    if (newDate !== date) {
+      setDate(newDate);
+      validateDateTime(newDate, time, duration);
+    }
   };
 
   const handleTimeChange = (newTime: string) => {
-    setTime(newTime);
-    validateDateTime(date, newTime, duration);
+    if (newTime !== time) {
+      setTime(newTime);
+      validateDateTime(date, newTime, duration);
+    }
   };
 
   const handlePopularTimeClick = (timeValue: string) => {
-    setTime(timeValue);
-    validateDateTime(date, timeValue, duration);
+    if (timeValue !== time) {
+      setTime(timeValue);
+      validateDateTime(date, timeValue, duration);
+    }
   };
 
   const handleDurationChange = (newDuration: number) => {
-    setDuration(newDuration);
-    validateDateTime(date, time, newDuration);
+    if (newDuration !== duration) {
+      setDuration(newDuration);
+      validateDateTime(date, time, newDuration);
+    }
   };
 
   const adjustTime = (adjustmentMinutes: number) => {
@@ -189,8 +206,11 @@ export default function DateTimePicker({
     
     const currentDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
     const newDateTime = new Date(currentDateTime.getTime() + adjustmentMinutes * 60000);
+    const newTimeString = newDateTime.toTimeString().slice(0, 5);
     
-    setTime(newDateTime.toTimeString().slice(0, 5));
+    if (newTimeString !== time) {
+      setTime(newTimeString);
+    }
   };
 
   const getEndTime = () => {

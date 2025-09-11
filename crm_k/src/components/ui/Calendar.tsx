@@ -10,10 +10,11 @@ interface CalendarProps {
   lessons: LessonWithOptionalStudent[];
   onDateClick: (date: Date) => void;
   onLessonClick: (lesson: LessonWithOptionalStudent) => void;
+  onAddLesson?: (date: Date) => void;
   currentDate?: Date;
 }
 
-export default function Calendar({ lessons, onDateClick, onLessonClick, currentDate = new Date() }: CalendarProps) {
+export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLesson, currentDate = new Date() }: CalendarProps) {
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
   const [showDayModal, setShowDayModal] = useState(false);
@@ -82,16 +83,20 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, currentD
     const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     setSelectedDate(newDate);
     
-    // Показываем модальное окно для всех дней (с занятиями и без)
     const dayLessons = lessonsByDay[day] || [];
+    
+    // Если день пустой и есть функция onAddLesson, открываем форму добавления занятия
+    if (dayLessons.length === 0 && onAddLesson) {
+      onAddLesson(newDate);
+      return;
+    }
+    
+    // Если есть занятия, показываем модальное окно
     setSelectedDayLessons(dayLessons);
     setSelectedDayDate(newDate);
     setShowDayModal(true);
     
     console.log('Calendar: Модальное окно должно показаться', { showDayModal: true, dayLessons: dayLessons.length });
-    
-    // Временно убираем вызов onDateClick, чтобы избежать переключения режима
-    // onDateClick(newDate);
   };
 
   const getStatusColor = (lesson: Lesson) => {
@@ -295,6 +300,7 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, currentD
         <MobileCalendar
           lessons={lessons}
           onDateClick={onDateClick}
+          onAddLesson={onAddLesson}
           currentDate={currentDate}
         />
       </div>

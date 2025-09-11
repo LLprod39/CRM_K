@@ -9,6 +9,7 @@ interface MobileCalendarProps {
   lessons: LessonWithOptionalStudent[];
   onDateClick: (date: Date) => void;
   onLessonClick?: (lesson: LessonWithOptionalStudent) => void;
+  onAddLesson?: (date: Date) => void;
   currentDate?: Date;
 }
 
@@ -16,6 +17,7 @@ export default function MobileCalendar({
   lessons, 
   onDateClick, 
   onLessonClick, 
+  onAddLesson,
   currentDate = new Date() 
 }: MobileCalendarProps) {
   const [selectedDate, setSelectedDate] = useState(currentDate);
@@ -86,14 +88,18 @@ export default function MobileCalendar({
     const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     setSelectedDate(newDate);
     
-    // Показываем модальное окно для всех дней (с занятиями и без)
     const dayLessons = lessonsByDay[day] || [];
+    
+    // Если день пустой и есть функция onAddLesson, открываем форму добавления занятия
+    if (dayLessons.length === 0 && onAddLesson) {
+      onAddLesson(newDate);
+      return;
+    }
+    
+    // Если есть занятия, показываем модальное окно
     setSelectedDayLessons(dayLessons);
     setSelectedDayDate(newDate);
     setShowDayModal(true);
-    
-    // Временно убираем вызов onDateClick, чтобы избежать переключения режима
-    // onDateClick(newDate);
   };
 
   const getStatusColor = (lesson: Lesson) => {

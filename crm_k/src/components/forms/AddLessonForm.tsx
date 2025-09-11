@@ -305,19 +305,15 @@ export default function AddLessonForm({
             <DateTimePicker
               value={formData.date}
               onChange={(value: string) => {
+                // value уже в формате YYYY-MM-DDTHH:MM
                 const startTime = new Date(value);
-                const newDateString = toLocalISOString(startTime);
+                const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
                 
-                // Обновляем только если дата действительно изменилась
-                if (formData.date !== newDateString) {
-                  const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
-                  
-                  setFormData(prev => ({
-                    ...prev,
-                    date: newDateString,
-                    endTime: toLocalISOString(endTime)
-                  }));
-                }
+                setFormData(prev => ({
+                  ...prev,
+                  date: value,
+                  endTime: toLocalISOString(endTime)
+                }));
               }}
               min={user?.role === 'ADMIN' ? undefined : new Date().toISOString()}
               showDurationSelector={true}

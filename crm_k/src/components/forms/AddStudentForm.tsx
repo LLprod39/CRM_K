@@ -352,20 +352,16 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
                   <DateTimePicker
                     value={lessonData.date.toISOString()}
-                    onChange={(value) => {
+                    onChange={(value: string) => {
                       const startTime = new Date(value);
                       const newDateString = startTime.toISOString();
+                      const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
                       
-                      // Обновляем только если дата действительно изменилась
-                      if (lessonData.date.toISOString() !== newDateString) {
-                        const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
-                        
-                        setLessonData(prev => ({
-                          ...prev,
-                          date: startTime,
-                          endTime: endTime
-                        }));
-                      }
+                      setLessonData(prev => ({
+                        ...prev,
+                        date: startTime,
+                        endTime: endTime
+                      }));
                     }}
                     showDurationSelector={true}
                     defaultDuration={60}

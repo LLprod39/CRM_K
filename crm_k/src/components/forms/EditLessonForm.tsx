@@ -5,7 +5,7 @@ import { X, Trash2 } from 'lucide-react';
 import { Student, Lesson } from '@/types';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/presentation/contexts';
-import DateTimePicker from '@/components/ui/DateTimePicker';
+import DateTimePicker from '../ui/DateTimePicker';
 
 interface EditLessonFormProps {
   isOpen: boolean;
@@ -61,8 +61,15 @@ export default function EditLessonForm({
   // Заполняем форму данными занятия
   useEffect(() => {
     if (lesson && isOpen) {
-      const startTime = new Date(lesson.date).toISOString().slice(0, 16);
-      const endTime = lesson.endTime ? new Date(lesson.endTime).toISOString().slice(0, 16) : '';
+      // Используем локальное время без UTC смещения
+      const startDate = new Date(lesson.date);
+      const startTime = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}T${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')}`;
+      
+      let endTime = '';
+      if (lesson.endTime) {
+        const endDate = new Date(lesson.endTime);
+        endTime = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}T${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
+      }
       
       setFormData({
         date: startTime,
@@ -195,19 +202,18 @@ export default function EditLessonForm({
             <DateTimePicker
               value={formData.date}
               onChange={(value: string) => {
+                // value уже в формате YYYY-MM-DDTHH:MM
                 const startTime = new Date(value);
-                const newDateString = startTime.toISOString().slice(0, 16);
+                const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
                 
-                // Обновляем только если дата действительно изменилась
-                if (formData.date !== newDateString) {
-                  const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
-                  
-                  setFormData(prev => ({
-                    ...prev,
-                    date: newDateString,
-                    endTime: endTime.toISOString().slice(0, 16)
-                  }));
-                }
+                // Форматируем время окончания в том же формате
+                const endTimeString = `${endTime.getFullYear()}-${String(endTime.getMonth() + 1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}T${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`;
+                
+                setFormData(prev => ({
+                  ...prev,
+                  date: value,
+                  endTime: endTimeString
+                }));
               }}
               min={user?.role === 'ADMIN' ? undefined : new Date().toISOString()}
               showDurationSelector={true}
