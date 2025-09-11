@@ -7,6 +7,7 @@ import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/presentation/contexts';
 import DateTimePicker from '../ui/DateTimePicker';
 import StudentSearch from '@/components/ui/StudentSearch';
+import UserSelector from '@/components/ui/UserSelector';
 
 interface AddLessonFormProps {
   isOpen: boolean;
@@ -43,7 +44,9 @@ export default function AddLessonForm({
     isPaid: false,
     isCancelled: false,
     notes: '',
-    lessonType: 'individual' as 'individual' | 'group'
+    comment: '',
+    lessonType: 'individual' as 'individual' | 'group',
+    userId: null as number | null
   });
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
@@ -71,6 +74,11 @@ export default function AddLessonForm({
       fetchStudents();
     }
   }, [isOpen]);
+
+  // Фильтруем учеников по выбранному пользователю
+  const filteredStudents = formData.userId 
+    ? students.filter(student => student.userId === formData.userId)
+    : students;
 
   // Обновляем форму при изменении selectedDate или selectedStudent
   useEffect(() => {
@@ -135,6 +143,11 @@ export default function AddLessonForm({
       }
     }
     
+    // Для админов проверяем выбор пользователя
+    if (user?.role === 'ADMIN' && !formData.userId) {
+      errors.userId = 'Выберите пользователя (учителя)';
+    }
+    
     if (formData.lessonType === 'individual') {
       if (!formData.studentId) {
         errors.studentId = 'Выберите ученика';
@@ -170,7 +183,10 @@ export default function AddLessonForm({
         endTime: new Date(formData.endTime),
         studentId: formData.lessonType === 'individual' ? parseInt(String(formData.studentId)) : selectedStudents[0]?.id,
         studentIds: formData.lessonType === 'group' ? selectedStudents.map(s => s.id) : undefined,
-        cost: parseFloat(formData.cost)
+        cost: parseFloat(formData.cost),
+        notes: formData.notes,
+        comment: formData.comment,
+        userId: formData.userId
       };
 
       const response = await apiRequest('/api/lessons', {
@@ -194,7 +210,9 @@ export default function AddLessonForm({
           isPaid: false,
           isCancelled: false,
           notes: '',
-          lessonType: 'individual'
+          comment: '',
+          lessonType: 'individual',
+          userId: null
         });
         setSelectedStudents([]);
         setValidationErrors({});
@@ -349,6 +367,34 @@ export default function AddLessonForm({
             )}
           </div>
 
+          {/* Выбор пользователя - только для админов */}
+          {user?.role === 'ADMIN' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <User className="w-4 h-4 inline mr-2" />
+                Пользователь (учитель)
+              </label>
+              <UserSelector
+                selectedUserId={formData.userId || undefined}
+                onUserChange={(userId) => {
+                  setFormData(prev => ({ ...prev, userId: userId || null }));
+                  // Очищаем выбранных учеников при смене пользователя
+                  setSelectedStudents([]);
+                  setFormData(prev => ({ ...prev, studentId: '' }));
+                }}
+                placeholder="Выберите учителя..."
+                showUserCount={true}
+                className={validationErrors.userId ? 'border-red-300' : ''}
+              />
+              {validationErrors.userId && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {validationErrors.userId}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Тип занятия */}
           <div>
             <label htmlFor="lessonType" className="block text-sm font-medium text-gray-700 mb-2">
@@ -383,16 +429,17 @@ export default function AddLessonForm({
               )}
             </label>
             <StudentSearch
-              students={students}
+              students={filteredStudents}
               selectedStudents={selectedStudents}
               onSelectionChange={handleStudentSelectionChange}
               placeholder={
                 formData.lessonType === 'individual' 
-                  ? "Поиск ученика..." 
-                  : "Поиск учеников для группового занятия..."
+                  ? (formData.userId ? "Поиск ученика..." : "Сначала выберите учителя...") 
+                  : (formData.userId ? "Поиск учеников для группового занятия..." : "Сначала выберите учителя...")
               }
               multiple={formData.lessonType === 'group'}
               className={validationErrors.studentId ? 'border-red-300' : ''}
+              disabled={!formData.userId && user?.role === 'ADMIN'}
             />
             {validationErrors.studentId && (
               <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -506,6 +553,28 @@ export default function AddLessonForm({
               Опишите особенности занятия, цели, задачи или любую другую важную информацию
             </p>
           </div>
+
+          {/* Комментарий о поведении ребенка - только для прошедших занятий */}
+          {formData.date && new Date(formData.date) < new Date() && (
+            <div>
+              <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">
+                <FileText className="w-4 h-4 inline mr-2" />
+                Комментарий о поведении ребенка
+              </label>
+              <textarea
+                id="comment"
+                name="comment"
+                value={formData.comment}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none"
+                placeholder="Опишите, как вел себя ребенок на занятии, что было хорошо, что нужно улучшить..."
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Этот комментарий будет доступен только для прошедших занятий
+              </p>
+            </div>
+          )}
 
           {/* Кнопки */}
           <div className="flex gap-3 pt-6 border-t border-gray-200">

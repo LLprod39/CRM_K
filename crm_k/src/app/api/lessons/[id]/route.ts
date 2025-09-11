@@ -172,7 +172,8 @@ export async function PUT(
         isCompleted: body.isCompleted,
         isPaid: body.isPaid,
         isCancelled: body.isCancelled,
-        notes: body.notes
+        notes: body.notes,
+        comment: body.comment
       },
       include: {
         student: true

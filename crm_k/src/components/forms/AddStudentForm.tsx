@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import PhotoUpload from './PhotoUpload';
 import DateTimePicker from '@/components/ui/DateTimePicker';
+import UserSelector from '@/components/ui/UserSelector';
 
 interface AddStudentFormProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
     comment: '',
     photoUrl: ''
   });
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [lessonData, setLessonData] = useState<CreateLessonData>({
     date: new Date(),
     endTime: new Date(Date.now() + 60 * 60 * 1000), // +1 час по умолчанию
@@ -74,6 +76,11 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Для админов проверяем выбор пользователя только если создаем занятие
+    if (user?.role === 'ADMIN' && createLesson && !selectedUserId) {
+      newErrors.userId = 'Выберите пользователя (учителя)';
+    }
+
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'ФИО обязательно для заполнения';
     }
@@ -107,9 +114,15 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
     
     try {
       // Создаем ученика
+      // Для админов: если выбран учитель - привязываем к нему, иначе к админу
+      // Для обычных пользователей - привязываем к текущему пользователю
+      const studentData = user?.role === 'ADMIN' 
+        ? { ...formData, userId: selectedUserId || user.id }
+        : formData;
+        
       const studentResponse = await apiRequest('/api/students', {
         method: 'POST',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(studentData),
       });
 
       if (studentResponse.ok) {
@@ -117,12 +130,15 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
         
         // Если нужно создать занятие
         if (createLesson) {
+          const lessonRequestData = {
+            ...lessonData,
+            studentId: newStudent.id,
+            userId: user?.role === 'ADMIN' ? selectedUserId : undefined
+          };
+          
           const lessonResponse = await apiRequest('/api/lessons', {
             method: 'POST',
-            body: JSON.stringify({
-              ...lessonData,
-              studentId: newStudent.id
-            }),
+            body: JSON.stringify(lessonRequestData),
           });
 
           if (!lessonResponse.ok) {
@@ -155,6 +171,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
         setErrors({});
         setCreateLesson(false);
         setStep('student');
+        setSelectedUserId(null);
         onSuccess();
         onClose();
       } else {
@@ -348,6 +365,29 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
               </>
             ) : (
               <>
+                {/* Выбор пользователя - только для админов */}
+                {user?.role === 'ADMIN' && (
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <User className="w-4 h-4 inline mr-2" />
+                      Пользователь (учитель)
+                    </label>
+                    <UserSelector
+                      selectedUserId={selectedUserId || undefined}
+                      onUserChange={(userId) => setSelectedUserId(userId || null)}
+                      placeholder="Выберите учителя..."
+                      showUserCount={true}
+                      className={errors.userId ? 'border-red-300' : ''}
+                    />
+                    {errors.userId && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <X className="w-4 h-4 mr-1" />
+                        {errors.userId}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Время проведения */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
                   <DateTimePicker

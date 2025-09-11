@@ -6,11 +6,20 @@ export interface TimeConflict {
   message: string;
 }
 
+export interface LunchBreak {
+  id: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  userId: number;
+}
+
 /**
  * Проверяет конфликты времени для нового занятия
  * @param newLesson - новое занятие для проверки
  * @param existingLessons - существующие занятия
  * @param excludeLessonId - ID занятия, которое нужно исключить из проверки (для редактирования)
+ * @param lunchBreaks - время обеда для проверки конфликтов
  * @returns объект с информацией о конфликтах
  */
 export function checkTimeConflicts(
@@ -20,7 +29,9 @@ export function checkTimeConflicts(
     studentId: number;
   },
   existingLessons: Lesson[],
-  excludeLessonId?: number
+  excludeLessonId?: number,
+  lunchBreaks: LunchBreak[] = [],
+  newLessonTeacherId?: number
 ): TimeConflict {
   const newStart = new Date(newLesson.date);
   const newEnd = new Date(newLesson.endTime);
@@ -32,13 +43,60 @@ export function checkTimeConflicts(
   
   const conflictingLessons: Lesson[] = [];
   
+  // Проверяем конфликты с существующими занятиями
   for (const lesson of lessonsToCheck) {
     const existingStart = new Date(lesson.date);
     const existingEnd = lesson.endTime ? new Date(lesson.endTime) : new Date(existingStart.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
     
     // Проверяем пересечение временных интервалов
     if (isTimeOverlap(newStart, newEnd, existingStart, existingEnd)) {
-      conflictingLessons.push(lesson);
+      // Если указан ID учителя нового занятия, проверяем, что конфликтующий урок принадлежит тому же учителю
+      if (newLessonTeacherId && (lesson as any).student?.userId) {
+        if ((lesson as any).student.userId === newLessonTeacherId) {
+          conflictingLessons.push(lesson);
+        }
+      } else {
+        // Если ID учителя не указан, считаем все конфликты (для обратной совместимости)
+        conflictingLessons.push(lesson);
+      }
+    }
+  }
+  
+  // Проверяем конфликты с временем обеда
+  const newDate = new Date(newStart);
+  newDate.setHours(0, 0, 0, 0);
+  
+  for (const lunchBreak of lunchBreaks) {
+    const lunchDate = new Date(lunchBreak.date);
+    lunchDate.setHours(0, 0, 0, 0);
+    
+    // Проверяем, что обед в тот же день
+    if (lunchDate.getTime() === newDate.getTime()) {
+      const lunchStart = new Date(lunchBreak.startTime);
+      const lunchEnd = new Date(lunchBreak.endTime);
+      
+      if (isTimeOverlap(newStart, newEnd, lunchStart, lunchEnd)) {
+        // Добавляем "виртуальное занятие" для времени обеда
+        const virtualLunchLesson: Lesson = {
+          id: -lunchBreak.id, // Отрицательный ID для отличия от реальных занятий
+          date: lunchStart,
+          endTime: lunchEnd,
+          studentId: 0,
+          cost: 0,
+          isCompleted: false,
+          isPaid: false,
+          isCancelled: false,
+          notes: 'Время обеда',
+          comment: null,
+          lessonType: 'lunch',
+          location: 'office',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          student: null
+        } as Lesson;
+        
+        conflictingLessons.push(virtualLunchLesson);
+      }
     }
   }
   
@@ -79,18 +137,23 @@ function isTimeOverlap(start1: Date, end1: Date, start2: Date, end2: Date): bool
  * @param endTime - время окончания
  * @param existingLessons - существующие занятия
  * @param excludeLessonId - ID занятия для исключения
+ * @param lunchBreaks - время обеда для проверки конфликтов
  * @returns true, если время свободно
  */
 export function isTimeSlotAvailable(
   startTime: Date,
   endTime: Date,
   existingLessons: Lesson[],
-  excludeLessonId?: number
+  excludeLessonId?: number,
+  lunchBreaks: LunchBreak[] = [],
+  teacherId?: number
 ): boolean {
   const conflict = checkTimeConflicts(
     { date: startTime, endTime, studentId: 0 },
     existingLessons,
-    excludeLessonId
+    excludeLessonId,
+    lunchBreaks,
+    teacherId
   );
   
   return !conflict.hasConflict;
@@ -103,6 +166,7 @@ export function isTimeSlotAvailable(
  * @param duration - продолжительность занятия в минутах (по умолчанию 60)
  * @param startHour - час начала рабочего дня (по умолчанию 9)
  * @param endHour - час окончания рабочего дня (по умолчанию 18)
+ * @param lunchBreaks - время обеда для проверки конфликтов
  * @returns массив доступных временных слотов
  */
 export function getAvailableTimeSlots(
@@ -110,7 +174,9 @@ export function getAvailableTimeSlots(
   existingLessons: Lesson[],
   duration: number = 60,
   startHour: number = 9,
-  endHour: number = 18
+  endHour: number = 18,
+  lunchBreaks: LunchBreak[] = [],
+  teacherId?: number
 ): { start: Date; end: Date }[] {
   const slots: { start: Date; end: Date }[] = [];
   const dayStart = new Date(date);
@@ -125,7 +191,7 @@ export function getAvailableTimeSlots(
     const slotEnd = new Date(currentTime.getTime() + duration * 60 * 1000);
     
     if (slotEnd <= dayEnd) {
-      const isAvailable = isTimeSlotAvailable(currentTime, slotEnd, existingLessons);
+      const isAvailable = isTimeSlotAvailable(currentTime, slotEnd, existingLessons, undefined, lunchBreaks, teacherId);
       
       if (isAvailable) {
         slots.push({

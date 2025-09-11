@@ -37,7 +37,7 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
     }
     acc[day].push(lesson);
     return acc;
-  }, {} as Record<number, Lesson[]>);
+  }, {} as Record<number, LessonWithOptionalStudent[]>);
 
   const monthNames = [
     'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -201,8 +201,15 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
                   </div>
                   <div className="flex items-center gap-1">
                     <User className="w-2.5 h-2.5" />
-                    <span className="truncate text-xs">Ученик #{lesson.studentId}</span>
+                    <span className="truncate text-xs">
+                      {lesson.student?.fullName || `Ученик #${lesson.studentId}`}
+                    </span>
                   </div>
+                  {userRole === 'ADMIN' && lesson.student?.user && (
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <span className="truncate">👨‍🏫 {lesson.student.user.name}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}

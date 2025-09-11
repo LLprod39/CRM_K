@@ -59,14 +59,19 @@ export function getCombinedLessonStatus(lesson: Lesson): string {
   return statuses.join(' + ')
 }
 
+// Тип для студента с пользователем
+export type StudentWithUser = Student & {
+  user?: User
+}
+
 // Тип для урока с включенным студентом
 export type LessonWithStudent = Lesson & {
-  student: Student
+  student: StudentWithUser
 }
 
 // Тип для урока с опциональным студентом
 export type LessonWithOptionalStudent = Lesson & {
-  student?: Student
+  student?: StudentWithUser
 }
 
 // Тип для студента с включенными уроками
@@ -83,6 +88,7 @@ export interface CreateStudentData {
   diagnosis?: string;
   comment?: string;
   photoUrl?: string;
+  userId?: number; // ID пользователя (учителя) - для админов
 }
 
 export interface UpdateStudentData extends Partial<CreateStudentData> {
@@ -99,7 +105,9 @@ export interface CreateLessonData {
   isPaid?: boolean;
   isCancelled?: boolean;
   notes?: string;
+  comment?: string;
   lessonType?: 'individual' | 'group';
+  userId?: number; // ID пользователя (учителя) - для админов
 }
 
 export interface UpdateLessonData extends Partial<CreateLessonData> {

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, CheckCircle, AlertCircle, Clock, History, ArrowUpDown, Filter } from 'lucide-react';
 import { LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
+import LunchTimeSelector from './LunchTimeSelector';
 
 interface DayLessonsModalProps {
   isOpen: boolean;
@@ -248,6 +249,15 @@ export default function DayLessonsModal({
 
         {/* Контент */}
         <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
+          {/* Компонент выбора времени обеда */}
+          <div className="p-6 border-b border-gray-200">
+            <LunchTimeSelector 
+              date={date}
+              existingLessons={lessons}
+              userRole={userRole}
+            />
+          </div>
+
           {lessons.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -302,6 +312,11 @@ export default function DayLessonsModal({
                         <ArrowUpDown className="w-3 h-3" />
                       </div>
                     </th>
+                    {userRole === 'ADMIN' && (
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Преподаватель
+                      </th>
+                    )}
                     <th 
                       className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('status')}
@@ -328,6 +343,9 @@ export default function DayLessonsModal({
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Заметки
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Комментарий
                     </th>
                   </tr>
                 </thead>
@@ -382,6 +400,27 @@ export default function DayLessonsModal({
                             </div>
                           </div>
                         </td>
+                        {userRole === 'ADMIN' && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-8 w-8">
+                                <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                  <span className="text-sm font-medium text-green-800">
+                                    {lesson.student?.user?.name?.charAt(0).toUpperCase() || '?'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="ml-3">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {lesson.student?.user?.name || 'Неизвестно'}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {lesson.student?.user?.email || ''}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        )}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(status)}`}>
                             {getStatusIcon(lesson)}
@@ -400,6 +439,11 @@ export default function DayLessonsModal({
                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
                           <div className="truncate" title={lesson.notes || ''}>
                             {lesson.notes || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                          <div className="truncate" title={(lesson as any).comment || ''}>
+                            {(lesson as any).comment || '-'}
                           </div>
                         </td>
                       </tr>

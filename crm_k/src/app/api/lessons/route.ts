@@ -178,6 +178,14 @@ export async function POST(request: NextRequest) {
     // Определяем список учеников для проверки
     const studentIds = body.lessonType === 'group' ? body.studentIds! : [body.studentId!];
     
+    // Для админов проверяем, что указан userId
+    if (authUser.role === 'ADMIN' && !body.userId) {
+      return NextResponse.json(
+        { error: 'Для администратора необходимо указать пользователя (учителя)' },
+        { status: 400 }
+      )
+    }
+    
     // Проверяем, существуют ли все ученики и принадлежат ли они пользователю
     const students = await prisma.student.findMany({
       where: { 
@@ -193,8 +201,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Если не админ, проверяем, что все ученики принадлежат пользователю
-    if (authUser.role !== 'ADMIN') {
+    // Проверяем принадлежность учеников
+    if (authUser.role === 'ADMIN') {
+      // Для админов проверяем, что все ученики принадлежат выбранному пользователю
+      const unauthorizedStudents = students.filter(student => student.userId !== body.userId);
+      if (unauthorizedStudents.length > 0) {
+        return NextResponse.json(
+          { error: 'Выбранные ученики не принадлежат указанному пользователю' },
+          { status: 400 }
+        )
+      }
+    } else {
+      // Для обычных пользователей проверяем, что все ученики принадлежат им
       const unauthorizedStudents = students.filter(student => student.userId !== authUser.id);
       if (unauthorizedStudents.length > 0) {
         return NextResponse.json(
@@ -215,6 +233,9 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Получаем информацию об учителе для нового занятия
+    const newLessonTeacherId = authUser.role === 'ADMIN' ? body.userId : students[0]?.userId;
+
     // Проверяем конфликты для каждого ученика
     for (const studentId of studentIds) {
       const timeConflict = checkTimeConflicts(
@@ -223,7 +244,10 @@ export async function POST(request: NextRequest) {
           endTime: new Date(body.endTime),
           studentId: studentId
         },
-        existingLessons
+        existingLessons,
+        undefined,
+        [], // lunchBreaks - пока не используем
+        newLessonTeacherId
       );
 
       if (timeConflict.hasConflict) {
@@ -257,6 +281,7 @@ export async function POST(request: NextRequest) {
               isPaid: body.isPaid || false,
               isCancelled: body.isCancelled || false,
               notes: body.notes || null,
+              comment: body.comment || null,
               lessonType: 'group'
             },
             include: {
@@ -288,6 +313,7 @@ export async function POST(request: NextRequest) {
           isPaid: body.isPaid || false,
           isCancelled: body.isCancelled || false,
           notes: body.notes || null,
+          comment: body.comment || null,
           lessonType: 'individual'
         },
         include: {

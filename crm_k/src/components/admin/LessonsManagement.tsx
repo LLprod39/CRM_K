@@ -135,17 +135,19 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
   })
 
   const generateLessonsCSV = () => {
-    const headers = ['ID', 'Ученик', 'Преподаватель', 'Дата', 'Время', 'Стоимость', 'Статус', 'Оплачено', 'Проведено']
+    const headers = ['ID', 'Ученик', 'Преподаватель', 'Email преподавателя', 'Дата', 'Время', 'Стоимость', 'Статус', 'Оплачено', 'Проведено', 'Тип занятия']
     const rows = filteredLessons.map(lesson => [
       lesson.id,
       lesson.student?.fullName || 'Неизвестно',
       lesson.student?.user?.name || 'Неизвестно',
+      lesson.student?.user?.email || 'Неизвестно',
       new Date(lesson.date).toLocaleDateString('ru-RU'),
       new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
       lesson.cost,
       getStatusInfo(lesson).text,
       lesson.isPaid ? 'Да' : 'Нет',
-      lesson.isCompleted ? 'Да' : 'Нет'
+      lesson.isCompleted ? 'Да' : 'Нет',
+      lesson.lessonType === 'group' ? 'Групповое' : 'Индивидуальное'
     ])
     
     return [headers, ...rows].map(row => 
@@ -376,12 +378,26 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-4">
-                          <h4 className="font-medium text-gray-900 truncate">
-                            {lesson.student?.fullName || 'Неизвестный ученик'}
-                          </h4>
-                          <span className="text-sm text-gray-600">
-                            {lesson.student?.user?.name || 'Неизвестный преподаватель'}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                              <span className="text-sm font-medium text-blue-800">
+                                {(lesson.student?.fullName || '?').charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <h4 className="font-medium text-gray-900 truncate">
+                              {lesson.student?.fullName || 'Неизвестный ученик'}
+                            </h4>
+                          </div>
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                              <span className="text-xs font-medium text-green-800">
+                                {lesson.student?.user?.name?.charAt(0).toUpperCase() || '?'}
+                              </span>
+                            </div>
+                            <span className="truncate">
+                              👨‍🏫 {lesson.student?.user?.name || 'Неизвестный преподаватель'}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
                           <span>{new Date(lesson.date).toLocaleDateString('ru-RU')}</span>

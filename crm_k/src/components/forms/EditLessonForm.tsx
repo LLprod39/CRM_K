@@ -34,6 +34,7 @@ export default function EditLessonForm({
     isPaid: false,
     isCancelled: false,
     notes: '',
+    comment: '',
     lessonType: 'individual' as 'individual' | 'group'
   });
   const [students, setStudents] = useState<Student[]>([]);
@@ -82,6 +83,7 @@ export default function EditLessonForm({
         isPaid: lesson.isPaid,
         isCancelled: lesson.isCancelled,
         notes: lesson.notes || '',
+        comment: (lesson as any).comment || '',
         lessonType: (lesson as any).lessonType || 'individual'
       });
     }
@@ -110,7 +112,8 @@ export default function EditLessonForm({
             isPaid: formData.isPaid
           } : {}),
           isCancelled: formData.isCancelled,
-          notes: formData.notes
+          notes: formData.notes,
+          comment: formData.comment
         }),
       });
 
@@ -392,6 +395,24 @@ export default function EditLessonForm({
               </div>
             )}
           </div>
+
+          {/* Комментарий о поведении ребенка - только для прошедших занятий */}
+          {new Date(lesson.date) < new Date() && (
+            <div className="space-y-2">
+              <label htmlFor="comment" className="block text-sm font-medium text-gray-700">
+                Комментарий о поведении ребенка
+              </label>
+              <textarea
+                id="comment"
+                name="comment"
+                value={formData.comment}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 resize-none"
+                placeholder="Опишите, как вел себя ребенок на занятии, что было хорошо, что нужно улучшить..."
+              />
+            </div>
+          )}
 
           {/* Кнопки */}
           <div className="space-y-4 pt-4 border-t border-gray-200">

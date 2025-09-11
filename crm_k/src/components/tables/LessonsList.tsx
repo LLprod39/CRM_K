@@ -140,6 +140,12 @@ export default function LessonsList({ lessons, onLessonClick, onEditLesson, sele
                     <span className="font-medium">Заметки:</span> {lesson.notes}
                   </div>
                 )}
+
+                {(lesson as any).comment && (
+                  <div className="mt-2 text-sm text-blue-600 bg-blue-50 p-2 rounded-lg">
+                    <span className="font-medium">Комментарий о поведении:</span> {(lesson as any).comment}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 ml-4">
