@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Clock, User, DollarSign, Edit, Eye, Calendar } from 'lucide-react';
+import { Clock, User, DollarSign, Edit, Eye } from 'lucide-react';
 import { LessonWithOptionalStudent, getCombinedLessonStatus } from '@/types';
 
 interface LessonsListProps {
@@ -12,7 +11,6 @@ interface LessonsListProps {
 }
 
 export default function LessonsList({ lessons, onLessonClick, onEditLesson, selectedDate }: LessonsListProps) {
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   const getStatusColor = (lesson: LessonWithOptionalStudent) => {
     if (lesson.isCancelled) return 'bg-red-100 text-red-800';
@@ -74,29 +72,6 @@ export default function LessonsList({ lessons, onLessonClick, onEditLesson, sele
             <h3 className="text-lg font-medium text-gray-900">
               {selectedDate ? `Занятия на ${formatDate(selectedDate)}` : 'Все занятия'}
             </h3>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-3 py-1 text-sm rounded-md ${
-                  viewMode === 'list' 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Список
-              </button>
-              <button
-                onClick={() => setViewMode('calendar')}
-                className={`px-3 py-1 text-sm rounded-md ${
-                  viewMode === 'calendar' 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <Calendar className="w-4 h-4 inline mr-1" />
-                Календарь
-              </button>
-            </div>
           </div>
         </div>
         <div className="p-6">
@@ -123,29 +98,6 @@ export default function LessonsList({ lessons, onLessonClick, onEditLesson, sele
             {selectedDate ? `Занятия на ${formatDate(selectedDate)}` : 'Все занятия'}
             <span className="ml-2 text-sm text-gray-500">({sortedLessons.length})</span>
           </h3>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1 text-sm rounded-md ${
-                viewMode === 'list' 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Список
-            </button>
-            <button
-              onClick={() => setViewMode('calendar')}
-              className={`px-3 py-1 text-sm rounded-md ${
-                viewMode === 'calendar' 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Calendar className="w-4 h-4 inline mr-1" />
-              Календарь
-            </button>
-          </div>
         </div>
       </div>
 

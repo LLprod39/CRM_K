@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Plus, Clock, Users, Bell, Printer } from 'lucide-react';
+import { Calendar, Plus, Clock, Bell, Printer } from 'lucide-react';
 import { LessonWithOptionalStudent, getLessonStatus } from '@/types';
 import CalendarComponent from '@/components/ui/Calendar';
 import LessonsList from '@/components/tables/LessonsList';
@@ -125,7 +125,13 @@ export default function SchedulePage() {
     return lessonDate >= weekStart && lessonDate <= weekEnd;
   });
 
-  const activeStudents = new Set(lessons.map(lesson => lesson.studentId)).size;
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  
+  const monthLessons = lessons.filter(lesson => {
+    const lessonDate = new Date(lesson.date);
+    return lessonDate >= monthStart && lessonDate <= monthEnd;
+  });
 
   // Предстоящие занятия (следующие 3 дня)
   const upcomingLessons = lessons.filter(lesson => {
@@ -234,7 +240,7 @@ export default function SchedulePage() {
       )}
 
       {/* Статистика */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -249,24 +255,24 @@ export default function SchedulePage() {
 
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Users className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Активных учеников</p>
-              <p className="text-2xl font-bold text-gray-900">{activeStudents}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex items-center">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <Calendar className="w-6 h-6 text-yellow-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Занятий в неделю</p>
               <p className="text-2xl font-bold text-gray-900">{weekLessons.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Calendar className="w-6 h-6 text-purple-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Занятий в месяц</p>
+              <p className="text-2xl font-bold text-gray-900">{monthLessons.length}</p>
             </div>
           </div>
         </div>
