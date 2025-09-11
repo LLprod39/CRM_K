@@ -1,6 +1,7 @@
 'use client';
 
 import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { UserRole } from '@/domain/entities/User';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -98,8 +99,8 @@ export default function Home() {
       href: '/students'
     },
     {
-      title: 'Запланировать занятие',
-      description: 'Добавить новое занятие в расписание',
+      title: user?.role === UserRole.ADMIN ? 'Заполнить расписание' : 'Просмотреть расписание',
+      description: user?.role === UserRole.ADMIN ? 'Добавить новое занятие в расписание' : 'Посмотреть все запланированные занятия',
       icon: Calendar,
       color: 'green',
       href: '/schedule'
@@ -200,7 +201,10 @@ export default function Home() {
           </div>
           <p className="text-gray-500 text-lg mb-2">Пока нет данных для отображения</p>
           <p className="text-sm text-gray-400">
-            Начните с добавления первого ученика или запланируйте занятие
+            {user?.role === UserRole.ADMIN 
+              ? 'Начните с добавления первого ученика или запланируйте занятие'
+              : 'Начните с добавления первого ученика или посмотрите расписание'
+            }
           </p>
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
@@ -215,7 +219,7 @@ export default function Home() {
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Calendar className="w-4 h-4 mr-2" />
-              Запланировать занятие
+              {user?.role === UserRole.ADMIN ? 'Запланировать занятие' : 'Просмотреть расписание'}
             </Link>
           </div>
         </div>
