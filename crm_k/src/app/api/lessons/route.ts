@@ -130,6 +130,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Только администраторы могут создавать занятия
+    if (authUser.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Доступ запрещен. Только администраторы могут создавать занятия.' },
+        { status: 403 }
+      )
+    }
+
     const body: CreateLessonData = await request.json()
     
     // Валидация обязательных полей

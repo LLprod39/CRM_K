@@ -12,9 +12,10 @@ interface CalendarProps {
   onLessonClick: (lesson: LessonWithOptionalStudent) => void;
   onAddLesson?: (date: Date) => void;
   currentDate?: Date;
+  userRole?: 'ADMIN' | 'USER';
 }
 
-export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLesson, currentDate = new Date() }: CalendarProps) {
+export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLesson, currentDate = new Date(), userRole }: CalendarProps) {
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
   const [showDayModal, setShowDayModal] = useState(false);
@@ -85,8 +86,8 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
     
     const dayLessons = lessonsByDay[day] || [];
     
-    // Если день пустой и есть функция onAddLesson, открываем форму добавления занятия
-    if (dayLessons.length === 0 && onAddLesson) {
+    // Если день пустой и есть функция onAddLesson, и пользователь - админ, открываем форму добавления занятия
+    if (dayLessons.length === 0 && onAddLesson && userRole === 'ADMIN') {
       onAddLesson(newDate);
       return;
     }
@@ -302,6 +303,7 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
           onDateClick={onDateClick}
           onAddLesson={onAddLesson}
           currentDate={currentDate}
+          userRole={userRole}
         />
       </div>
 
@@ -312,6 +314,7 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
         lessons={selectedDayLessons}
         date={selectedDayDate}
         onLessonClick={onLessonClick}
+        userRole={userRole}
       />
     </>
   );

@@ -8,9 +8,10 @@ interface LessonsListProps {
   onLessonClick: (lesson: LessonWithOptionalStudent) => void;
   onEditLesson: (lesson: LessonWithOptionalStudent) => void;
   selectedDate?: Date;
+  userRole?: 'ADMIN' | 'USER';
 }
 
-export default function LessonsList({ lessons, onLessonClick, onEditLesson, selectedDate }: LessonsListProps) {
+export default function LessonsList({ lessons, onLessonClick, onEditLesson, selectedDate, userRole }: LessonsListProps) {
 
   const getStatusColor = (lesson: LessonWithOptionalStudent) => {
     if (lesson.isCancelled) return 'bg-red-100 text-red-800';
@@ -142,16 +143,18 @@ export default function LessonsList({ lessons, onLessonClick, onEditLesson, sele
               </div>
 
               <div className="flex items-center gap-2 ml-4">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditLesson(lesson);
-                  }}
-                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md"
-                  title="Редактировать"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
+                {userRole === 'ADMIN' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditLesson(lesson);
+                    }}
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md"
+                    title="Редактировать"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

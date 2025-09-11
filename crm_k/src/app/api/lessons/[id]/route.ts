@@ -203,6 +203,14 @@ export async function DELETE(
       )
     }
 
+    // Только администраторы могут удалять занятия
+    if (authUser.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Доступ запрещен. Только администраторы могут удалять занятия.' },
+        { status: 403 }
+      )
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
     

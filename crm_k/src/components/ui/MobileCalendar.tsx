@@ -11,6 +11,7 @@ interface MobileCalendarProps {
   onLessonClick?: (lesson: LessonWithOptionalStudent) => void;
   onAddLesson?: (date: Date) => void;
   currentDate?: Date;
+  userRole?: 'ADMIN' | 'USER';
 }
 
 export default function MobileCalendar({ 
@@ -18,7 +19,8 @@ export default function MobileCalendar({
   onDateClick, 
   onLessonClick, 
   onAddLesson,
-  currentDate = new Date() 
+  currentDate = new Date(),
+  userRole
 }: MobileCalendarProps) {
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
@@ -90,8 +92,8 @@ export default function MobileCalendar({
     
     const dayLessons = lessonsByDay[day] || [];
     
-    // Если день пустой и есть функция onAddLesson, открываем форму добавления занятия
-    if (dayLessons.length === 0 && onAddLesson) {
+    // Если день пустой и есть функция onAddLesson, и пользователь - админ, открываем форму добавления занятия
+    if (dayLessons.length === 0 && onAddLesson && userRole === 'ADMIN') {
       onAddLesson(newDate);
       return;
     }
@@ -268,6 +270,7 @@ export default function MobileCalendar({
           lessons={selectedDayLessons}
           date={selectedDayDate}
           onLessonClick={onLessonClick}
+          userRole={userRole}
         />
       )}
     </div>

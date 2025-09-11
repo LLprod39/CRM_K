@@ -13,6 +13,7 @@ interface EditLessonFormProps {
   onSuccess: () => void;
   onDelete: () => void;
   lesson: Lesson | null;
+  userRole?: 'ADMIN' | 'USER';
 }
 
 export default function EditLessonForm({ 
@@ -20,7 +21,8 @@ export default function EditLessonForm({
   onClose, 
   onSuccess, 
   onDelete,
-  lesson 
+  lesson,
+  userRole
 }: EditLessonFormProps) {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -180,7 +182,7 @@ export default function EditLessonForm({
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-semibold text-gray-900">
-            Редактировать занятие
+            {userRole === 'ADMIN' ? 'Редактировать занятие' : 'Просмотр занятия'}
           </h2>
           <button
             onClick={onClose}
@@ -199,26 +201,52 @@ export default function EditLessonForm({
 
           {/* Дата и время */}
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
-            <DateTimePicker
-              value={formData.date}
-              onChange={(value: string) => {
-                // value уже в формате YYYY-MM-DDTHH:MM
-                const startTime = new Date(value);
-                const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
-                
-                // Форматируем время окончания в том же формате
-                const endTimeString = `${endTime.getFullYear()}-${String(endTime.getMonth() + 1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}T${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`;
-                
-                setFormData(prev => ({
-                  ...prev,
-                  date: value,
-                  endTime: endTimeString
-                }));
-              }}
-              min={user?.role === 'ADMIN' ? undefined : new Date().toISOString()}
-              showDurationSelector={true}
-              defaultDuration={60}
-            />
+            {userRole === 'ADMIN' ? (
+              <DateTimePicker
+                value={formData.date}
+                onChange={(value: string) => {
+                  // value уже в формате YYYY-MM-DDTHH:MM
+                  const startTime = new Date(value);
+                  const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
+                  
+                  // Форматируем время окончания в том же формате
+                  const endTimeString = `${endTime.getFullYear()}-${String(endTime.getMonth() + 1).padStart(2, '0')}-${String(endTime.getDate()).padStart(2, '0')}T${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`;
+                  
+                  setFormData(prev => ({
+                    ...prev,
+                    date: value,
+                    endTime: endTimeString
+                  }));
+                }}
+                min={user?.role === 'ADMIN' ? undefined : new Date().toISOString()}
+                showDurationSelector={true}
+                defaultDuration={60}
+              />
+            ) : (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Дата и время</label>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="text-sm text-gray-900">
+                    {new Date(formData.date).toLocaleString('ru-RU', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                    {formData.endTime && (
+                      <span className="text-gray-500">
+                        {' - '}
+                        {new Date(formData.endTime).toLocaleTimeString('ru-RU', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Ученик */}
@@ -226,20 +254,28 @@ export default function EditLessonForm({
             <label htmlFor="studentId" className="block text-sm font-medium text-gray-700">
               Ученик
             </label>
-            <select
-              id="studentId"
-              name="studentId"
-              value={formData.studentId}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-            >
-              {students.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.fullName} ({student.age} лет)
-                </option>
-              ))}
-            </select>
+            {userRole === 'ADMIN' ? (
+              <select
+                id="studentId"
+                name="studentId"
+                value={formData.studentId}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              >
+                {students.map((student) => (
+                  <option key={student.id} value={student.id}>
+                    {student.fullName} ({student.age} лет)
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="text-sm text-gray-900">
+                  {students.find(s => s.id.toString() === formData.studentId)?.fullName || 'Неизвестно'}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Стоимость */}
@@ -247,17 +283,23 @@ export default function EditLessonForm({
             <label htmlFor="cost" className="block text-sm font-medium text-gray-700">
               Стоимость (тенге)
             </label>
-            <input
-              type="number"
-              id="cost"
-              name="cost"
-              value={formData.cost}
-              onChange={handleChange}
-              required
-              min="0"
-              step="0.01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-            />
+            {userRole === 'ADMIN' ? (
+              <input
+                type="number"
+                id="cost"
+                name="cost"
+                value={formData.cost}
+                onChange={handleChange}
+                required
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              />
+            ) : (
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="text-sm text-gray-900">{formData.cost} ₸</div>
+              </div>
+            )}
           </div>
 
           {/* Статусы */}
@@ -292,6 +334,24 @@ export default function EditLessonForm({
                 </>
               )}
               
+              {/* Для обычных пользователей показываем статусы только для чтения */}
+              {userRole === 'USER' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <span className="text-sm text-gray-700">Проведено</span>
+                    <span className={`text-sm font-medium ${formData.isCompleted ? 'text-green-600' : 'text-gray-400'}`}>
+                      {formData.isCompleted ? 'Да' : 'Нет'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <span className="text-sm text-gray-700">Оплачено</span>
+                    <span className={`text-sm font-medium ${formData.isPaid ? 'text-green-600' : 'text-gray-400'}`}>
+                      {formData.isPaid ? 'Да' : 'Нет'}
+                    </span>
+                  </div>
+                </div>
+              )}
+              
               {/* Чекбокс отмены доступен всем пользователям */}
               <label className="flex items-center cursor-pointer">
                 <input
@@ -301,7 +361,9 @@ export default function EditLessonForm({
                   onChange={handleChange}
                   className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                 />
-                <span className="ml-3 text-sm text-gray-700">Отменено</span>
+                <span className="ml-3 text-sm text-gray-700">
+                  {userRole === 'USER' ? 'Отменить занятие' : 'Отменено'}
+                </span>
               </label>
               
             </div>
@@ -312,15 +374,23 @@ export default function EditLessonForm({
             <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
               Заметки
             </label>
-            <textarea
-              id="notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 resize-none"
-              placeholder="Дополнительная информация о занятии..."
-            />
+            {userRole === 'ADMIN' ? (
+              <textarea
+                id="notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 resize-none"
+                placeholder="Дополнительная информация о занятии..."
+              />
+            ) : (
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="text-sm text-gray-900 whitespace-pre-wrap">
+                  {formData.notes || 'Нет заметок'}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Кнопки */}
@@ -331,26 +401,39 @@ export default function EditLessonForm({
                 onClick={onClose}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
               >
-                Отмена
+                {userRole === 'USER' ? 'Закрыть' : 'Отмена'}
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors duration-200 font-medium"
-              >
-                {loading ? 'Сохранение...' : 'Сохранить'}
-              </button>
+              {userRole === 'ADMIN' && (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors duration-200 font-medium"
+                >
+                  {loading ? 'Сохранение...' : 'Сохранить'}
+                </button>
+              )}
+              {userRole === 'USER' && (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors duration-200 font-medium"
+                >
+                  {loading ? 'Сохранение...' : 'Сохранить изменения'}
+                </button>
+              )}
             </div>
             
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleteLoading}
-              className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors duration-200 font-medium"
-            >
-              <Trash2 className="w-4 h-4" />
-              {deleteLoading ? 'Удаление...' : 'Удалить занятие'}
-            </button>
+            {userRole === 'ADMIN' && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors duration-200 font-medium"
+              >
+                <Trash2 className="w-4 h-4" />
+                {deleteLoading ? 'Удаление...' : 'Удалить занятие'}
+              </button>
+            )}
           </div>
         </form>
       </div>

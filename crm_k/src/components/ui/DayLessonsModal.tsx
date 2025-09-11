@@ -10,6 +10,7 @@ interface DayLessonsModalProps {
   lessons: LessonWithOptionalStudent[];
   date: Date;
   onLessonClick: (lesson: LessonWithOptionalStudent) => void;
+  userRole?: 'ADMIN' | 'USER';
 }
 
 export default function DayLessonsModal({ 
@@ -17,7 +18,8 @@ export default function DayLessonsModal({
   onClose, 
   lessons, 
   date, 
-  onLessonClick 
+  onLessonClick,
+  userRole
 }: DayLessonsModalProps) {
   console.log('DayLessonsModal: isOpen =', isOpen, 'lessons =', lessons.length);
   const [sortField, setSortField] = useState<'time' | 'student' | 'status' | 'cost'>('time');
@@ -413,7 +415,12 @@ export default function DayLessonsModal({
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              <span>Нажмите на занятие для редактирования</span>
+              <span>
+                {userRole === 'ADMIN' 
+                  ? 'Нажмите на занятие для редактирования' 
+                  : 'Нажмите на занятие для просмотра (только отмена доступна)'
+                }
+              </span>
               {lessons.length > 0 && (
                 <span className="ml-4">
                   • Всего занятий: {lessons.length}

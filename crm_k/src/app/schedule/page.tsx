@@ -11,8 +11,10 @@ import EditLessonForm from '@/components/forms/EditLessonForm';
 import { printSchedule } from '@/lib/print';
 import { autoUpdateLessonStatuses } from '@/lib/lessonUtils';
 import { apiRequest } from '@/lib/api';
+import { useAuth } from '@/presentation/contexts';
 
 export default function SchedulePage() {
+  const { user } = useAuth();
   const [lessons, setLessons] = useState<LessonWithOptionalStudent[]>([]);
   // const [students] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,6 +89,10 @@ export default function SchedulePage() {
   };
 
   const handleAddLesson = (date: Date) => {
+    // Только администраторы могут создавать занятия
+    if (user?.role !== 'ADMIN') {
+      return;
+    }
     setSelectedDate(date);
     setShowAddForm(true);
   };
@@ -97,6 +103,10 @@ export default function SchedulePage() {
   };
 
   const handleEditLesson = (lesson: LessonWithOptionalStudent) => {
+    // Только администраторы могут редактировать занятия
+    if (user?.role !== 'ADMIN') {
+      return;
+    }
     setSelectedLesson(lesson);
     setShowEditForm(true);
   };
@@ -179,13 +189,15 @@ export default function SchedulePage() {
             <Calendar className="w-4 h-4 mr-2" />
             {viewMode === 'calendar' ? 'Список' : 'Календарь'}
           </button>
-          <button 
-            onClick={() => setShowAddForm(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 hover:scale-105"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Добавить занятие
-          </button>
+          {user?.role === 'ADMIN' && (
+            <button 
+              onClick={() => setShowAddForm(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 hover:scale-105"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Добавить занятие
+            </button>
+          )}
         </div>
       </div>
 
@@ -235,6 +247,7 @@ export default function SchedulePage() {
           onDateClick={handleDateClick}
           onAddLesson={handleAddLesson}
           currentDate={selectedDate}
+          userRole={user?.role}
         />
       ) : (
         <LessonsList
@@ -242,6 +255,7 @@ export default function SchedulePage() {
           onLessonClick={handleLessonClick}
           onEditLesson={handleEditLesson}
           selectedDate={selectedDate}
+          userRole={user?.role}
         />
       )}
 
@@ -301,6 +315,7 @@ export default function SchedulePage() {
         onSuccess={handleEditSuccess}
         onDelete={handleDeleteSuccess}
         lesson={selectedLesson}
+        userRole={user?.role}
       />
     </div>
   );
