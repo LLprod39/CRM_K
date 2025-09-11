@@ -155,7 +155,7 @@ export default function LessonHistory() {
       </div>
       <div className="divide-y divide-gray-200">
         {lessons.map((lesson) => (
-          <div key={lesson.id} className="p-6">
+          <div key={lesson.id} className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">
@@ -164,33 +164,25 @@ export default function LessonHistory() {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center">
-                    <h4 className="text-lg font-medium text-gray-900 truncate">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-gray-900 truncate">
                       {lesson.student.fullName}
                     </h4>
-                    <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson)}`}>
+                    <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson)}`}>
                       {getStatusText(lesson)}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center text-sm text-gray-500">
-                    <Calendar className="w-4 h-4 mr-1" />
+                  <div className="mt-1 flex items-center text-xs text-gray-500">
+                    <Calendar className="w-3 h-3 mr-1" />
                     {formatDate(lesson.date)}
-                    <Clock className="w-4 h-4 ml-3 mr-1" />
+                    <Clock className="w-3 h-3 ml-2 mr-1" />
                     {formatTime(lesson.date)}
                   </div>
-                  {lesson.notes && (
-                    <div className="mt-1 text-sm text-gray-600">
-                      {lesson.notes}
-                    </div>
-                  )}
                 </div>
               </div>
               <div className="flex-shrink-0 text-right">
-                <div className="text-lg font-semibold text-gray-900">
+                <div className="text-sm font-semibold text-gray-900">
                   {formatCurrency(lesson.cost)}
-                </div>
-                <div className="text-sm text-gray-500">
-                  Стоимость
                 </div>
               </div>
             </div>
