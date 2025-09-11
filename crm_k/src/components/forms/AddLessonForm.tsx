@@ -5,6 +5,7 @@ import { X, Calendar, User, DollarSign, FileText, Clock, AlertCircle, CheckCircl
 import { Student } from '@/types';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/presentation/contexts';
+import DateTimePicker from '@/components/ui/DateTimePicker';
 
 interface AddLessonFormProps {
   isOpen: boolean;
@@ -13,6 +14,16 @@ interface AddLessonFormProps {
   selectedDate?: Date;
   selectedStudent?: Student;
 }
+
+// Вспомогательная функция для создания локального времени в формате ISO
+const toLocalISOString = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
 
 export default function AddLessonForm({ 
   isOpen, 
@@ -23,7 +34,7 @@ export default function AddLessonForm({
 }: AddLessonFormProps) {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    date: selectedDate ? selectedDate.toISOString().slice(0, 16) : '',
+    date: selectedDate ? toLocalISOString(selectedDate) : '',
     endTime: '',
     studentId: selectedStudent?.id || '',
     cost: '',
@@ -62,8 +73,8 @@ export default function AddLessonForm({
   // Обновляем форму при изменении selectedDate или selectedStudent
   useEffect(() => {
     if (selectedDate) {
-      const startTime = selectedDate.toISOString().slice(0, 16);
-      const endTime = new Date(selectedDate.getTime() + 60 * 60 * 1000).toISOString().slice(0, 16); // +1 час по умолчанию
+      const startTime = toLocalISOString(selectedDate);
+      const endTime = toLocalISOString(new Date(selectedDate.getTime() + 60 * 60 * 1000)); // +1 час по умолчанию
       setFormData(prev => ({
         ...prev,
         date: startTime,
@@ -227,8 +238,8 @@ export default function AddLessonForm({
                   const endTime = new Date(yesterday.getTime() + 60 * 60 * 1000);
                   setFormData(prev => ({
                     ...prev,
-                    date: yesterday.toISOString().slice(0, 16),
-                    endTime: endTime.toISOString().slice(0, 16),
+                    date: toLocalISOString(yesterday),
+                    endTime: toLocalISOString(endTime),
                     isCompleted: true,
                     isPaid: true
                   }));
@@ -257,68 +268,56 @@ export default function AddLessonForm({
           )}
 
           {/* Время проведения */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-                <Calendar className="w-4 h-4 inline mr-2" />
-                Дата и время начала
-              </label>
-              <input
-                type="datetime-local"
-                id="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                required
-                min={user?.role === 'ADMIN' ? undefined : new Date().toISOString().slice(0, 16)}
-                className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                  validationErrors.date ? 'border-red-300' : 'border-gray-300'
-                }`}
-              />
-              {validationErrors.date && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {validationErrors.date}
-                </p>
-              )}
-              {user?.role === 'ADMIN' && isBackdate && (
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <div className="flex items-start">
-                    <AlertCircle className="w-4 h-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm">
-                      <p className="text-blue-800 font-medium">Администратор</p>
-                      <p className="text-blue-700 mt-1">
-                        Вы можете создавать занятия задним числом. Рекомендуется отметить занятие как "Проведено" и "Оплачено" если оно уже состоялось.
-                      </p>
-                    </div>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
+            <DateTimePicker
+              value={formData.date}
+              onChange={(value: string) => {
+                const startTime = new Date(value);
+                const newDateString = toLocalISOString(startTime);
+                
+                // Обновляем только если дата действительно изменилась
+                if (formData.date !== newDateString) {
+                  const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
+                  
+                  setFormData(prev => ({
+                    ...prev,
+                    date: newDateString,
+                    endTime: toLocalISOString(endTime)
+                  }));
+                }
+              }}
+              min={user?.role === 'ADMIN' ? undefined : new Date().toISOString()}
+              showDurationSelector={true}
+              defaultDuration={60}
+            />
+            
+            {validationErrors.date && (
+              <p className="mt-2 text-sm text-red-600 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {validationErrors.date}
+              </p>
+            )}
+            
+            {validationErrors.endTime && (
+              <p className="mt-2 text-sm text-red-600 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {validationErrors.endTime}
+              </p>
+            )}
+            
+            {user?.role === 'ADMIN' && isBackdate && (
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-start">
+                  <AlertCircle className="w-4 h-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="text-blue-800 font-medium">Администратор</p>
+                    <p className="text-blue-700 mt-1">
+                      Вы можете создавать занятия задним числом. Рекомендуется отметить занятие как "Проведено" и "Оплачено" если оно уже состоялось.
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
-            
-            <div>
-              <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-2">
-                <Clock className="w-4 h-4 inline mr-2" />
-                Время окончания
-              </label>
-              <input
-                type="datetime-local"
-                id="endTime"
-                name="endTime"
-                value={formData.endTime}
-                onChange={handleChange}
-                required
-                className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                  validationErrors.endTime ? 'border-red-300' : 'border-gray-300'
-                }`}
-              />
-              {validationErrors.endTime && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {validationErrors.endTime}
-                </p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Ученик и тип занятия */}

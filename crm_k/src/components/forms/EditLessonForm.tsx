@@ -5,6 +5,7 @@ import { X, Trash2 } from 'lucide-react';
 import { Student, Lesson } from '@/types';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/presentation/contexts';
+import DateTimePicker from '@/components/ui/DateTimePicker';
 
 interface EditLessonFormProps {
   isOpen: boolean;
@@ -187,19 +188,27 @@ export default function EditLessonForm({
           )}
 
           {/* Дата и время */}
-          <div className="space-y-2">
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-              Дата и время
-            </label>
-            <input
-              type="datetime-local"
-              id="date"
-              name="date"
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
+            <DateTimePicker
               value={formData.date}
-              onChange={handleChange}
-              required
-              min={user?.role === 'ADMIN' ? undefined : new Date().toISOString().slice(0, 16)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              onChange={(value) => {
+                const startTime = new Date(value);
+                const newDateString = startTime.toISOString().slice(0, 16);
+                
+                // Обновляем только если дата действительно изменилась
+                if (formData.date !== newDateString) {
+                  const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
+                  
+                  setFormData(prev => ({
+                    ...prev,
+                    date: newDateString,
+                    endTime: endTime.toISOString().slice(0, 16)
+                  }));
+                }
+              }}
+              min={user?.role === 'ADMIN' ? undefined : new Date().toISOString()}
+              showDurationSelector={true}
+              defaultDuration={60}
             />
           </div>
 

@@ -8,6 +8,7 @@ import { apiRequest } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import PhotoUpload from './PhotoUpload';
+import DateTimePicker from '@/components/ui/DateTimePicker';
 
 interface AddStudentFormProps {
   isOpen: boolean;
@@ -349,37 +350,26 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
               <>
                 {/* Время проведения */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <Calendar className="w-4 h-4 inline mr-2" />
-                        Дата и время начала
-                      </label>
-                      <input
-                        type="datetime-local"
-                        name="lesson_date"
-                        value={lessonData.date.toISOString().slice(0, 16)}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <Clock className="w-4 h-4 inline mr-2" />
-                        Время окончания
-                      </label>
-                      <input
-                        type="datetime-local"
-                        name="lesson_endTime"
-                        value={lessonData.endTime.toISOString().slice(0, 16)}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                  </div>
+                  <DateTimePicker
+                    value={lessonData.date.toISOString()}
+                    onChange={(value) => {
+                      const startTime = new Date(value);
+                      const newDateString = startTime.toISOString();
+                      
+                      // Обновляем только если дата действительно изменилась
+                      if (lessonData.date.toISOString() !== newDateString) {
+                        const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
+                        
+                        setLessonData(prev => ({
+                          ...prev,
+                          date: startTime,
+                          endTime: endTime
+                        }));
+                      }
+                    }}
+                    showDurationSelector={true}
+                    defaultDuration={60}
+                  />
                 </div>
 
                 {/* Стоимость и тип занятия */}
