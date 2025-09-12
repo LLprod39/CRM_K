@@ -392,7 +392,7 @@ export default function SubscriptionModal({
           studentIds: formData.lessonType === 'group' ? selectedStudents.map(s => s.id) : undefined,
           cost: parseFloat(formData.cost),
           userId: formData.userId,
-          isPaid: true // Помечаем как предоплаченные
+          isPaid: false // Создаем как неоплаченные, предоплата их пометит как оплаченные
         }),
       });
 

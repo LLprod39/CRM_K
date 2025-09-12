@@ -109,45 +109,6 @@ export async function POST(request: NextRequest) {
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Проверяем конфликты с занятиями
-    const conflictingLessons = await prisma.lesson.findMany({
-      where: {
-        student: {
-          userId: user.id
-        },
-        date: {
-          gte: startOfDay,
-          lte: endOfDay
-        },
-        OR: [
-          {
-            AND: [
-              { date: { lt: new Date(endTime) } },
-              { 
-                OR: [
-                  { endTime: { gt: new Date(startTime) } }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      include: {
-        student: true
-      }
-    });
-
-    if (conflictingLessons.length > 0) {
-      return NextResponse.json({ 
-        error: 'Выбранное время обеда конфликтует с существующими занятиями',
-        conflictingLessons: conflictingLessons.map(lesson => ({
-          id: lesson.id,
-          date: lesson.date,
-          endTime: lesson.endTime,
-          student: lesson.student
-        }))
-      }, { status: 400 });
-    }
 
     // Проверяем, есть ли уже время обеда на эту дату
     const existingLunchBreak = await prisma.lunchBreak.findFirst({
@@ -239,45 +200,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Время обеда не найдено' }, { status: 404 });
     }
 
-    // Проверяем конфликты с занятиями перед удалением
-    const conflictingLessons = await prisma.lesson.findMany({
-      where: {
-        student: {
-          userId: lunchBreak.userId
-        },
-        date: {
-          gte: startOfDay,
-          lte: endOfDay
-        },
-        OR: [
-          {
-            AND: [
-              { date: { lt: lunchBreak.endTime } },
-              { 
-                OR: [
-                  { endTime: { gt: lunchBreak.startTime } }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      include: {
-        student: true
-      }
-    });
-
-    if (conflictingLessons.length > 0) {
-      return NextResponse.json({ 
-        error: 'Невозможно удалить обед - он не конфликтует с занятиями',
-        conflictingLessons: conflictingLessons.map(lesson => ({
-          id: lesson.id,
-          date: lesson.date,
-          endTime: lesson.endTime,
-          student: lesson.student
-        }))
-      }, { status: 400 });
-    }
 
     await prisma.lunchBreak.delete({
       where: { id: lunchBreak.id }
@@ -330,45 +252,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Обед не найден' }, { status: 404 });
     }
 
-    // Проверяем конфликты с занятиями
-    const conflictingLessons = await prisma.lesson.findMany({
-      where: {
-        student: {
-          userId: existingLunchBreak.userId
-        },
-        date: {
-          gte: startOfDay,
-          lte: endOfDay
-        },
-        OR: [
-          {
-            AND: [
-              { date: { lt: new Date(endTime) } },
-              { 
-                OR: [
-                  { endTime: { gt: new Date(startTime) } }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      include: {
-        student: true
-      }
-    });
-
-    if (conflictingLessons.length > 0) {
-      return NextResponse.json({ 
-        error: 'Выбранное время обеда конфликтует с существующими занятиями',
-        conflictingLessons: conflictingLessons.map(lesson => ({
-          id: lesson.id,
-          date: lesson.date,
-          endTime: lesson.endTime,
-          student: lesson.student
-        }))
-      }, { status: 400 });
-    }
 
     // Обновляем обед
     const updatedLunchBreak = await prisma.lunchBreak.update({

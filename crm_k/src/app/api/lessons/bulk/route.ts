@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
-import { checkTimeConflicts } from '@/lib/scheduleUtils'
 
 interface BulkLessonData {
   studentId?: string;
@@ -118,65 +117,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Проверяем конфликты времени
-    const existingLessons = await prisma.lesson.findMany({
-      where: {
-        isCancelled: false,
-        date: {
-          gte: new Date(body.schedulePattern.startDate),
-          lte: new Date(body.schedulePattern.endDate)
-        }
-      }
-    });
-
-    // Проверяем конфликты для каждого занятия
-    const conflictingLessons: Array<{
-      date: Date;
-      endTime: Date;
-      studentId: number;
-      conflict: string;
-    }> = [];
-    
-    console.log(`Проверяем конфликты для ${lessonsToCreate.length} занятий`)
-    console.log(`Найдено ${existingLessons.length} существующих занятий в периоде`)
-    
-    for (const lesson of lessonsToCreate) {
-      const timeConflict = checkTimeConflicts(
-        lesson,
-        existingLessons,
-        undefined,
-        [], // lunchBreaks - пока не используем
-        body.userId
-      );
-
-      if (timeConflict.hasConflict) {
-        console.log(`Конфликт обнаружен для занятия:`, {
-          date: lesson.date,
-          endTime: lesson.endTime,
-          studentId: lesson.studentId,
-          conflict: timeConflict.message
-        })
-        conflictingLessons.push({
-          ...lesson,
-          conflict: timeConflict.message
-        });
-      }
-    }
-
-    if (conflictingLessons.length > 0) {
-      return NextResponse.json(
-        { 
-          error: 'Обнаружены конфликты времени',
-          conflictingLessons: conflictingLessons.map(lesson => ({
-            date: lesson.date,
-            endTime: lesson.endTime,
-            studentId: lesson.studentId,
-            conflict: lesson.conflict
-          }))
-        },
-        { status: 409 }
-      )
-    }
 
     // Создаем занятия в транзакции
     const createdLessons = await prisma.$transaction(async (tx) => {

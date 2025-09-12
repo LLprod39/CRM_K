@@ -220,11 +220,7 @@ export default function AddLessonForm({
         setValidationErrors({});
       } else {
         const errorData = await response.json();
-        if (errorData.error === 'Конфликт времени') {
-          setError(`${errorData.error}: ${errorData.details}`);
-        } else {
-          setError(errorData.error || 'Ошибка при создании занятия');
-        }
+        setError(errorData.error || 'Ошибка при создании занятия');
       }
     } catch {
       setError('Ошибка при создании занятия');

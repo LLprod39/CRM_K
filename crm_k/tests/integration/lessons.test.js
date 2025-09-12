@@ -186,37 +186,6 @@ describe('Lessons API', () => {
       expect(response.status).toBe(400)
     })
 
-    it('should validate lesson time conflicts', async () => {
-      const baseDate = new Date('2025-01-15T10:00:00Z')
-      
-      // Create existing lesson
-      await testHelpers.prisma.lesson.create({
-        data: {
-          ...createTestLesson('individual', testData.student.id),
-          date: baseDate,
-          endTime: new Date(baseDate.getTime() + 60 * 60 * 1000) // +1 hour
-        }
-      })
-
-      // Try to create conflicting lesson
-      const conflictingData = {
-        ...createTestLesson('individual', testData.student.id),
-        date: baseDate,
-        endTime: new Date(baseDate.getTime() + 30 * 60 * 1000) // +30 minutes (overlaps)
-      }
-      const headers = testHelpers.createAuthHeaders(testData.user)
-      
-      const response = await fetch('http://localhost:3000/api/lessons', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(conflictingData)
-      })
-
-      expect(response.status).toBe(400)
-      
-      const data = await response.json()
-      expect(data).toHaveProperty('error')
-    })
 
     it('should allow admin to create lesson for any student', async () => {
       const lessonData = createTestLesson('individual', testData.student.id)

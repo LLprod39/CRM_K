@@ -1162,7 +1162,7 @@ export default function UnifiedSubscriptionModal({
           studentIds: regularData.lessonType === 'group' ? selectedStudents.map(s => s.id) : undefined,
           cost: parseFloat(regularData.cost),
           userId: regularData.userId,
-          isPaid: true
+          isPaid: false // Создаем как неоплаченные, предоплата их пометит как оплаченные
         };
         
         console.log('Отправляем данные для создания занятий:', JSON.stringify(requestData, null, 2));
@@ -1178,17 +1178,6 @@ export default function UnifiedSubscriptionModal({
         if (!lessonsResponse.ok) {
           const errorData = await lessonsResponse.json();
           
-          // Обрабатываем конфликты времени более детально
-          if (lessonsResponse.status === 409 && errorData.conflictingLessons) {
-            const conflictDetails = errorData.conflictingLessons
-              .map((conflict: any) => 
-                `${new Date(conflict.date).toLocaleDateString('ru-RU')} в ${new Date(conflict.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${conflict.conflict}`
-              )
-              .join('\n');
-            
-            setSuggestAlternativeTime(true);
-            throw new Error(`Обнаружены конфликты времени:\n${conflictDetails}\n\nПожалуйста, выберите другое время или даты для занятий.`);
-          }
           
           throw new Error(errorData.error || 'Ошибка при создании занятий');
         }

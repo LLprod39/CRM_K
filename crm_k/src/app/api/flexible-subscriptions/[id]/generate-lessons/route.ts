@@ -82,52 +82,14 @@ export async function POST(
       )
     }
 
-    // Проверяем конфликты времени
-    const existingLessons = await prisma.lesson.findMany({
-      where: {
-        isCancelled: false,
-        date: {
-          gte: subscription.startDate,
-          lte: subscription.endDate
-        }
-      }
+    // Создаем все уроки
+    await prisma.lesson.createMany({
+      data: lessonsToCreate
     })
 
-    const conflictingLessons = []
-    const validLessons = []
-
-    for (const lesson of lessonsToCreate) {
-      const hasConflict = existingLessons.some(existing => {
-        const existingStart = new Date(existing.date)
-        const existingEnd = existing.endTime ? new Date(existing.endTime) : new Date(existingStart.getTime() + 60 * 60 * 1000)
-        const newStart = new Date(lesson.date)
-        const newEnd = new Date(lesson.endTime)
-        
-        return (newStart < existingEnd && newEnd > existingStart)
-      })
-
-      if (hasConflict) {
-        conflictingLessons.push(lesson)
-      } else {
-        validLessons.push(lesson)
-      }
-    }
-
-    // Создаем только валидные уроки
-    if (validLessons.length > 0) {
-      await prisma.lesson.createMany({
-        data: validLessons
-      })
-    }
-
     return NextResponse.json({
-      message: `Создано ${validLessons.length} уроков`,
-      createdLessons: validLessons.length,
-      conflictingLessons: conflictingLessons.length,
-      conflicts: conflictingLessons.map(lesson => ({
-        date: lesson.date,
-        time: lesson.date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-      }))
+      message: `Создано ${lessonsToCreate.length} уроков`,
+      createdLessons: lessonsToCreate.length
     })
   } catch (error) {
     console.error('Ошибка при генерации уроков из абонемента:', error)

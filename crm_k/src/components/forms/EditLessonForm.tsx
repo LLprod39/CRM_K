@@ -148,11 +148,7 @@ export default function EditLessonForm({
         onClose();
       } else {
         const errorData = await response.json();
-        const errorMessage = errorData.error === 'Конфликт времени' 
-          ? `${errorData.error}: ${errorData.details}`
-          : errorData.error || 'Ошибка при обновлении занятия';
-        
-        setError(errorMessage);
+        setError(errorData.error || 'Ошибка при обновлении занятия');
       }
     } catch {
       const errorMessage = 'Ошибка при обновлении занятия';

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { CreateLessonData } from '@/types'
 import { getAuthUser } from '@/lib/auth'
-import { checkTimeConflicts } from '@/lib/scheduleUtils'
 import { getLessonStatus } from '@/lib/lessonStatusUtils'
 
 // GET /api/lessons - получить все занятия
@@ -237,36 +236,6 @@ export async function POST(request: NextRequest) {
     // Получаем информацию об учителе для нового занятия
     const newLessonTeacherId = authUser.role === 'ADMIN' ? body.userId : students[0]?.userId;
 
-    // Проверяем конфликты для каждого ученика
-    for (const studentId of studentIds) {
-      const timeConflict = checkTimeConflicts(
-        {
-          date: new Date(body.date),
-          endTime: new Date(body.endTime),
-          studentId: studentId
-        },
-        existingLessons,
-        undefined,
-        [], // lunchBreaks - пока не используем
-        newLessonTeacherId
-      );
-
-      if (timeConflict.hasConflict) {
-        return NextResponse.json(
-          { 
-            error: 'Конфликт времени',
-            details: timeConflict.message,
-            conflictingLessons: timeConflict.conflictingLessons.map(lesson => ({
-              id: lesson.id,
-              date: lesson.date,
-              endTime: lesson.endTime,
-              studentId: lesson.studentId
-            }))
-          },
-          { status: 409 }
-        )
-      }
-    }
 
     if (body.lessonType === 'group') {
       // Для групповых занятий создаем отдельное занятие для каждого ученика

@@ -171,43 +171,6 @@ describe('Lunch Breaks API', () => {
       expect(response.status).toBe(400)
     })
 
-    it('should check for lesson conflicts', async () => {
-      // Create a lesson that conflicts with lunch break
-      const lessonDate = new Date('2025-01-15T12:30:00Z')
-      await testHelpers.prisma.lesson.create({
-        data: {
-          date: lessonDate,
-          endTime: new Date(lessonDate.getTime() + 60 * 60 * 1000), // +1 hour
-          studentId: testData.student.id,
-          cost: 1500,
-          isCompleted: false,
-          isPaid: false,
-          isCancelled: false,
-          notes: 'Conflicting lesson',
-          lessonType: 'individual',
-          location: 'office'
-        }
-      })
-
-      const lunchBreakData = {
-        date: new Date('2025-01-15T00:00:00Z'),
-        startTime: new Date('2025-01-15T12:00:00Z'),
-        endTime: new Date('2025-01-15T13:00:00Z')
-      }
-      const headers = testHelpers.createAuthHeaders(testData.user)
-      
-      const response = await fetch('http://localhost:3000/api/lunch-breaks', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(lunchBreakData)
-      })
-
-      expect(response.status).toBe(400)
-      
-      const data = await response.json()
-      expect(data).toHaveProperty('error')
-      expect(data.error).toContain('конфликтует')
-    })
 
     it('should not allow admin to create lunch break', async () => {
       const lunchBreakData = createTestLunchBreak('lunch1', testData.admin.id)

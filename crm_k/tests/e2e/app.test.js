@@ -158,59 +158,6 @@ describe('End-to-End Application Tests', () => {
     })
   })
 
-  describe('Lesson Scheduling Flow', () => {
-    it('should handle lesson scheduling with conflict detection', async () => {
-      const headers = testHelpers.createAuthHeaders(testData.user)
-
-      // Create first lesson
-      const lesson1Data = {
-        date: '2025-01-15T10:00:00Z',
-        endTime: '2025-01-15T11:00:00Z',
-        studentId: testData.student.id,
-        cost: 1500,
-        notes: 'First lesson',
-        lessonType: 'individual',
-        location: 'office'
-      }
-
-      const createLesson1Response = await fetch('http://localhost:3000/api/lessons', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(lesson1Data)
-      })
-      expect(createLesson1Response.status).toBe(201)
-
-      // Try to create conflicting lesson
-      const conflictingLessonData = {
-        ...lesson1Data,
-        date: '2025-01-15T10:30:00Z', // Overlaps with first lesson
-        endTime: '2025-01-15T11:30:00Z',
-        notes: 'Conflicting lesson'
-      }
-
-      const createConflictingResponse = await fetch('http://localhost:3000/api/lessons', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(conflictingLessonData)
-      })
-      expect(createConflictingResponse.status).toBe(400)
-
-      // Create non-conflicting lesson
-      const lesson2Data = {
-        ...lesson1Data,
-        date: '2025-01-15T14:00:00Z', // No conflict
-        endTime: '2025-01-15T15:00:00Z',
-        notes: 'Second lesson'
-      }
-
-      const createLesson2Response = await fetch('http://localhost:3000/api/lessons', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(lesson2Data)
-      })
-      expect(createLesson2Response.status).toBe(201)
-    })
-  })
 
   describe('Payment Processing Flow', () => {
     it('should handle payment processing and lesson marking', async () => {
@@ -283,61 +230,6 @@ describe('End-to-End Application Tests', () => {
     })
   })
 
-  describe('Lunch Break Management Flow', () => {
-    it('should handle lunch break scheduling with conflict detection', async () => {
-      const headers = testHelpers.createAuthHeaders(testData.user)
-
-      // Create lunch break
-      const lunchBreakData = {
-        date: '2025-01-15T00:00:00Z',
-        startTime: '2025-01-15T12:00:00Z',
-        endTime: '2025-01-15T13:00:00Z'
-      }
-
-      const createLunchResponse = await fetch('http://localhost:3000/api/lunch-breaks', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(lunchBreakData)
-      })
-      expect(createLunchResponse.status).toBe(200)
-
-      // Try to create lesson during lunch break
-      const conflictingLessonData = {
-        date: '2025-01-15T12:30:00Z',
-        endTime: '2025-01-15T13:30:00Z',
-        studentId: testData.student.id,
-        cost: 1500,
-        notes: 'Lesson during lunch',
-        lessonType: 'individual',
-        location: 'office'
-      }
-
-      const createConflictingLessonResponse = await fetch('http://localhost:3000/api/lessons', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(conflictingLessonData)
-      })
-      expect(createConflictingLessonResponse.status).toBe(400)
-
-      // Create lesson outside lunch break
-      const nonConflictingLessonData = {
-        date: '2025-01-15T14:00:00Z',
-        endTime: '2025-01-15T15:00:00Z',
-        studentId: testData.student.id,
-        cost: 1500,
-        notes: 'Lesson after lunch',
-        lessonType: 'individual',
-        location: 'office'
-      }
-
-      const createNonConflictingLessonResponse = await fetch('http://localhost:3000/api/lessons', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(nonConflictingLessonData)
-      })
-      expect(createNonConflictingLessonResponse.status).toBe(201)
-    })
-  })
 
   describe('Error Handling Flow', () => {
     it('should handle various error scenarios gracefully', async () => {

@@ -46,7 +46,7 @@ export default function FlexibleSubscriptionsList({ studentId }: FlexibleSubscri
 
       if (response.ok) {
         const result = await response.json()
-        alert(`Создано ${result.createdLessons} уроков. Конфликтов: ${result.conflictingLessons}`)
+        alert(`Создано ${result.createdLessons} уроков`)
         loadSubscriptions() // Перезагружаем список
       } else {
         const errorData = await response.json()

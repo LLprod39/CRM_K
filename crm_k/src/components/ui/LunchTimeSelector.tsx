@@ -38,7 +38,6 @@ export default function LunchTimeSelector({
   const [endTime, setEndTime] = useState('13:00');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [conflicts, setConflicts] = useState<any[]>([]);
   const [editingLunch, setEditingLunch] = useState<number | null>(null);
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
@@ -49,10 +48,6 @@ export default function LunchTimeSelector({
     loadLunchBreak();
   }, [date]);
 
-  // Проверяем конфликты при изменении времени
-  useEffect(() => {
-    checkConflicts();
-  }, [startTime, endTime, existingLessons]);
 
   const loadLunchBreak = async () => {
     try {
@@ -84,31 +79,6 @@ export default function LunchTimeSelector({
     }
   };
 
-  const checkConflicts = () => {
-    if (!startTime || !endTime) {
-      setConflicts([]);
-      return;
-    }
-
-    const startDateTime = new Date(date);
-    const [startHour, startMinute] = startTime.split(':').map(Number);
-    startDateTime.setHours(startHour, startMinute, 0, 0);
-
-    const endDateTime = new Date(date);
-    const [endHour, endMinute] = endTime.split(':').map(Number);
-    endDateTime.setHours(endHour, endMinute, 0, 0);
-
-    const conflicts = existingLessons.filter(lesson => {
-      const lessonStart = new Date(lesson.date);
-      const lessonEnd = lesson.endTime ? new Date(lesson.endTime) : new Date(lessonStart.getTime() + 60 * 60 * 1000);
-      
-      return (
-        (lessonStart < endDateTime && lessonEnd > startDateTime)
-      );
-    });
-
-    setConflicts(conflicts);
-  };
 
   const handleSave = async () => {
     if (!startTime || !endTime) {
@@ -116,10 +86,6 @@ export default function LunchTimeSelector({
       return;
     }
 
-    if (conflicts.length > 0) {
-      setError('Выбранное время обеда конфликтует с существующими занятиями');
-      return;
-    }
 
     // Админ не может добавлять собственные обеды
     if (userRole === 'ADMIN') {
@@ -559,7 +525,7 @@ export default function LunchTimeSelector({
 
         <button
           onClick={handleSave}
-          disabled={loading || conflicts.length > 0}
+          disabled={loading}
           className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           title={lunchBreak ? 'Обновить обед' : 'Сохранить обед'}
         >
@@ -582,26 +548,13 @@ export default function LunchTimeSelector({
         )}
       </div>
 
-      {(conflicts.length > 0 || error) && (
+      {error && (
         <div className="mt-2 bg-red-50 border border-red-200 rounded p-2">
           <div className="flex items-center gap-1 mb-1">
             <AlertCircle className="w-3 h-3 text-red-600" />
-            <span className="text-xs font-medium text-red-800">
-              {conflicts.length > 0 ? 'Конфликт с занятиями' : 'Ошибка'}
-            </span>
+            <span className="text-xs font-medium text-red-800">Ошибка</span>
           </div>
-          {conflicts.length > 0 && (
-            <div className="space-y-1">
-              {conflicts.map((lesson) => (
-                <div key={lesson.id} className="text-xs text-red-700">
-                  • {lesson.student?.fullName || `Ученик #${lesson.studentId}`} - {formatTime(new Date(lesson.date).toTimeString().slice(0, 5))}
-                </div>
-              ))}
-            </div>
-          )}
-          {error && (
-            <div className="text-xs text-red-700">{error}</div>
-          )}
+          <div className="text-xs text-red-700">{error}</div>
         </div>
       )}
     </div>
