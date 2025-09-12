@@ -10,7 +10,7 @@ import Input from '@/components/ui/Input';
 import PhotoUpload from './PhotoUpload';
 import DateTimePicker from '@/components/ui/DateTimePicker';
 import UserSelector from '@/components/ui/UserSelector';
-import SubscriptionForm from './SubscriptionForm';
+import SubscriptionModal from './SubscriptionModal';
 
 interface AddStudentFormProps {
   isOpen: boolean;
@@ -565,7 +565,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
       </div>
       
       {/* Модальное окно абонемента */}
-      <SubscriptionForm
+      <SubscriptionModal
         isOpen={showSubscriptionForm}
         onClose={() => {
           setShowSubscriptionForm(false);

@@ -31,6 +31,7 @@ import { useAuth } from '@/presentation/contexts'
 import { getLessonStatusInfo, getLessonStatus, getLessonStatusText } from '@/lib/lessonStatusUtils'
 import BulkLessonForm from '../forms/BulkLessonForm'
 import PrepaymentForm from '../forms/PrepaymentForm'
+import SubscriptionModal from '../forms/SubscriptionModal'
 
 interface LessonsManagementProps {
   className?: string
@@ -52,6 +53,7 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
   const [selectedLesson, setSelectedLesson] = useState<LessonWithDetails | null>(null)
   const [showBulkForm, setShowBulkForm] = useState(false)
   const [showPrepaymentForm, setShowPrepaymentForm] = useState(false)
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
 
   // Проверяем, что пользователь является админом
   if (user?.role !== 'ADMIN') {
@@ -88,33 +90,11 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
   }
 
   const getStatusInfo = (lesson: LessonWithDetails) => {
-<<<<<<< HEAD
-    const statusInfo = getLessonStatusInfo(
+    const status = getLessonStatus(
       lesson.isCompleted,
       lesson.isPaid,
-      lesson.isCancelled,
-      new Date(lesson.date)
-    );
-    
-    // Маппинг иконок для совместимости с существующим кодом
-    const iconMap = {
-      'scheduled': Clock,
-      'prepaid': DollarSign,
-      'completed': CheckCircle,
-      'paid': CheckCircle,
-      'debt': AlertCircle,
-      'unpaid': Clock,
-      'cancelled': XCircle
-    };
-    
-    return {
-      icon: iconMap[statusInfo.status],
-      text: statusInfo.label,
-      color: statusInfo.bgColor,
-      iconColor: statusInfo.color.replace('text-', 'text-'),
-      description: statusInfo.description
-=======
-    const status = getLessonStatus(lesson)
+      lesson.isCancelled
+    )
     
     switch (status) {
       case 'scheduled':
@@ -166,7 +146,6 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
           color: 'bg-gray-100 text-gray-800',
           iconColor: 'text-gray-600'
         }
->>>>>>> 66213c95130893af2415605d776d8d96e5be6f6d
     }
   }
 
@@ -378,6 +357,15 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
             </select>
             
             <button
+              onClick={() => setShowSubscriptionModal(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors flex items-center"
+              title="Создать абонемент"
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Абонемент
+            </button>
+            
+            <button
               onClick={() => setShowBulkForm(true)}
               className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center"
               title="Массовое создание занятий"
@@ -554,6 +542,15 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
       </div>
       
       {/* Модальные окна */}
+      <SubscriptionModal
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        onSuccess={() => {
+          setShowSubscriptionModal(false);
+          fetchLessons();
+        }}
+      />
+      
       <BulkLessonForm
         isOpen={showBulkForm}
         onClose={() => setShowBulkForm(false)}

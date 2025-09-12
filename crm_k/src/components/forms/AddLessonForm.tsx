@@ -8,7 +8,7 @@ import { useAuth } from '@/presentation/contexts';
 import DateTimePicker from '../ui/DateTimePicker';
 import StudentSearch from '@/components/ui/StudentSearch';
 import UserSelector from '@/components/ui/UserSelector';
-import SubscriptionForm from './SubscriptionForm';
+import SubscriptionModal from './SubscriptionModal';
 
 interface AddLessonFormProps {
   isOpen: boolean;
@@ -619,7 +619,7 @@ export default function AddLessonForm({
       </div>
       
       {/* Модальное окно абонемента */}
-      <SubscriptionForm
+      <SubscriptionModal
         isOpen={showSubscriptionForm}
         onClose={() => setShowSubscriptionForm(false)}
         onSuccess={() => {
