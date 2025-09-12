@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, CheckCircle, AlertCircle, Clock, History, ArrowUpDown, Calendar, Users, DollarSign } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Clock, History, ArrowUpDown, Calendar, Users, DollarSign, CreditCard, AlertTriangle } from 'lucide-react';
 import { LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
 import LunchTimeSelector from './LunchTimeSelector';
 import Modal, { ModalSection, InfoCard } from './Modal';
@@ -37,22 +37,22 @@ export default function DayLessonsModal({
     if (isBackdate) {
       switch (status) {
         case 'scheduled': return 'bg-orange-100 text-orange-800 border-orange-300 border-l-4';
-        case 'completed': return 'bg-green-100 text-green-800 border-green-300 border-l-4';
-        case 'cancelled': return 'bg-red-100 text-red-800 border-red-300 border-l-4';
-        case 'paid': return 'bg-purple-100 text-purple-800 border-purple-300 border-l-4';
         case 'prepaid': return 'bg-yellow-100 text-yellow-800 border-yellow-300 border-l-4';
-        case 'unpaid': return 'bg-orange-100 text-orange-800 border-orange-300 border-l-4';
+        case 'cancelled': return 'bg-red-100 text-red-800 border-red-300 border-l-4';
+        case 'completed': return 'bg-green-100 text-green-800 border-green-300 border-l-4';
+        case 'debt': return 'bg-orange-100 text-orange-800 border-orange-300 border-l-4';
+        case 'unpaid': return 'bg-gray-100 text-gray-800 border-gray-300 border-l-4';
         default: return 'bg-gray-100 text-gray-800 border-gray-300 border-l-4';
       }
     }
     
     switch (status) {
       case 'scheduled': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      case 'paid': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'prepaid': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'unpaid': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
+      case 'debt': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'unpaid': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -60,9 +60,13 @@ export default function DayLessonsModal({
   const getStatusIcon = (lesson: LessonWithOptionalStudent) => {
     const status = getLessonStatus(lesson);
     switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4" />;
+      case 'scheduled': return <Calendar className="w-4 h-4" />;
+      case 'prepaid': return <CreditCard className="w-4 h-4" />;
       case 'cancelled': return <AlertCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case 'completed': return <CheckCircle className="w-4 h-4" />;
+      case 'debt': return <AlertTriangle className="w-4 h-4" />;
+      case 'unpaid': return <Clock className="w-4 h-4" />;
+      default: return <Calendar className="w-4 h-4" />;
     }
   };
 

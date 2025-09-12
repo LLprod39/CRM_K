@@ -45,10 +45,10 @@ export const API_ROUTES = {
 
 export const LESSON_STATUS = {
   SCHEDULED: 'scheduled',
-  COMPLETED: 'completed',
-  PAID: 'paid',
-  CANCELLED: 'cancelled',
   PREPAID: 'prepaid',
+  CANCELLED: 'cancelled',
+  COMPLETED: 'completed',
+  DEBT: 'debt',
   UNPAID: 'unpaid',
 } as const;
 

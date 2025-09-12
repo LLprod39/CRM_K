@@ -7,10 +7,13 @@ import {
   Clock, 
   AlertCircle,
   User,
-  BookOpen
+  BookOpen,
+  CreditCard,
+  AlertTriangle
 } from 'lucide-react'
 import { Lesson } from '@/types'
 import { cn } from '@/lib/utils'
+import { getLessonStatus, getLessonStatusText } from '@/lib/lessonStatusUtils'
 
 interface RecentActivityProps {
   lessons: Lesson[]
@@ -19,35 +22,58 @@ interface RecentActivityProps {
 
 export default function RecentActivity({ lessons, className }: RecentActivityProps) {
   const getStatusInfo = (lesson: Lesson) => {
-    if (lesson.isCompleted && lesson.isPaid) {
-      return {
-        icon: CheckCircle,
-        text: 'Проведено + Оплачено',
-        color: 'bg-green-100 text-green-800',
-        iconColor: 'text-green-600'
-      }
-    }
-    if (lesson.isPaid) {
-      return {
-        icon: DollarSign,
-        text: 'Оплачено',
-        color: 'bg-blue-100 text-blue-800',
-        iconColor: 'text-blue-600'
-      }
-    }
-    if (lesson.isCancelled) {
-      return {
-        icon: AlertCircle,
-        text: 'Отменено',
-        color: 'bg-red-100 text-red-800',
-        iconColor: 'text-red-600'
-      }
-    }
-    return {
-      icon: Clock,
-      text: 'Запланировано',
-      color: 'bg-yellow-100 text-yellow-800',
-      iconColor: 'text-yellow-600'
+    const status = getLessonStatus(lesson)
+    
+    switch (status) {
+      case 'scheduled':
+        return {
+          icon: Calendar,
+          text: 'Запланировано',
+          color: 'bg-blue-100 text-blue-800',
+          iconColor: 'text-blue-600'
+        }
+      case 'prepaid':
+        return {
+          icon: CreditCard,
+          text: 'Предоплачено',
+          color: 'bg-yellow-100 text-yellow-800',
+          iconColor: 'text-yellow-600'
+        }
+      case 'cancelled':
+        return {
+          icon: AlertCircle,
+          text: 'Отменено',
+          color: 'bg-red-100 text-red-800',
+          iconColor: 'text-red-600'
+        }
+      case 'completed':
+        return {
+          icon: CheckCircle,
+          text: 'Проведено',
+          color: 'bg-green-100 text-green-800',
+          iconColor: 'text-green-600'
+        }
+      case 'debt':
+        return {
+          icon: AlertTriangle,
+          text: 'Задолженность',
+          color: 'bg-orange-100 text-orange-800',
+          iconColor: 'text-orange-600'
+        }
+      case 'unpaid':
+        return {
+          icon: Clock,
+          text: 'Не оплачено',
+          color: 'bg-gray-100 text-gray-800',
+          iconColor: 'text-gray-600'
+        }
+      default:
+        return {
+          icon: Clock,
+          text: 'Неизвестно',
+          color: 'bg-gray-100 text-gray-800',
+          iconColor: 'text-gray-600'
+        }
     }
   }
 
@@ -94,7 +120,7 @@ export default function RecentActivity({ lessons, className }: RecentActivityPro
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
                       <h3 className="text-sm font-medium text-gray-900 truncate">
-                        {lesson.student?.fullName || `ID: ${lesson.studentId}`}
+                        {`ID: ${lesson.studentId}`}
                       </h3>
                       <div className="text-sm font-semibold text-gray-900">
                         {lesson.cost} ₸

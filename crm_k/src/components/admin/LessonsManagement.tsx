@@ -18,12 +18,15 @@ import {
   User,
   BookOpen,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  CreditCard,
+  AlertTriangle
 } from 'lucide-react'
 import { Lesson, Student, User as UserType } from '@/types'
 import { apiRequest } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/presentation/contexts'
+import { getLessonStatus, getLessonStatusText } from '@/lib/lessonStatusUtils'
 
 interface LessonsManagementProps {
   className?: string
@@ -79,35 +82,58 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
   }
 
   const getStatusInfo = (lesson: LessonWithDetails) => {
-    if (lesson.isCompleted && lesson.isPaid) {
-      return {
-        icon: CheckCircle,
-        text: 'Проведено + Оплачено',
-        color: 'bg-green-100 text-green-800',
-        iconColor: 'text-green-600'
-      }
-    }
-    if (lesson.isPaid) {
-      return {
-        icon: DollarSign,
-        text: 'Оплачено',
-        color: 'bg-blue-100 text-blue-800',
-        iconColor: 'text-blue-600'
-      }
-    }
-    if (lesson.isCancelled) {
-      return {
-        icon: XCircle,
-        text: 'Отменено',
-        color: 'bg-red-100 text-red-800',
-        iconColor: 'text-red-600'
-      }
-    }
-    return {
-      icon: Clock,
-      text: 'Запланировано',
-      color: 'bg-yellow-100 text-yellow-800',
-      iconColor: 'text-yellow-600'
+    const status = getLessonStatus(lesson)
+    
+    switch (status) {
+      case 'scheduled':
+        return {
+          icon: Calendar,
+          text: 'Запланировано',
+          color: 'bg-blue-100 text-blue-800',
+          iconColor: 'text-blue-600'
+        }
+      case 'prepaid':
+        return {
+          icon: CreditCard,
+          text: 'Предоплачено',
+          color: 'bg-yellow-100 text-yellow-800',
+          iconColor: 'text-yellow-600'
+        }
+      case 'cancelled':
+        return {
+          icon: XCircle,
+          text: 'Отменено',
+          color: 'bg-red-100 text-red-800',
+          iconColor: 'text-red-600'
+        }
+      case 'completed':
+        return {
+          icon: CheckCircle,
+          text: 'Проведено',
+          color: 'bg-green-100 text-green-800',
+          iconColor: 'text-green-600'
+        }
+      case 'debt':
+        return {
+          icon: AlertTriangle,
+          text: 'Задолженность',
+          color: 'bg-orange-100 text-orange-800',
+          iconColor: 'text-orange-600'
+        }
+      case 'unpaid':
+        return {
+          icon: Clock,
+          text: 'Не оплачено',
+          color: 'bg-gray-100 text-gray-800',
+          iconColor: 'text-gray-600'
+        }
+      default:
+        return {
+          icon: Clock,
+          text: 'Неизвестно',
+          color: 'bg-gray-100 text-gray-800',
+          iconColor: 'text-gray-600'
+        }
     }
   }
 

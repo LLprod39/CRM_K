@@ -1,4 +1,4 @@
-const { getLessonStatus, getLessonStatusText, getCombinedLessonStatus } = require('../../src/types')
+const { getLessonStatus, getLessonStatusText, getCombinedLessonStatus } = require('../../src/lib/lessonStatusUtils')
 
 describe('Lesson Status Utils', () => {
   describe('getLessonStatus', () => {
@@ -13,7 +13,7 @@ describe('Lesson Status Utils', () => {
       expect(status).toBe('cancelled')
     })
 
-    it('should return paid for completed and paid lesson', () => {
+    it('should return completed for completed and paid lesson', () => {
       const lesson = {
         isCancelled: false,
         isCompleted: true,
@@ -21,10 +21,10 @@ describe('Lesson Status Utils', () => {
       }
       
       const status = getLessonStatus(lesson)
-      expect(status).toBe('paid')
+      expect(status).toBe('completed')
     })
 
-    it('should return completed for completed but unpaid lesson', () => {
+    it('should return debt for completed but unpaid lesson', () => {
       const lesson = {
         isCancelled: false,
         isCompleted: true,
@@ -32,7 +32,7 @@ describe('Lesson Status Utils', () => {
       }
       
       const status = getLessonStatus(lesson)
-      expect(status).toBe('completed')
+      expect(status).toBe('debt')
     })
 
     it('should return prepaid for paid but not completed lesson', () => {
@@ -61,10 +61,10 @@ describe('Lesson Status Utils', () => {
   describe('getLessonStatusText', () => {
     it('should return correct text for each status', () => {
       expect(getLessonStatusText('scheduled')).toBe('Запланировано')
-      expect(getLessonStatusText('completed')).toBe('Проведено')
-      expect(getLessonStatusText('paid')).toBe('Оплачено')
-      expect(getLessonStatusText('cancelled')).toBe('Отменено')
       expect(getLessonStatusText('prepaid')).toBe('Предоплачено')
+      expect(getLessonStatusText('cancelled')).toBe('Отменено')
+      expect(getLessonStatusText('completed')).toBe('Проведено')
+      expect(getLessonStatusText('debt')).toBe('Задолженность')
       expect(getLessonStatusText('unpaid')).toBe('Не оплачено')
     })
 

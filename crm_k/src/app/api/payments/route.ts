@@ -157,13 +157,13 @@ export async function POST(request: NextRequest) {
           }))
         })
 
-        // Обновляем статус уроков на "оплачено"
+        // Обновляем статус уроков согласно новой логике
         await tx.lesson.updateMany({
           where: {
             id: { in: lessonIds }
           },
           data: {
-            status: 'PAID'
+            isPaid: true
           }
         })
       }
