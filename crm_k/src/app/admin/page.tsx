@@ -15,6 +15,7 @@ import LessonsManagement from '@/components/admin/LessonsManagement'
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard'
 import SystemSettings from '@/components/admin/SystemSettings'
 import SecurityLogs from '@/components/admin/SecurityLogs'
+import StudentAssignment from '@/components/admin/StudentAssignment'
 import { 
   Users, 
   UserCheck, 
@@ -57,7 +58,7 @@ export default function AdminPage() {
   const [showAddUserModal, setShowAddUserModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security'>('overview')
   const [showNotifications, setShowNotifications] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -277,12 +278,12 @@ export default function AdminPage() {
           </button>
           
           <button
-            onClick={() => setActiveTab('analytics')}
+            onClick={() => setActiveTab('students')}
             className="p-4 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 transition-all duration-200 text-left hover:shadow-md"
           >
-            <BarChart3 className="w-6 h-6 text-green-600 mb-3" />
-            <div className="font-medium text-gray-900">Просмотр аналитики</div>
-            <div className="text-sm text-gray-600">Детальная статистика и отчеты</div>
+            <UserCheck className="w-6 h-6 text-green-600 mb-3" />
+            <div className="font-medium text-gray-900">Управление учениками</div>
+            <div className="text-sm text-gray-600">Назначение учеников учителям</div>
           </button>
           
           <button
@@ -566,6 +567,7 @@ export default function AdminPage() {
                 {[
                   { tab: 'overview', name: 'Обзор', icon: Home },
                   { tab: 'users', name: 'Пользователи', icon: Users },
+                  { tab: 'students', name: 'Ученики', icon: UserCheck },
                   { tab: 'lessons', name: 'Занятия', icon: Calendar },
                   { tab: 'toys', name: 'Игрушки', icon: Target },
                   { tab: 'analytics', name: 'Аналитика', icon: BarChart3 },
@@ -576,7 +578,7 @@ export default function AdminPage() {
                   return (
                     <button
                       key={item.tab}
-                      onClick={() => setActiveTab(item.tab as 'overview' | 'users' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security')}
+                      onClick={() => setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security')}
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                         isActive
                           ? 'bg-white text-red-600 shadow-sm'
@@ -609,6 +611,7 @@ export default function AdminPage() {
                   {[
                     { tab: 'overview', name: 'Обзор', icon: Home },
                     { tab: 'users', name: 'Пользователи', icon: Users },
+                    { tab: 'students', name: 'Ученики', icon: UserCheck },
                     { tab: 'lessons', name: 'Занятия', icon: Calendar },
                     { tab: 'toys', name: 'Игрушки', icon: Target },
                     { tab: 'analytics', name: 'Аналитика', icon: BarChart3 },
@@ -620,7 +623,7 @@ export default function AdminPage() {
                       <button
                         key={item.tab}
                         onClick={() => {
-                          setActiveTab(item.tab as 'overview' | 'users' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security')
+                          setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security')
                           setShowMobileMenu(false)
                         }}
                         className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -719,6 +722,7 @@ export default function AdminPage() {
             <span className="text-gray-900 font-medium">
               {activeTab === 'overview' && 'Обзор'}
               {activeTab === 'users' && 'Пользователи'}
+              {activeTab === 'students' && 'Ученики'}
               {activeTab === 'lessons' && 'Занятия'}
               {activeTab === 'toys' && 'Игрушки'}
               {activeTab === 'analytics' && 'Аналитика'}
@@ -746,6 +750,11 @@ export default function AdminPage() {
               {activeTab === 'users' && (
                 <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
                   {renderUsers()}
+                </div>
+              )}
+              {activeTab === 'students' && (
+                <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                  <StudentAssignment />
                 </div>
               )}
               {activeTab === 'lessons' && (

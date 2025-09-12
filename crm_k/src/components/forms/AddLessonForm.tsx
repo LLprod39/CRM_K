@@ -77,10 +77,12 @@ export default function AddLessonForm({
     }
   }, [isOpen]);
 
-  // Фильтруем учеников по выбранному пользователю
-  const filteredStudents = formData.userId 
-    ? students.filter(student => student.userId === formData.userId)
-    : students;
+  // Для админа показываем всех учеников, для обычных пользователей - только своих
+  const filteredStudents = user?.role === 'ADMIN' 
+    ? students // Админ видит всех учеников
+    : (formData.userId 
+        ? students.filter(student => student.userId === formData.userId)
+        : students.filter(student => student.userId === user?.id));
 
   // Обновляем форму при изменении selectedDate или selectedStudent
   useEffect(() => {
@@ -386,9 +388,7 @@ export default function AddLessonForm({
                 selectedUserId={formData.userId || undefined}
                 onUserChange={(userId) => {
                   setFormData(prev => ({ ...prev, userId: userId || null }));
-                  // Очищаем выбранных учеников при смене пользователя
-                  setSelectedStudents([]);
-                  setFormData(prev => ({ ...prev, studentId: '' }));
+                  // Для админа НЕ очищаем выбранных учеников - он может выбрать любого ученика любому учителю
                 }}
                 placeholder="Выберите учителя..."
                 showUserCount={true}
@@ -441,13 +441,15 @@ export default function AddLessonForm({
               selectedStudents={selectedStudents}
               onSelectionChange={handleStudentSelectionChange}
               placeholder={
-                formData.lessonType === 'individual' 
-                  ? (formData.userId ? "Поиск ученика..." : "Сначала выберите учителя...") 
-                  : (formData.userId ? "Поиск учеников для группового занятия..." : "Сначала выберите учителя...")
+                user?.role === 'ADMIN' 
+                  ? (formData.lessonType === 'individual' ? "Поиск любого ученика..." : "Поиск учеников для группового занятия...")
+                  : (formData.lessonType === 'individual' 
+                      ? (formData.userId ? "Поиск ученика..." : "Сначала выберите учителя...") 
+                      : (formData.userId ? "Поиск учеников для группового занятия..." : "Сначала выберите учителя..."))
               }
               multiple={formData.lessonType === 'group'}
               className={validationErrors.studentId ? 'border-red-300' : ''}
-              disabled={!formData.userId && user?.role === 'ADMIN'}
+              disabled={user?.role !== 'ADMIN' && !formData.userId}
             />
             {validationErrors.studentId && (
               <p className="mt-1 text-sm text-red-600 flex items-center">

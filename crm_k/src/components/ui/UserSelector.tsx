@@ -44,16 +44,16 @@ export default function UserSelector({
       setError('');
       
       try {
-        const response = await apiRequest('/api/admin/users');
+        const response = await apiRequest('/api/admin/teachers');
         if (response.ok) {
           const data = await response.json();
           setUsers(data);
         } else {
-          setError('Ошибка при загрузке пользователей');
+          setError('Ошибка при загрузке учителей');
         }
       } catch (err) {
-        setError('Ошибка при загрузке пользователей');
-        console.error('Ошибка загрузки пользователей:', err);
+        setError('Ошибка при загрузке учителей');
+        console.error('Ошибка загрузки учителей:', err);
       } finally {
         setLoading(false);
       }

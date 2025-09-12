@@ -115,11 +115,11 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
     
     try {
       // Создаем ученика
-      // Для админов: если выбран учитель - привязываем к нему, иначе к админу
+      // Для админов: создаем "нечейного" ученика (без userId)
       // Для обычных пользователей - привязываем к текущему пользователю
       const studentData = user?.role === 'ADMIN' 
-        ? { ...formData, userId: selectedUserId || user.id }
-        : formData;
+        ? formData // Админ создает "нечейного" ученика
+        : formData; // Учитель создает ученика и привязывает к себе
         
       const studentResponse = await apiRequest('/api/students', {
         method: 'POST',
@@ -406,26 +406,18 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
               </>
             ) : (
               <>
-                {/* Выбор пользователя - только для админов */}
+                {/* Информация для админов */}
                 {user?.role === 'ADMIN' && (
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <User className="w-4 h-4 inline mr-2" />
-                      Пользователь (учитель)
-                    </label>
-                    <UserSelector
-                      selectedUserId={selectedUserId || undefined}
-                      onUserChange={(userId) => setSelectedUserId(userId || null)}
-                      placeholder="Выберите учителя..."
-                      showUserCount={true}
-                      className={errors.userId ? 'border-red-300' : ''}
-                    />
-                    {errors.userId && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
-                        <X className="w-4 h-4 mr-1" />
-                        {errors.userId}
-                      </p>
-                    )}
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                    <div className="flex items-center space-x-2">
+                      <User className="w-5 h-5 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">
+                        Администратор
+                      </span>
+                    </div>
+                    <p className="text-sm text-blue-700 mt-2">
+                      Ученик будет создан как "нечейный" и может быть назначен любому учителю при создании занятия.
+                    </p>
                   </div>
                 )}
 

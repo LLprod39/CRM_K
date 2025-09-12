@@ -4,12 +4,14 @@ import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles, AlertCir
 import { UserRole } from '@/domain/entities/User';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/presentation/contexts';
 import { apiRequest } from '@/lib/api';
 
 export default function Home() {
   const { user } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState({
     students: 0,
     todayLessons: 0,

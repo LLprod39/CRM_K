@@ -203,11 +203,33 @@ export async function POST(request: NextRequest) {
 
     // Проверяем принадлежность учеников
     if (authUser.role === 'ADMIN') {
-      // Для админов проверяем, что все ученики принадлежат выбранному пользователю
-      const unauthorizedStudents = students.filter(student => student.userId !== body.userId);
+      // Для админов: проверяем, что выбранный учитель не является админом
+      if (body.userId === authUser.id) {
+        return NextResponse.json(
+          { error: 'Администратор не может назначать занятия себе. Назначьте занятие учителю.' },
+          { status: 400 }
+        )
+      }
+      
+      // Проверяем, что выбранный пользователь является учителем
+      const teacher = await prisma.user.findUnique({
+        where: { id: body.userId }
+      })
+      
+      if (!teacher || teacher.role === 'ADMIN') {
+        return NextResponse.json(
+          { error: 'Выбранный пользователь не является учителем' },
+          { status: 400 }
+        )
+      }
+      
+      // Для админов: проверяем, что все ученики принадлежат выбранному учителю или являются "нечейными"
+      const unauthorizedStudents = students.filter(student => 
+        student.userId !== body.userId && student.userId !== null
+      );
       if (unauthorizedStudents.length > 0) {
         return NextResponse.json(
-          { error: 'Выбранные ученики не принадлежат указанному пользователю' },
+          { error: 'Выбранные ученики не принадлежат указанному учителю или не являются "нечейными"' },
           { status: 400 }
         )
       }
@@ -235,6 +257,22 @@ export async function POST(request: NextRequest) {
 
     // Получаем информацию об учителе для нового занятия
     const newLessonTeacherId = authUser.role === 'ADMIN' ? body.userId : students[0]?.userId;
+
+    // Если админ создает занятие, автоматически назначаем "нечейных" учеников учителю
+    if (authUser.role === 'ADMIN' && body.userId) {
+      const unassignedStudents = students.filter(student => !student.isAssigned);
+      if (unassignedStudents.length > 0) {
+        await prisma.student.updateMany({
+          where: {
+            id: { in: unassignedStudents.map(s => s.id) }
+          },
+          data: {
+            userId: body.userId,
+            isAssigned: true
+          }
+        });
+      }
+    }
 
 
     if (body.lessonType === 'group') {

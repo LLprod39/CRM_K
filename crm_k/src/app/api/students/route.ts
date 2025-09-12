@@ -70,8 +70,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Для админов: если userId не указан, используем ID админа
-    // Для обычных пользователей: используем их ID
+    // Новая логика:
+    // - Если админ создает ученика: ученик остается "нечейный" (userId = null, isAssigned = false)
+    // - Если учитель создает ученика: ученик привязывается к учителю (userId = teacherId, isAssigned = true)
+    let userId: number | null = null
+    let isAssigned = false
+
+    if (authUser.role === 'ADMIN') {
+      // Админ создает "нечейного" ученика
+      userId = null
+      isAssigned = false
+    } else {
+      // Учитель создает ученика и привязывает к себе
+      userId = authUser.id
+      isAssigned = true
+    }
 
     const student = await prisma.student.create({
       data: {
@@ -81,7 +94,8 @@ export async function POST(request: NextRequest) {
         parentName: body.parentName,
         diagnosis: body.diagnosis || null,
         comment: body.comment || null,
-        userId: authUser.role === 'ADMIN' ? (body.userId || authUser.id) : authUser.id
+        userId: userId,
+        isAssigned: isAssigned
       }
     })
 

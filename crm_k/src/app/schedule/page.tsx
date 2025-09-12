@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Calendar, Plus, Clock, Bell, Printer } from 'lucide-react';
 import { LessonWithOptionalStudent, getLessonStatus } from '@/types';
 import CalendarComponent from '@/components/ui/Calendar';
@@ -15,6 +16,7 @@ import { useAuth } from '@/presentation/contexts';
 
 export default function SchedulePage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [lessons, setLessons] = useState<LessonWithOptionalStudent[]>([]);
   // const [students] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,7 @@ export default function SchedulePage() {
     status: '',
     period: 'today' as 'today' | 'week' | 'month' | 'all'
   });
+
 
   // Загружаем данные
   useEffect(() => {

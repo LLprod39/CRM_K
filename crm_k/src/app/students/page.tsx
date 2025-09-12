@@ -8,9 +8,11 @@ import AddStudentForm from '@/components/forms/AddStudentForm';
 import EditStudentForm from '@/components/forms/EditStudentForm';
 import { printStudentsList } from '@/lib/print';
 import { apiRequest } from '@/lib/api';
+import { useAuth } from '@/presentation/contexts';
 
 export default function StudentsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,10 +22,9 @@ export default function StudentsPage() {
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
-  // Загрузка учеников
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [user]);
 
   const fetchStudents = async () => {
     try {

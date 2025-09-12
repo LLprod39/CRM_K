@@ -20,7 +20,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  // Связь с учениками (один пользователь может иметь много учеников)
+  // Связь с учениками (только для учителей, не для админов)
   students  Student[]
   
   // Связь с временем обеда
@@ -48,12 +48,13 @@ model Student {
   diagnosis   String?  // Диагноз (опционально)
   comment     String?  // Комментарий (опционально)
   photoUrl    String?  // URL фото ученика (опционально)
-  userId      Int      // ID пользователя-владельца
+  userId      Int?     // ID пользователя-владельца (nullable для "нечейных" учеников)
+  isAssigned  Boolean  @default(false) // Назначен ли ученик учителю
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  // Связь с пользователем
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Связь с пользователем (nullable)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
   // Связь с занятиями
   lessons     Lesson[]
