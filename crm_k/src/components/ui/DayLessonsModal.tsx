@@ -168,53 +168,36 @@ export default function DayLessonsModal({
         {/* Заголовок */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">
-              Занятия на {date.toLocaleDateString('ru-RU', { 
-                weekday: 'long', 
-                year: 'numeric', 
+            <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              📅 Занятия — {date.toLocaleDateString('ru-RU', { 
+                day: 'numeric', 
                 month: 'long', 
-                day: 'numeric' 
+                weekday: 'long'
               })}
               {date < new Date() && (
-                <span className="ml-3 inline-flex items-center gap-1 px-2 py-1 text-sm bg-orange-100 text-orange-800 rounded-full">
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-sm bg-orange-100 text-orange-800 rounded-full">
                   <History className="w-3 h-3" />
                   Задним числом
                 </span>
               )}
             </h2>
-            <div className="flex items-center gap-2 mt-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                lessons.length === 0 ? 'bg-gray-100 text-gray-700' :
-                lessons.length === 1 ? 'bg-green-100 text-green-700' :
-                lessons.length === 2 ? 'bg-yellow-100 text-yellow-700' :
-                'bg-red-100 text-red-700'
-              }`}>
-                {lessons.length === 0 ? 'Свободный день' : `${lessons.length} занят${lessons.length === 1 ? 'ие' : lessons.length < 5 ? 'ия' : 'ий'}`}
-              </span>
-              {lessons.length > 0 && (
-                <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                  {lessons.reduce((total, lesson) => {
-                    if (lesson.endTime) {
-                      const duration = new Date(lesson.endTime).getTime() - new Date(lesson.date).getTime();
-                      return total + duration;
-                    }
-                    return total;
-                  }, 0) > 0 ? Math.round(lessons.reduce((total, lesson) => {
-                    if (lesson.endTime) {
-                      const duration = new Date(lesson.endTime).getTime() - new Date(lesson.date).getTime();
-                      return total + duration;
-                    }
-                    return total;
-                  }, 0) / (1000 * 60 * 60) * 10) / 10 : 0}ч
-                </span>
-              )}
-            </div>
+            {lessons.length > 0 && (
+              <p className="text-lg text-gray-600 mt-2">
+                {lessons.length} занят{lessons.length === 1 ? 'ие' : lessons.length < 5 ? 'ия' : 'ий'} • {Math.round(lessons.reduce((total, lesson) => {
+                if (lesson.endTime) {
+                  const duration = new Date(lesson.endTime).getTime() - new Date(lesson.date).getTime();
+                  return total + duration;
+                }
+                return total;
+              }, 0) / (1000 * 60 * 60) * 10) / 10}ч
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 hover:bg-gray-100 rounded-lg"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -295,7 +278,7 @@ export default function DayLessonsModal({
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th 
-                      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('time')}
                     >
                       <div className="flex items-center gap-2">
@@ -304,7 +287,7 @@ export default function DayLessonsModal({
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('student')}
                     >
                       <div className="flex items-center gap-2">
@@ -312,25 +295,8 @@ export default function DayLessonsModal({
                         <ArrowUpDown className="w-3 h-3" />
                       </div>
                     </th>
-                    {userRole === 'ADMIN' && (
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Преподаватель
-                      </th>
-                    )}
                     <th 
-                      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort('status')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Статус
-                        <ArrowUpDown className="w-3 h-3" />
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Тип
-                    </th>
-                    <th 
-                      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('cost')}
                     >
                       <div className="flex items-center gap-2">
@@ -338,14 +304,8 @@ export default function DayLessonsModal({
                         <ArrowUpDown className="w-3 h-3" />
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Длительность
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Заметки
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Комментарий
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Статус
                     </th>
                   </tr>
                 </thead>
@@ -357,13 +317,13 @@ export default function DayLessonsModal({
                     return (
                       <tr 
                         key={lesson.id}
-                        className="hover:bg-gray-50 cursor-pointer transition-colors duration-150"
+                        className="hover:bg-gray-50 cursor-pointer transition-colors duration-150 border-l-4 border-green-200"
                         onClick={() => {
                           onLessonClick(lesson);
                           onClose();
                         }}
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex flex-col">
                             <div className="text-sm font-medium text-gray-900">
                               {formatTime(lesson.date)}
@@ -381,7 +341,7 @@ export default function DayLessonsModal({
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-8 w-8">
                               <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -395,55 +355,37 @@ export default function DayLessonsModal({
                                 {lesson.student?.fullName || `Ученик #${lesson.studentId}`}
                               </div>
                               <div className="text-xs text-gray-500">
-                                ID: {lesson.id}
+                                {getLessonTypeText(lesson.lessonType || 'individual')}
                               </div>
                             </div>
                           </div>
                         </td>
-                        {userRole === 'ADMIN' && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-8 w-8">
-                                <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                                  <span className="text-sm font-medium text-green-800">
-                                    {lesson.student?.user?.name?.charAt(0).toUpperCase() || '?'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="ml-3">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {lesson.student?.user?.name || 'Неизвестно'}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {lesson.student?.user?.email || ''}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        )}
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(status)}`}>
-                            {getStatusIcon(lesson)}
-                            {getLessonStatusText(status)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {getLessonTypeText(lesson.lessonType || 'individual')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {lesson.cost} ₸
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {lesson.endTime ? formatDuration(lesson.date, lesson.endTime) : '-'}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
-                          <div className="truncate" title={lesson.notes || ''}>
-                            {lesson.notes || '-'}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {lesson.cost} ₸
                           </div>
+                          {lesson.endTime && (
+                            <div className="text-xs text-gray-500">
+                              {formatDuration(lesson.date, lesson.endTime)}
+                            </div>
+                          )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
-                          <div className="truncate" title={(lesson as any).comment || ''}>
-                            {(lesson as any).comment || '-'}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(status)}`}>
+                              {getStatusIcon(lesson)}
+                              {getLessonStatusText(status)}
+                            </span>
+                            {lesson.notes && (
+                              <span className="text-gray-400" title={lesson.notes}>
+                                📝
+                              </span>
+                            )}
+                            {(lesson as any).comment && (
+                              <span className="text-gray-400" title={(lesson as any).comment}>
+                                💬
+                              </span>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -458,26 +400,36 @@ export default function DayLessonsModal({
         {/* Подвал */}
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
           <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">
-              <span>
-                {userRole === 'ADMIN' 
-                  ? 'Нажмите на занятие для редактирования' 
-                  : 'Нажмите на занятие для просмотра (только отмена доступна)'
-                }
-              </span>
-              {lessons.length > 0 && (
-                <span className="ml-4">
-                  • Всего занятий: {lessons.length}
-                  {sortedLessons.length !== lessons.length && ` • Показано: ${sortedLessons.length}`}
-                </span>
+            <div className="flex items-center gap-4">
+              {userRole === 'ADMIN' && (
+                <button
+                  onClick={() => {
+                    // Здесь можно добавить логику для добавления нового занятия
+                    onClose();
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                >
+                  <span className="text-lg">+</span>
+                  Добавить занятие
+                </button>
               )}
+              <div className="text-sm text-gray-600">
+                {lessons.length > 0 && (
+                  <span>
+                    Всего занятий: {lessons.length}
+                    {sortedLessons.length !== lessons.length && ` • Показано: ${sortedLessons.length}`}
+                  </span>
+                )}
+              </div>
             </div>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 font-medium"
-            >
-              Закрыть
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Отмена
+              </button>
+            </div>
           </div>
         </div>
       </div>

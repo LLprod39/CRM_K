@@ -320,7 +320,7 @@ export default function LunchTimeSelector({
         <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Utensils className="w-5 h-5 text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Обеды всех учителей</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Обеды преподавателей</h3>
           </div>
 
           {error && (
@@ -333,9 +333,9 @@ export default function LunchTimeSelector({
           )}
 
           {allLunchBreaks.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {allLunchBreaks.map((lunch) => (
-                <div key={lunch.id} className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200 hover:border-gray-300">
+                <div key={lunch.id} className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200">
                   {editingLunch === lunch.id ? (
                     // Режим редактирования
                     <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
@@ -399,8 +399,8 @@ export default function LunchTimeSelector({
                     </div>
                   ) : (
                     // Обычный режим просмотра
-                    <div className="flex items-center justify-between p-6">
-                      <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-100 rounded-lg">
                           <Utensils className="w-5 h-5 text-blue-600" />
                         </div>
@@ -519,94 +519,91 @@ export default function LunchTimeSelector({
     );
   }
 
-  // Для обычных пользователей показываем форму настройки обеда
+  // Для обычных пользователей показываем компактную форму настройки обеда
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        <Utensils className="w-5 h-5 text-gray-600" />
-        <h3 className="text-lg font-semibold text-gray-900">Время обеда</h3>
+    <div className={`bg-white border rounded-lg p-3 shadow-sm max-w-md ${
+      lunchBreak 
+        ? 'border-green-200 bg-green-50' 
+        : 'border-orange-200 bg-orange-50'
+    }`}>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🍽️</span>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-700">Время обеда:</span>
+            {lunchBreak ? (
+              <span className="text-xs text-green-600 font-medium">
+                ✓ Запланирован на {formatTime(new Date(lunchBreak.startTime).toTimeString().slice(0, 5))} - {formatTime(new Date(lunchBreak.endTime).toTimeString().slice(0, 5))}
+              </span>
+            ) : (
+              <span className="text-xs text-orange-600 font-medium">⚠ Нужно запланировать</span>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          />
+          <span className="text-gray-400">–</span>
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          />
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={loading || conflicts.length > 0}
+          className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          title={lunchBreak ? 'Обновить обед' : 'Сохранить обед'}
+        >
+          {loading ? (
+            <Clock className="w-4 h-4 animate-spin" />
+          ) : (
+            <CheckCircle className="w-4 h-4" />
+          )}
+        </button>
+
         {lunchBreak && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
-            <CheckCircle className="w-3 h-3" />
-            Настроено
-          </span>
+          <button
+            onClick={() => handleRemove()}
+            disabled={loading}
+            className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+            title="Удалить обед"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         )}
       </div>
 
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Начало обеда
-            </label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            />
+      {(conflicts.length > 0 || error) && (
+        <div className="mt-2 bg-red-50 border border-red-200 rounded p-2">
+          <div className="flex items-center gap-1 mb-1">
+            <AlertCircle className="w-3 h-3 text-red-600" />
+            <span className="text-xs font-medium text-red-800">
+              {conflicts.length > 0 ? 'Конфликт с занятиями' : 'Ошибка'}
+            </span>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Конец обеда
-            </label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            />
-          </div>
-        </div>
-
-        {(conflicts.length > 0 || error) && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="w-4 h-4 text-red-600" />
-              <span className="text-sm font-medium text-red-800">
-                {conflicts.length > 0 ? 'Конфликт с занятиями' : 'Ошибка'}
-              </span>
+          {conflicts.length > 0 && (
+            <div className="space-y-1">
+              {conflicts.map((lesson) => (
+                <div key={lesson.id} className="text-xs text-red-700">
+                  • {lesson.student?.fullName || `Ученик #${lesson.studentId}`} - {formatTime(new Date(lesson.date).toTimeString().slice(0, 5))}
+                </div>
+              ))}
             </div>
-            {conflicts.length > 0 && (
-              <div className="space-y-1">
-                {conflicts.map((lesson) => (
-                  <div key={lesson.id} className="text-sm text-red-700">
-                    • {lesson.student?.fullName || `Ученик #${lesson.studentId}`} - {formatTime(new Date(lesson.date).toTimeString().slice(0, 5))}
-                  </div>
-                ))}
-              </div>
-            )}
-            {error && (
-              <div className="text-sm text-red-700">{error}</div>
-            )}
-          </div>
-        )}
-
-        <div className="flex gap-3">
-          <button
-            onClick={handleSave}
-            disabled={loading || conflicts.length > 0}
-            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2 font-medium"
-          >
-            {loading ? (
-              <Clock className="w-4 h-4 animate-spin" />
-            ) : (
-              <CheckCircle className="w-4 h-4" />
-            )}
-            {lunchBreak ? 'Обновить' : 'Сохранить'}
-          </button>
-          
-          {lunchBreak && (
-            <button
-              onClick={() => handleRemove()}
-              disabled={loading}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
-            >
-              Удалить
-            </button>
+          )}
+          {error && (
+            <div className="text-xs text-red-700">{error}</div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
