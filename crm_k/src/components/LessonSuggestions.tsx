@@ -6,6 +6,7 @@ import Card from '@/components/ui/Card';
 import { useToast } from '@/presentation/hooks';
 import { apiRequest } from '@/lib/api';
 import { X, Calendar, Clock, ChevronDown, ChevronUp, User, DollarSign, MessageSquare } from 'lucide-react';
+import { formatTime, formatDate, calculateDuration } from '@/lib/timeUtils';
 
 interface LessonSuggestionsProps {
   studentId: number;
@@ -629,17 +630,14 @@ export default function LessonSuggestions({ studentId }: LessonSuggestionsProps)
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-medium text-gray-900 text-sm">
-                            {new Date(lesson.date).toLocaleDateString('ru-RU', {
+                            {formatDate(lesson.date, {
                               day: '2-digit',
                               month: '2-digit',
                               year: 'numeric'
                             })}
                           </h4>
                           <span className="text-gray-500">
-                            {new Date(lesson.date).toLocaleTimeString('ru-RU', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {formatTime(lesson.date)}
                           </span>
                           {hasExistingPlan && (
                             <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
@@ -652,7 +650,7 @@ export default function LessonSuggestions({ studentId }: LessonSuggestionsProps)
                           <span>{lesson.cost.toLocaleString()} ₸</span>
                           {lesson.endTime && (
                             <span>
-                              {Math.round((new Date(lesson.endTime).getTime() - new Date(lesson.date).getTime()) / (1000 * 60))} мин
+                              {calculateDuration(lesson.date, lesson.endTime)} мин
                             </span>
                           )}
                           {lesson.lessonType && <span>{lesson.lessonType}</span>}

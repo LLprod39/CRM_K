@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Clock, User, History } from 'lucide-react';
 import { Lesson, LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
 import MobileCalendar from './MobileCalendar';
 import DayLessonsModal from './DayLessonsModal';
+import { formatTime } from '@/lib/timeUtils';
 
 interface CalendarProps {
   lessons: LessonWithOptionalStudent[];
@@ -191,12 +192,12 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
                 <div
                   key={lesson.id}
                   className={`text-xs p-1 rounded ${getStatusColor(lesson)}`}
-                  title={`Ученик #${lesson.studentId} - ${new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${lesson.endTime ? new Date(lesson.endTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}${isBackdate ? ' (задним числом)' : ''}`}
+                  title={`Ученик #${lesson.studentId} - ${formatTime(lesson.date)} - ${formatTime(lesson.endTime)}${isBackdate ? ' (задним числом)' : ''}`}
                 >
                   <div className="flex items-center gap-1">
                     {isBackdate ? <History className="w-2.5 h-2.5" /> : <Clock className="w-2.5 h-2.5" />}
                     <span className="truncate font-medium">
-                      {new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                      {formatTime(lesson.date)}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">

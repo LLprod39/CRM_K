@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, CheckCircle, AlertCircle, Clock, History, ArrowUpDown, Filter } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Clock, History, ArrowUpDown } from 'lucide-react';
 import { LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
 import LunchTimeSelector from './LunchTimeSelector';
 
@@ -25,7 +25,6 @@ export default function DayLessonsModal({
   console.log('DayLessonsModal: isOpen =', isOpen, 'lessons =', lessons.length);
   const [sortField, setSortField] = useState<'time' | 'student' | 'status' | 'cost'>('time');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   
   if (!isOpen) return null;
 
@@ -105,13 +104,48 @@ export default function DayLessonsModal({
   const getSortedAndFilteredLessons = () => {
     let filtered = lessons;
     
-    // Фильтрация по статусу
-    if (statusFilter !== 'all') {
-      filtered = lessons.filter(lesson => getLessonStatus(lesson) === statusFilter);
-    }
+    // Группировка групповых занятий
+    const groupedLessons = new Map<string, LessonWithOptionalStudent[]>();
+    const individualLessons: LessonWithOptionalStudent[] = [];
+    
+    filtered.forEach(lesson => {
+      if (lesson.lessonType === 'group') {
+        // Создаем ключ для группировки по времени и типу занятия
+        const timeKey = `${new Date(lesson.date).getTime()}-${lesson.lessonType}`;
+        if (!groupedLessons.has(timeKey)) {
+          groupedLessons.set(timeKey, []);
+        }
+        groupedLessons.get(timeKey)!.push(lesson);
+      } else {
+        individualLessons.push(lesson);
+      }
+    });
+    
+    // Объединяем групповые занятия в один элемент
+    const processedLessons: LessonWithOptionalStudent[] = [];
+    
+    // Добавляем групповые занятия как объединенные
+    groupedLessons.forEach(groupLessons => {
+      if (groupLessons.length > 0) {
+        const firstLesson = groupLessons[0];
+        // Создаем "виртуальное" занятие для отображения группы
+        const groupLesson: LessonWithOptionalStudent = {
+          ...firstLesson,
+          id: firstLesson.id, // Используем ID первого занятия
+          student: {
+            ...firstLesson.student!,
+            fullName: `Группа (${groupLessons.length} чел.)`
+          }
+        };
+        processedLessons.push(groupLesson);
+      }
+    });
+    
+    // Добавляем индивидуальные занятия
+    processedLessons.push(...individualLessons);
     
     // Сортировка
-    return filtered.sort((a, b) => {
+    return processedLessons.sort((a, b) => {
       let aValue: any, bValue: any;
       
       switch (sortField) {
@@ -201,34 +235,6 @@ export default function DayLessonsModal({
           </button>
         </div>
 
-        {/* Фильтры и сортировка */}
-        {lessons.length > 0 && (
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-500" />
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">Все статусы</option>
-                    <option value="scheduled">Запланировано</option>
-                    <option value="completed">Завершено</option>
-                    <option value="cancelled">Отменено</option>
-                    <option value="paid">Оплачено</option>
-                    <option value="prepaid">Предоплачено</option>
-                    <option value="unpaid">Не оплачено</option>
-                  </select>
-                </div>
-                <div className="text-sm text-gray-600">
-                  Показано: {sortedLessons.length} из {lessons.length} занятий
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Контент */}
         <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
@@ -319,7 +325,17 @@ export default function DayLessonsModal({
                         key={lesson.id}
                         className="hover:bg-gray-50 cursor-pointer transition-colors duration-150 border-l-4 border-green-200"
                         onClick={() => {
-                          onLessonClick(lesson);
+                          // Для групповых занятий передаем все занятия группы
+                          if (lesson.lessonType === 'group') {
+                            const groupLessons = lessons.filter(l => 
+                              l.lessonType === 'group' && 
+                              new Date(l.date).getTime() === new Date(lesson.date).getTime()
+                            );
+                            // Передаем первое занятие группы, но с информацией о том, что это группа
+                            onLessonClick({...lesson, groupLessons});
+                          } else {
+                            onLessonClick(lesson);
+                          }
                           onClose();
                         }}
                       >
@@ -344,9 +360,20 @@ export default function DayLessonsModal({
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-8 w-8">
-                              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                <span className="text-sm font-medium text-blue-800">
-                                  {(lesson.student?.fullName || `#${lesson.studentId}`).charAt(0).toUpperCase()}
+                              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                                lesson.lessonType === 'group' 
+                                  ? 'bg-purple-100' 
+                                  : 'bg-blue-100'
+                              }`}>
+                                <span className={`text-sm font-medium ${
+                                  lesson.lessonType === 'group' 
+                                    ? 'text-purple-800' 
+                                    : 'text-blue-800'
+                                }`}>
+                                  {lesson.lessonType === 'group' 
+                                    ? '👥' 
+                                    : (lesson.student?.fullName || `#${lesson.studentId}`).charAt(0).toUpperCase()
+                                  }
                                 </span>
                               </div>
                             </div>
@@ -356,6 +383,14 @@ export default function DayLessonsModal({
                               </div>
                               <div className="text-xs text-gray-500">
                                 {getLessonTypeText(lesson.lessonType || 'individual')}
+                                {lesson.lessonType === 'group' && (
+                                  <span className="ml-1 text-purple-600">
+                                    • {lessons.filter(l => 
+                                        l.lessonType === 'group' && 
+                                        new Date(l.date).getTime() === new Date(lesson.date).getTime()
+                                      ).length} участников
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>

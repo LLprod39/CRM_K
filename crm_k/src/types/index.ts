@@ -72,6 +72,7 @@ export type LessonWithStudent = Lesson & {
 // Тип для урока с опциональным студентом
 export type LessonWithOptionalStudent = Lesson & {
   student?: StudentWithUser
+  groupLessons?: LessonWithOptionalStudent[] // Для групповых занятий
 }
 
 // Тип для студента с включенными уроками
