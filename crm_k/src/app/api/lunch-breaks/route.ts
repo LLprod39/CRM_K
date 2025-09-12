@@ -83,6 +83,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Неверный токен' }, { status: 401 });
     }
 
+    // Проверяем, что пользователь существует в базе данных
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id }
+    });
+
+    if (!dbUser) {
+      return NextResponse.json({ error: 'Пользователь не найден в базе данных' }, { status: 404 });
+    }
+
     // Админ не может добавлять собственные обеды
     if (user.role === 'ADMIN') {
       return NextResponse.json({ error: 'Администратор не может добавлять собственные обеды' }, { status: 403 });

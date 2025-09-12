@@ -8,7 +8,14 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "npx prisma migrate reset --force && npm run db:seed"
+    "db:reset": "npx prisma migrate reset --force && npm run db:seed",
+    "test": "cd tests && npm test",
+    "test:watch": "cd tests && npm run test:watch",
+    "test:coverage": "cd tests && npm run test:coverage",
+    "test:unit": "cd tests && npm run test:unit",
+    "test:integration": "cd tests && npm run test:integration",
+    "test:e2e": "cd tests && npm run test:e2e",
+    "test:ci": "cd tests && npm run test:ci"
   },
   "dependencies": {
     "@google/genai": "^1.19.0",

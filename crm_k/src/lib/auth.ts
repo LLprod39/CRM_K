@@ -18,7 +18,8 @@ export function verifyToken(token: string): AuthUser | null {
       name: decoded.name || '',
       role: decoded.role as 'ADMIN' | 'USER'
     }
-  } catch {
+  } catch (error) {
+    console.error('Ошибка верификации токена:', error);
     return null
   }
 }
