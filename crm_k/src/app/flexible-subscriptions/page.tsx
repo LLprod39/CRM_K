@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/presentation/contexts'
 import UnifiedSubscriptionModal from '@/components/forms/UnifiedSubscriptionModal'
-import FlexibleSubscriptionsList from '@/components/FlexibleSubscriptionsList'
+import AllSubscriptionsList from '@/components/AllSubscriptionsList'
 
 export default function FlexibleSubscriptionsPage() {
   const [showForm, setShowForm] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
   const { user, isLoading } = useAuth()
   const router = useRouter()
 
@@ -36,9 +37,9 @@ export default function FlexibleSubscriptionsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Гибкие абонементы</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Абонементы</h1>
           <p className="text-gray-600 mt-2">
-            Создавайте абонементы с разными днями и временем для каждой недели
+            Управляйте всеми типами абонементов: обычными и гибкими
           </p>
         </div>
         <button
@@ -49,14 +50,14 @@ export default function FlexibleSubscriptionsPage() {
         </button>
       </div>
 
-      <FlexibleSubscriptionsList />
+      <AllSubscriptionsList key={refreshKey} />
 
       <UnifiedSubscriptionModal
         isOpen={showForm}
         onClose={() => setShowForm(false)}
         onSuccess={() => {
           setShowForm(false)
-          // Можно добавить обновление списка здесь
+          setRefreshKey(prev => prev + 1) // Обновляем список
         }}
       />
     </div>

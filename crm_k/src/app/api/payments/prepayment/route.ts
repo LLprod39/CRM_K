@@ -103,12 +103,13 @@ export async function POST(request: NextRequest) {
     // Создаем предоплату и обновляем статус занятий в транзакции
     const result = await prisma.$transaction(async (tx) => {
       // Создаем платеж
-      const payment = await tx.payment.create({
+      const payment = await (tx as any).payment.create({
         data: {
           studentId: body.studentId,
           amount: body.amount,
           date: new Date(body.date),
-          description: body.description || `Предоплата за период с ${body.period.startDate} по ${body.period.endDate}`
+          description: body.description || `Предоплата за период с ${body.period.startDate} по ${body.period.endDate}`,
+          type: 'prepayment'
         }
       })
 

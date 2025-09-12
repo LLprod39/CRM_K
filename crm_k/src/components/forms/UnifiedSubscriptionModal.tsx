@@ -18,6 +18,7 @@ interface UnifiedSubscriptionModalProps {
   onClose: () => void;
   onSuccess: () => void;
   selectedStudent?: Student;
+  editingSubscription?: any; // Добавляем поддержку редактирования
 }
 
 type SubscriptionType = 'regular' | 'flexible';
@@ -895,7 +896,8 @@ export default function UnifiedSubscriptionModal({
   isOpen, 
   onClose, 
   onSuccess,
-  selectedStudent 
+  selectedStudent,
+  editingSubscription 
 }: UnifiedSubscriptionModalProps) {
   const { user } = useAuth();
   const [subscriptionType, setSubscriptionType] = useState<SubscriptionType>('regular');
@@ -973,6 +975,35 @@ export default function UnifiedSubscriptionModal({
       setSelectedStudents([selectedStudent]);
     }
   }, [selectedStudent]);
+
+  // Инициализируем форму данными редактируемого абонемента
+  useEffect(() => {
+    if (editingSubscription) {
+      setSubscriptionType('flexible'); // Редактируем только гибкие абонементы
+      setFlexibleData({
+        name: editingSubscription.name,
+        studentId: editingSubscription.studentId,
+        userId: editingSubscription.userId,
+        startDate: new Date(editingSubscription.startDate).toISOString().split('T')[0],
+        endDate: new Date(editingSubscription.endDate).toISOString().split('T')[0],
+        description: editingSubscription.description || '',
+        weekSchedules: editingSubscription.weekSchedules.map((week: any) => ({
+          weekNumber: week.weekNumber,
+          startDate: new Date(week.startDate).toISOString().split('T')[0],
+          endDate: new Date(week.endDate).toISOString().split('T')[0],
+          weekDays: week.weekDays.map((day: any) => ({
+            dayOfWeek: day.dayOfWeek,
+            startTime: new Date(day.startTime).toISOString().split('T')[0] + 'T' + new Date(day.startTime).toTimeString().split(' ')[0],
+            endTime: new Date(day.endTime).toISOString().split('T')[0] + 'T' + new Date(day.endTime).toTimeString().split(' ')[0],
+            cost: day.cost,
+            location: day.location || 'office',
+            notes: day.notes || ''
+          }))
+        }))
+      });
+      setSelectedStudents([editingSubscription.student]);
+    }
+  }, [editingSubscription]);
 
   // Расчет количества занятий для обычного абонемента
   const lessonsCount = useMemo(() => {
@@ -1210,14 +1241,22 @@ export default function UnifiedSubscriptionModal({
           throw new Error(errorData.error || 'Ошибка при создании предоплаты');
         }
       } else if (subscriptionType === 'flexible') {
-        // Создание гибкого абонемента
+        // Создание или редактирование гибкого абонемента
         const requestData = {
           ...flexibleData,
           totalCost: flexibleTotalAmount
         };
 
-        const response = await apiRequest('/api/flexible-subscriptions', {
-          method: 'POST',
+        const isEditing = !!editingSubscription;
+        const url = isEditing 
+          ? `/api/flexible-subscriptions/${editingSubscription.id}`
+          : '/api/flexible-subscriptions';
+        const method = isEditing ? 'PUT' : 'POST';
+        
+        console.log(`Отправляем данные для ${isEditing ? 'редактирования' : 'создания'} гибкого абонемента:`, JSON.stringify(requestData, null, 2));
+
+        const response = await apiRequest(url, {
+          method,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -1226,7 +1265,7 @@ export default function UnifiedSubscriptionModal({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Ошибка при создании гибкого абонемента');
+          throw new Error(errorData.error || `Ошибка при ${isEditing ? 'редактировании' : 'создании'} гибкого абонемента`);
         }
       }
 
@@ -1244,7 +1283,7 @@ export default function UnifiedSubscriptionModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Создание абонемента"
+      title={editingSubscription ? "Редактирование абонемента" : "Создание абонемента"}
       size="lg"
       footer={
         <ModalFooter
@@ -1257,10 +1296,12 @@ export default function UnifiedSubscriptionModal({
           }
           confirmText={
             loading 
-              ? 'Создание...' 
+              ? (editingSubscription ? 'Сохранение...' : 'Создание...') 
               : subscriptionType === 'regular' 
                 ? `Создать абонемент (${lessonsCount} занятий)` 
-                : `Создать гибкий абонемент (${flexibleTotalAmount.toLocaleString()} ₸)`
+                : editingSubscription
+                  ? `Сохранить изменения (${flexibleTotalAmount.toLocaleString()} ₸)`
+                  : `Создать гибкий абонемент (${flexibleTotalAmount.toLocaleString()} ₸)`
           }
           loading={loading}
         />

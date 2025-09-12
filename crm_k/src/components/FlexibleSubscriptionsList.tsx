@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { apiRequest } from '@/lib/api'
 import { FlexibleSubscriptionWithDetails } from '@/types'
+import UnifiedSubscriptionModal from '@/components/forms/UnifiedSubscriptionModal'
 
 interface FlexibleSubscriptionsListProps {
   studentId?: number
@@ -12,6 +13,8 @@ export default function FlexibleSubscriptionsList({ studentId }: FlexibleSubscri
   const [subscriptions, setSubscriptions] = useState<FlexibleSubscriptionWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [editingSubscription, setEditingSubscription] = useState<FlexibleSubscriptionWithDetails | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   useEffect(() => {
     loadSubscriptions()
@@ -55,6 +58,39 @@ export default function FlexibleSubscriptionsList({ studentId }: FlexibleSubscri
     } catch (error) {
       alert('Ошибка при генерации уроков')
     }
+  }
+
+  const handleEdit = (subscription: FlexibleSubscriptionWithDetails) => {
+    setEditingSubscription(subscription)
+    setShowEditModal(true)
+  }
+
+  const handleDelete = async (subscriptionId: number) => {
+    if (!confirm('Вы уверены, что хотите удалить этот абонемент?')) {
+      return
+    }
+
+    try {
+      const response = await apiRequest(`/api/flexible-subscriptions/${subscriptionId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        alert('Абонемент успешно удален')
+        loadSubscriptions() // Перезагружаем список
+      } else {
+        const errorData = await response.json()
+        alert(`Ошибка: ${errorData.error}`)
+      }
+    } catch (error) {
+      alert('Ошибка при удалении абонемента')
+    }
+  }
+
+  const handleEditSuccess = () => {
+    setShowEditModal(false)
+    setEditingSubscription(null)
+    loadSubscriptions() // Перезагружаем список
   }
 
   const formatDate = (date: string | Date) => {
@@ -167,6 +203,18 @@ export default function FlexibleSubscriptionsList({ studentId }: FlexibleSubscri
           {/* Действия */}
           <div className="flex justify-end space-x-2">
             <button
+              onClick={() => handleEdit(subscription)}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+            >
+              Редактировать
+            </button>
+            <button
+              onClick={() => handleDelete(subscription.id)}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+            >
+              Удалить
+            </button>
+            <button
               onClick={() => generateLessons(subscription.id)}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
             >
@@ -175,6 +223,20 @@ export default function FlexibleSubscriptionsList({ studentId }: FlexibleSubscri
           </div>
         </div>
       ))}
+
+      {/* Модальное окно для редактирования */}
+      {editingSubscription && (
+        <UnifiedSubscriptionModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false)
+            setEditingSubscription(null)
+          }}
+          onSuccess={handleEditSuccess}
+          selectedStudent={editingSubscription.student}
+          editingSubscription={editingSubscription}
+        />
+      )}
     </div>
   )
 }
