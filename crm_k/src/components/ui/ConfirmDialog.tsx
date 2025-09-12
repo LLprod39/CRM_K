@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { AlertTriangle, X, CheckCircle, Info } from 'lucide-react';
+import Modal, { ModalFooter } from './Modal';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -64,48 +65,45 @@ export default function ConfirmDialog({
 
   const styles = getStyles();
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-md">
-        <div className={`p-6 border-b ${styles.container}`}>
-          <div className="flex items-center space-x-3">
-            {getIcon()}
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          </div>
-        </div>
-        
-        <div className="p-6">
-          <p className="text-gray-700 mb-6">{message}</p>
-          
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium disabled:opacity-50"
-            >
-              {cancelText}
-            </button>
-            <button
-              onClick={onConfirm}
-              disabled={loading}
-              className={`flex-1 px-4 py-2 rounded-lg transition-colors duration-200 font-medium disabled:opacity-50 flex items-center justify-center space-x-2 ${styles.button}`}
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Обработка...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-4 h-4" />
-                  <span>{confirmText}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
+  const modalTitle = (
+    <div className="flex items-center gap-3">
+      {getIcon()}
+      <span className="text-lg font-semibold text-gray-900">{title}</span>
     </div>
+  );
+
+  const getVariant = (): 'primary' | 'danger' | 'success' => {
+    switch (type) {
+      case 'danger':
+        return 'danger';
+      case 'info':
+        return 'primary';
+      default:
+        return 'primary';
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={modalTitle}
+      size="sm"
+      footer={
+        <ModalFooter
+          onCancel={onClose}
+          onConfirm={onConfirm}
+          cancelText={cancelText}
+          confirmText={confirmText}
+          loading={loading}
+          variant={getVariant()}
+        />
+      }
+    >
+      <div className="p-6">
+        <p className="text-gray-700">{message}</p>
+      </div>
+    </Modal>
   );
 }
 

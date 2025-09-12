@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { X, CheckCircle, AlertCircle, Clock, History, ArrowUpDown } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Clock, History, ArrowUpDown, Calendar, Users, DollarSign } from 'lucide-react';
 import { LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
 import LunchTimeSelector from './LunchTimeSelector';
+import Modal, { ModalSection, InfoCard } from './Modal';
 
 interface DayLessonsModalProps {
   isOpen: boolean;
@@ -189,285 +190,271 @@ export default function DayLessonsModal({
 
   const sortedLessons = getSortedAndFilteredLessons();
 
-  return (
-    <div 
-      className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-[9999] p-4" 
-      style={{ zIndex: 9999 }}
-      onClick={onClose}
-    >
-      <div 
-        className="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-7xl max-h-[95vh] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Заголовок */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              📅 Занятия — {date.toLocaleDateString('ru-RU', { 
-                day: 'numeric', 
-                month: 'long', 
-                weekday: 'long'
-              })}
-              {date < new Date() && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 text-sm bg-orange-100 text-orange-800 rounded-full">
-                  <History className="w-3 h-3" />
-                  Задним числом
-                </span>
-              )}
-            </h2>
-            {lessons.length > 0 && (
-              <p className="text-lg text-gray-600 mt-2">
-                {lessons.length} занят{lessons.length === 1 ? 'ие' : lessons.length < 5 ? 'ия' : 'ий'} • {Math.round(lessons.reduce((total, lesson) => {
-                if (lesson.endTime) {
-                  const duration = new Date(lesson.endTime).getTime() - new Date(lesson.date).getTime();
-                  return total + duration;
-                }
-                return total;
-              }, 0) / (1000 * 60 * 60) * 10) / 10}ч
-              </p>
-            )}
-          </div>
+  const modalTitle = (
+    <div className="flex-1">
+      <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+        <Calendar className="w-5 h-5 text-blue-600" />
+        {date.toLocaleDateString('ru-RU', { 
+          day: 'numeric', 
+          month: 'long', 
+          weekday: 'long',
+          year: 'numeric'
+        })}
+      </h2>
+      {lessons.length > 0 && (
+        <p className="text-sm text-gray-600 mt-1">
+          {lessons.length} занят{lessons.length === 1 ? 'ие' : lessons.length < 5 ? 'ия' : 'ий'} • 
+          {Math.round(lessons.reduce((total, lesson) => {
+            if (lesson.endTime) {
+              const duration = new Date(lesson.endTime).getTime() - new Date(lesson.date).getTime();
+              return total + duration;
+            }
+            return total;
+          }, 0) / (1000 * 60 * 60) * 10) / 10}ч
+          {date < new Date() && (
+            <span className="inline-flex items-center gap-1 ml-2 px-2 py-0.5 text-xs bg-orange-100 text-orange-800 rounded-full">
+              <History className="w-3 h-3" />
+              Задним числом
+            </span>
+          )}
+        </p>
+      )}
+    </div>
+  );
+
+  const modalFooter = (
+    <div className="flex justify-between items-center">
+      <div className="flex items-center gap-4">
+        {userRole === 'ADMIN' && (
           <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 hover:bg-gray-100 rounded-lg"
+            onClick={() => {
+              // Здесь можно добавить логику для добавления нового занятия
+              onClose();
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm"
           >
-            <X className="w-6 h-6" />
+            <span className="text-lg">+</span>
+            Добавить занятие
           </button>
+        )}
+        <div className="text-sm text-gray-600">
+          {lessons.length > 0 && (
+            <span>
+              Всего занятий: {lessons.length}
+              {sortedLessons.length !== lessons.length && ` • Показано: ${sortedLessons.length}`}
+            </span>
+          )}
         </div>
+      </div>
+      <button
+        onClick={onClose}
+        className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+      >
+        Закрыть
+      </button>
+    </div>
+  );
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={modalTitle}
+      size="full"
+      footer={modalFooter}
+    >
 
 
-        {/* Контент */}
-        <div className="overflow-y-auto max-h-[calc(95vh-200px)]">
-          {/* Компонент выбора времени обеда */}
-          <div className="p-6 border-b border-gray-200">
-            <LunchTimeSelector 
-              date={date}
-              existingLessons={lessons}
-              userRole={userRole}
-            />
+      {/* Компонент выбора времени обеда */}
+      <ModalSection className="border-b border-gray-100">
+        <LunchTimeSelector 
+          date={date}
+          existingLessons={lessons}
+          userRole={userRole}
+        />
+      </ModalSection>
+
+      {lessons.length === 0 ? (
+        <div className="text-center py-16">
+          <div className="w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-10 h-10 text-gray-400" />
           </div>
-
-          {lessons.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="w-8 h-8 text-gray-400" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Свободный день</h3>
+          <p className="text-gray-600 mb-8">
+            На эту дату не запланировано занятий
+          </p>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-50/50 rounded-xl p-6 max-w-md mx-auto border border-gray-100">
+            <h4 className="text-lg font-medium text-gray-800 mb-4">Возможности дня:</h4>
+            <div className="space-y-3 text-left">
+              <div className="flex items-center gap-3 text-gray-700">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Добавить новое занятие</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Свободный день</h3>
-              <p className="text-gray-600 mb-6">
-                На {date.toLocaleDateString('ru-RU', { 
-                  day: 'numeric', 
-                  month: 'long', 
-                  year: 'numeric' 
-                })} не запланировано занятий
-              </p>
-              <div className="bg-gray-50 rounded-lg p-6 max-w-md mx-auto">
-                <h4 className="text-lg font-medium text-gray-800 mb-4">Возможности дня:</h4>
-                <div className="space-y-3 text-left">
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Добавить новое занятие</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm">Планирование на будущее</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <span className="text-sm">Время для подготовки</span>
-                  </div>
-                </div>
+              <div className="flex items-center gap-3 text-gray-700">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Планирование на будущее</span>
+              </div>
+              <div className="flex items-center gap-3 text-gray-700">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Время для подготовки</span>
               </div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th 
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort('time')}
+          </div>
+        </div>
+      ) : (
+        <div className="p-6">
+          <div className="overflow-x-auto -mx-6">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-y border-gray-100">
+                <tr>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('time')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5" />
+                      Время
+                      <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('student')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Users className="w-3.5 h-3.5" />
+                      Ученик
+                      <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('cost')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-3.5 h-3.5" />
+                      Стоимость
+                      <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Статус
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {sortedLessons.map((lesson) => {
+                  const status = getLessonStatus(lesson);
+                  const isBackdate = new Date(lesson.date) < new Date();
+                  
+                  return (
+                    <tr 
+                      key={lesson.id}
+                      className={`hover:bg-gray-50 cursor-pointer transition-all duration-150 ${getStatusColor(lesson).includes('red') ? 'hover:bg-red-50' : ''}`}
+                      onClick={() => {
+                        // Для групповых занятий передаем все занятия группы
+                        if (lesson.lessonType === 'group') {
+                          const groupLessons = lessons.filter(l => 
+                            l.lessonType === 'group' && 
+                            new Date(l.date).getTime() === new Date(lesson.date).getTime()
+                          );
+                          // Передаем первое занятие группы, но с информацией о том, что это группа
+                          onLessonClick({...lesson, groupLessons});
+                        } else {
+                          onLessonClick(lesson);
+                        }
+                        onClose();
+                      }}
                     >
-                      <div className="flex items-center gap-2">
-                        Время
-                        <ArrowUpDown className="w-3 h-3" />
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort('student')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Ученик
-                        <ArrowUpDown className="w-3 h-3" />
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort('cost')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Стоимость
-                        <ArrowUpDown className="w-3 h-3" />
-                      </div>
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Статус
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {sortedLessons.map((lesson) => {
-                    const status = getLessonStatus(lesson);
-                    const isBackdate = new Date(lesson.date) < new Date();
-                    
-                    return (
-                      <tr 
-                        key={lesson.id}
-                        className="hover:bg-gray-50 cursor-pointer transition-colors duration-150 border-l-4 border-green-200"
-                        onClick={() => {
-                          // Для групповых занятий передаем все занятия группы
-                          if (lesson.lessonType === 'group') {
-                            const groupLessons = lessons.filter(l => 
-                              l.lessonType === 'group' && 
-                              new Date(l.date).getTime() === new Date(lesson.date).getTime()
-                            );
-                            // Передаем первое занятие группы, но с информацией о том, что это группа
-                            onLessonClick({...lesson, groupLessons});
-                          } else {
-                            onLessonClick(lesson);
-                          }
-                          onClose();
-                        }}
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex flex-col">
-                            <div className="text-sm font-medium text-gray-900">
-                              {formatTime(lesson.date)}
-                            </div>
-                            {lesson.endTime && (
-                              <div className="text-xs text-gray-500">
-                                до {formatTime(lesson.endTime)}
-                              </div>
-                            )}
-                            {isBackdate && (
-                              <div className="flex items-center gap-1 mt-1">
-                                <History className="w-3 h-3 text-orange-500" />
-                                <span className="text-xs text-orange-600">Задним числом</span>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-8 w-8">
-                              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                                lesson.lessonType === 'group' 
-                                  ? 'bg-purple-100' 
-                                  : 'bg-blue-100'
-                              }`}>
-                                <span className={`text-sm font-medium ${
-                                  lesson.lessonType === 'group' 
-                                    ? 'text-purple-800' 
-                                    : 'text-blue-800'
-                                }`}>
-                                  {lesson.lessonType === 'group' 
-                                    ? '👥' 
-                                    : (lesson.student?.fullName || `#${lesson.studentId}`).charAt(0).toUpperCase()
-                                  }
-                                </span>
-                              </div>
-                            </div>
-                            <div className="ml-3">
-                              <div className="text-sm font-medium text-gray-900">
-                                {lesson.student?.fullName || `Ученик #${lesson.studentId}`}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {getLessonTypeText(lesson.lessonType || 'individual')}
-                                {lesson.lessonType === 'group' && (
-                                  <span className="ml-1 text-purple-600">
-                                    • {lessons.filter(l => 
-                                        l.lessonType === 'group' && 
-                                        new Date(l.date).getTime() === new Date(lesson.date).getTime()
-                                      ).length} участников
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
                           <div className="text-sm font-medium text-gray-900">
-                            {lesson.cost} ₸
+                            {formatTime(lesson.date)}
                           </div>
                           {lesson.endTime && (
                             <div className="text-xs text-gray-500">
-                              {formatDuration(lesson.date, lesson.endTime)}
+                              до {formatTime(lesson.endTime)}
                             </div>
                           )}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(status)}`}>
-                              {getStatusIcon(lesson)}
-                              {getLessonStatusText(status)}
-                            </span>
-                            {lesson.notes && (
-                              <span className="text-gray-400" title={lesson.notes}>
-                                📝
+                          {isBackdate && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <History className="w-3 h-3 text-orange-500" />
+                              <span className="text-xs text-orange-600">Задним числом</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className={`h-10 w-10 rounded-full flex items-center justify-center ring-2 ring-offset-2 ${
+                              lesson.lessonType === 'group' 
+                                ? 'bg-purple-100 text-purple-800 ring-purple-200' 
+                                : 'bg-blue-100 text-blue-800 ring-blue-200'
+                            }`}>
+                              <span className="text-sm font-semibold">
+                                {lesson.lessonType === 'group' 
+                                  ? <Users className="w-5 h-5" />
+                                  : (lesson.student?.fullName || `#${lesson.studentId}`).charAt(0).toUpperCase()
+                                }
                               </span>
-                            )}
-                            {(lesson as any).comment && (
-                              <span className="text-gray-400" title={(lesson as any).comment}>
-                                💬
-                              </span>
-                            )}
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Подвал */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              {userRole === 'ADMIN' && (
-                <button
-                  onClick={() => {
-                    // Здесь можно добавить логику для добавления нового занятия
-                    onClose();
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                >
-                  <span className="text-lg">+</span>
-                  Добавить занятие
-                </button>
-              )}
-              <div className="text-sm text-gray-600">
-                {lessons.length > 0 && (
-                  <span>
-                    Всего занятий: {lessons.length}
-                    {sortedLessons.length !== lessons.length && ` • Показано: ${sortedLessons.length}`}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-              >
-                Отмена
-              </button>
-            </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {lesson.student?.fullName || `Ученик #${lesson.studentId}`}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {getLessonTypeText(lesson.lessonType || 'individual')}
+                              {lesson.lessonType === 'group' && (
+                                <span className="ml-1 text-purple-600 font-medium">
+                                  • {lessons.filter(l => 
+                                      l.lessonType === 'group' && 
+                                      new Date(l.date).getTime() === new Date(lesson.date).getTime()
+                                    ).length} участников
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-gray-900">
+                          {lesson.cost.toLocaleString()} ₸
+                        </div>
+                        {lesson.endTime && (
+                          <div className="text-xs text-gray-500">
+                            {formatDuration(lesson.date, lesson.endTime)}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${getStatusBadgeColor(status)}`}>
+                            {getStatusIcon(lesson)}
+                            {getLessonStatusText(status)}
+                          </span>
+                          {lesson.notes && (
+                            <span className="text-gray-400 hover:text-gray-600" title={lesson.notes}>
+                              📝
+                            </span>
+                          )}
+                          {(lesson as any).comment && (
+                            <span className="text-gray-400 hover:text-gray-600" title={(lesson as any).comment}>
+                              💬
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+
+    </Modal>
   );
 }
