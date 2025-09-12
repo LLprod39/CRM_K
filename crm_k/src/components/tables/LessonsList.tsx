@@ -2,6 +2,7 @@
 
 import { Clock, User, DollarSign, Edit, Eye, Calendar, AlertCircle } from 'lucide-react';
 import { LessonWithOptionalStudent, getCombinedLessonStatus } from '@/types';
+import { getLessonStatusInfo } from '@/lib/lessonStatusUtils';
 import Card, { CardHeader, CardTitle } from '../ui/Card';
 
 interface LessonsListProps {
@@ -14,16 +15,23 @@ interface LessonsListProps {
 
 export default function LessonsList({ lessons, onLessonClick, onEditLesson, selectedDate, userRole }: LessonsListProps) {
 
+  const getStatusInfo = (lesson: LessonWithOptionalStudent) => {
+    return getLessonStatusInfo(
+      lesson.isCompleted,
+      lesson.isPaid,
+      lesson.isCancelled,
+      new Date(lesson.date)
+    );
+  };
+
   const getStatusColor = (lesson: LessonWithOptionalStudent) => {
-    if (lesson.isCancelled) return 'bg-red-50 text-red-700 border border-red-200';
-    if (lesson.isCompleted && lesson.isPaid) return 'bg-purple-50 text-purple-700 border border-purple-200';
-    if (lesson.isCompleted && !lesson.isPaid) return 'bg-green-50 text-green-700 border border-green-200';
-    if (!lesson.isCompleted && lesson.isPaid) return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
-    return 'bg-blue-50 text-blue-700 border border-blue-200';
+    const statusInfo = getStatusInfo(lesson);
+    return `${statusInfo.bgColor} ${statusInfo.color} border border-current`;
   };
 
   const getStatusText = (lesson: LessonWithOptionalStudent) => {
-    return getCombinedLessonStatus(lesson);
+    const statusInfo = getStatusInfo(lesson);
+    return statusInfo.label;
   };
 
   const formatDate = (date: Date) => {
@@ -124,7 +132,8 @@ export default function LessonsList({ lessons, onLessonClick, onEditLesson, sele
                       {formatDateTime(lesson.date)}
                     </span>
                   </div>
-                  <span className={`px-3 py-1.5 text-xs font-medium rounded-lg ${getStatusColor(lesson)}`}>
+                  <span className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1 ${getStatusColor(lesson)}`}>
+                    <span>{getStatusInfo(lesson).icon}</span>
                     {getStatusText(lesson)}
                   </span>
                 </div>

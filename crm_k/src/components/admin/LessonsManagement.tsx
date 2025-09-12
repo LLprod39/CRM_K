@@ -18,12 +18,18 @@ import {
   User,
   BookOpen,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  CalendarDays,
+  CreditCard,
+  Users
 } from 'lucide-react'
 import { Lesson, Student, User as UserType } from '@/types'
 import { apiRequest } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/presentation/contexts'
+import { getLessonStatusInfo } from '@/lib/lessonStatusUtils'
+import BulkLessonForm from '../forms/BulkLessonForm'
+import PrepaymentForm from '../forms/PrepaymentForm'
 
 interface LessonsManagementProps {
   className?: string
@@ -43,6 +49,8 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'paid' | 'scheduled' | 'cancelled'>('all')
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [selectedLesson, setSelectedLesson] = useState<LessonWithDetails | null>(null)
+  const [showBulkForm, setShowBulkForm] = useState(false)
+  const [showPrepaymentForm, setShowPrepaymentForm] = useState(false)
 
   // Проверяем, что пользователь является админом
   if (user?.role !== 'ADMIN') {
@@ -79,35 +87,30 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
   }
 
   const getStatusInfo = (lesson: LessonWithDetails) => {
-    if (lesson.isCompleted && lesson.isPaid) {
-      return {
-        icon: CheckCircle,
-        text: 'Проведено + Оплачено',
-        color: 'bg-green-100 text-green-800',
-        iconColor: 'text-green-600'
-      }
-    }
-    if (lesson.isPaid) {
-      return {
-        icon: DollarSign,
-        text: 'Оплачено',
-        color: 'bg-blue-100 text-blue-800',
-        iconColor: 'text-blue-600'
-      }
-    }
-    if (lesson.isCancelled) {
-      return {
-        icon: XCircle,
-        text: 'Отменено',
-        color: 'bg-red-100 text-red-800',
-        iconColor: 'text-red-600'
-      }
-    }
+    const statusInfo = getLessonStatusInfo(
+      lesson.isCompleted,
+      lesson.isPaid,
+      lesson.isCancelled,
+      new Date(lesson.date)
+    );
+    
+    // Маппинг иконок для совместимости с существующим кодом
+    const iconMap = {
+      'scheduled': Clock,
+      'prepaid': DollarSign,
+      'completed': CheckCircle,
+      'paid': CheckCircle,
+      'debt': AlertCircle,
+      'unpaid': Clock,
+      'cancelled': XCircle
+    };
+    
     return {
-      icon: Clock,
-      text: 'Запланировано',
-      color: 'bg-yellow-100 text-yellow-800',
-      iconColor: 'text-yellow-600'
+      icon: iconMap[statusInfo.status],
+      text: statusInfo.label,
+      color: statusInfo.bgColor,
+      iconColor: statusInfo.color.replace('text-', 'text-'),
+      description: statusInfo.description
     }
   }
 
@@ -319,6 +322,24 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
             </select>
             
             <button
+              onClick={() => setShowBulkForm(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center"
+              title="Массовое создание занятий"
+            >
+              <CalendarDays className="w-4 h-4 mr-2" />
+              Массовое создание
+            </button>
+            
+            <button
+              onClick={() => setShowPrepaymentForm(true)}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors flex items-center"
+              title="Создать предоплату"
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Предоплата
+            </button>
+            
+            <button
               onClick={handleExportLessons}
               className="px-4 py-2 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors flex items-center"
               title="Экспорт в CSV"
@@ -475,6 +496,25 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
           )}
         </div>
       </div>
+      
+      {/* Модальные окна */}
+      <BulkLessonForm
+        isOpen={showBulkForm}
+        onClose={() => setShowBulkForm(false)}
+        onSuccess={() => {
+          setShowBulkForm(false);
+          fetchLessons();
+        }}
+      />
+      
+      <PrepaymentForm
+        isOpen={showPrepaymentForm}
+        onClose={() => setShowPrepaymentForm(false)}
+        onSuccess={() => {
+          setShowPrepaymentForm(false);
+          fetchLessons();
+        }}
+      />
     </div>
   )
 }

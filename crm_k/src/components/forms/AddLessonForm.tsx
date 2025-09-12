@@ -8,6 +8,7 @@ import { useAuth } from '@/presentation/contexts';
 import DateTimePicker from '../ui/DateTimePicker';
 import StudentSearch from '@/components/ui/StudentSearch';
 import UserSelector from '@/components/ui/UserSelector';
+import SubscriptionForm from './SubscriptionForm';
 
 interface AddLessonFormProps {
   isOpen: boolean;
@@ -53,6 +54,7 @@ export default function AddLessonForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [showSubscriptionForm, setShowSubscriptionForm] = useState(false);
 
   // Загружаем список учеников
   useEffect(() => {
@@ -280,26 +282,36 @@ export default function AddLessonForm({
           </div>
           <div className="flex items-center gap-2">
             {user?.role === 'ADMIN' && (
-              <button
-                type="button"
-                onClick={() => {
-                  const yesterday = new Date();
-                  yesterday.setDate(yesterday.getDate() - 1);
-                  yesterday.setHours(10, 0, 0, 0);
-                  const endTime = new Date(yesterday.getTime() + 60 * 60 * 1000);
-                  setFormData(prev => ({
-                    ...prev,
-                    date: toLocalISOString(yesterday),
-                    endTime: toLocalISOString(endTime),
-                    isCompleted: true,
-                    isPaid: true
-                  }));
-                }}
-                className="px-3 py-1.5 text-xs bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 transition-colors font-medium"
-                title="Быстро добавить занятие на вчера"
-              >
-                Вчера
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowSubscriptionForm(true)}
+                  className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors font-medium"
+                  title="Создать абонемент с расписанием и предоплатой"
+                >
+                  Абонемент
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    yesterday.setHours(10, 0, 0, 0);
+                    const endTime = new Date(yesterday.getTime() + 60 * 60 * 1000);
+                    setFormData(prev => ({
+                      ...prev,
+                      date: toLocalISOString(yesterday),
+                      endTime: toLocalISOString(endTime),
+                      isCompleted: true,
+                      isPaid: true
+                    }));
+                  }}
+                  className="px-3 py-1.5 text-xs bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 transition-colors font-medium"
+                  title="Быстро добавить занятие на вчера"
+                >
+                  Вчера
+                </button>
+              </>
             )}
             <button
               onClick={onClose}
@@ -605,6 +617,17 @@ export default function AddLessonForm({
           </div>
         </form>
       </div>
+      
+      {/* Модальное окно абонемента */}
+      <SubscriptionForm
+        isOpen={showSubscriptionForm}
+        onClose={() => setShowSubscriptionForm(false)}
+        onSuccess={() => {
+          setShowSubscriptionForm(false);
+          onSuccess();
+        }}
+        selectedStudent={selectedStudents.length > 0 ? selectedStudents[0] : undefined}
+      />
     </div>
   );
 }

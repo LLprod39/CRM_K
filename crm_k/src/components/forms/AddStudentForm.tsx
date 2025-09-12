@@ -10,6 +10,7 @@ import Input from '@/components/ui/Input';
 import PhotoUpload from './PhotoUpload';
 import DateTimePicker from '@/components/ui/DateTimePicker';
 import UserSelector from '@/components/ui/UserSelector';
+import SubscriptionForm from './SubscriptionForm';
 
 interface AddStudentFormProps {
   isOpen: boolean;
@@ -44,6 +45,8 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [createLesson, setCreateLesson] = useState(false);
   const [step, setStep] = useState<'student' | 'lesson'>('student');
+  const [showSubscriptionForm, setShowSubscriptionForm] = useState(false);
+  const [createdStudent, setCreatedStudent] = useState<any>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -103,11 +106,9 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const createStudent = async () => {
     if (!validateForm()) {
-      return;
+      return null;
     }
 
     setLoading(true);
@@ -127,63 +128,83 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
 
       if (studentResponse.ok) {
         const newStudent = await studentResponse.json();
-        
-        // Если нужно создать занятие
-        if (createLesson) {
-          const lessonRequestData = {
-            ...lessonData,
-            studentId: newStudent.id,
-            userId: user?.role === 'ADMIN' ? selectedUserId : undefined
-          };
-          
-          const lessonResponse = await apiRequest('/api/lessons', {
-            method: 'POST',
-            body: JSON.stringify(lessonRequestData),
-          });
-
-          if (!lessonResponse.ok) {
-            const errorData = await lessonResponse.json();
-            alert(`Ученик создан, но ошибка при создании занятия: ${errorData.error}`);
-          }
-        }
-
-        // Сбрасываем форму
-        setFormData({
-          fullName: '',
-          phone: '',
-          age: 0,
-          parentName: '',
-          diagnosis: '',
-          comment: '',
-          photoUrl: ''
-        });
-        setLessonData({
-          date: new Date(),
-          endTime: new Date(Date.now() + 60 * 60 * 1000),
-          studentId: 0,
-          cost: 0,
-          isCompleted: false,
-          isPaid: false,
-          isCancelled: false,
-          notes: '',
-          lessonType: 'individual'
-        });
-        setErrors({});
-        setCreateLesson(false);
-        setStep('student');
-        setSelectedUserId(null);
-        onSuccess();
-        onClose();
+        return newStudent;
       } else {
         const errorData = await studentResponse.json();
         alert(errorData.error || 'Ошибка при создании ученика');
+        return null;
       }
     } catch (error) {
       console.error('Ошибка при создании ученика:', error);
       alert('Ошибка при создании ученика');
+      return null;
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const newStudent = await createStudent();
+    
+    if (newStudent) {
+      setCreatedStudent(newStudent);
+      
+      // Если нужно создать занятие
+      if (createLesson) {
+        const lessonRequestData = {
+          ...lessonData,
+          studentId: newStudent.id,
+          userId: user?.role === 'ADMIN' ? selectedUserId : undefined
+        };
+        
+        const lessonResponse = await apiRequest('/api/lessons', {
+          method: 'POST',
+          body: JSON.stringify(lessonRequestData),
+        });
+
+        if (!lessonResponse.ok) {
+          const errorData = await lessonResponse.json();
+          alert(`Ученик создан, но ошибка при создании занятия: ${errorData.error}`);
+        }
+      }
+
+      // Сбрасываем форму только если не создаем абонемент
+      if (!showSubscriptionForm) {
+        resetForm();
+        onSuccess();
+        onClose();
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      fullName: '',
+      phone: '',
+      age: 0,
+      parentName: '',
+      diagnosis: '',
+      comment: '',
+      photoUrl: ''
+    });
+    setLessonData({
+      date: new Date(),
+      endTime: new Date(Date.now() + 60 * 60 * 1000),
+      studentId: 0,
+      cost: 0,
+      isCompleted: false,
+      isPaid: false,
+      isCancelled: false,
+      notes: '',
+      lessonType: 'individual'
+    });
+    setErrors({});
+    setCreateLesson(false);
+    setStep('student');
+    setSelectedUserId(null);
+    setCreatedStudent(null);
   };
 
   if (!isOpen) return null;
@@ -210,12 +231,30 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:scale-110 text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {step === 'lesson' && user?.role === 'ADMIN' && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const newStudent = await createStudent();
+                    if (newStudent) {
+                      setCreatedStudent(newStudent);
+                      setShowSubscriptionForm(true);
+                    }
+                  }}
+                  className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors font-medium"
+                  title="Создать абонемент с расписанием и предоплатой"
+                >
+                  Абонемент
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:scale-110 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           
           {/* Индикатор шагов */}
@@ -524,6 +563,24 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
           </form>
         </div>
       </div>
+      
+      {/* Модальное окно абонемента */}
+      <SubscriptionForm
+        isOpen={showSubscriptionForm}
+        onClose={() => {
+          setShowSubscriptionForm(false);
+          resetForm();
+          onSuccess();
+          onClose();
+        }}
+        onSuccess={() => {
+          setShowSubscriptionForm(false);
+          resetForm();
+          onSuccess();
+          onClose();
+        }}
+        selectedStudent={createdStudent}
+      />
     </div>
   );
 }
