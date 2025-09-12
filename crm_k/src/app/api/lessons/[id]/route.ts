@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
+import { validateStatusTransition, getCancellationResult } from '@/lib/lessonStatusUtils'
 import { UpdateLessonData } from '@/types'
 
 // GET /api/lessons/[id] - получить занятие по ID
@@ -131,6 +132,21 @@ export async function PUT(
       )
     }
 
+    // Валидация переходов статусов согласно новой логике
+    const validation = validateStatusTransition(
+      existingLesson,
+      body.isCompleted,
+      body.isPaid,
+      body.isCancelled
+    )
+
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      )
+    }
+
     // Если не админ, ограничиваем изменение статуса - можно менять только на отменено
     if (authUser.role !== 'ADMIN') {
       // Проверяем, что пользователь пытается изменить только статус отмены
@@ -146,6 +162,16 @@ export async function PUT(
           { error: 'Вы можете изменить только статус отмены занятия' },
           { status: 403 }
         )
+      }
+    }
+
+    // Если отменяем занятие, проверяем правила отмены
+    if (body.isCancelled === true && !existingLesson.isCancelled) {
+      const cancellationResult = getCancellationResult(existingLesson)
+      
+      // Логируем результат отмены для админов
+      if (authUser.role === 'ADMIN') {
+        console.log(`Отмена занятия ${id}: ${cancellationResult.reason}`)
       }
     }
 

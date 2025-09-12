@@ -286,3 +286,67 @@ export function isValidStatusTransition(
 
   return validTransitions[fromStatus]?.includes(toStatus) || false;
 }
+
+/**
+ * Получить статус занятия (для совместимости)
+ */
+export function getLessonStatus(
+  isCompleted: boolean,
+  isPaid: boolean,
+  isCancelled: boolean,
+  lessonDate?: Date
+): LessonStatus {
+  const statusInfo = getLessonStatusInfo(isCompleted, isPaid, isCancelled, lessonDate);
+  return statusInfo.status;
+}
+
+/**
+ * Получить текст статуса занятия (для совместимости)
+ */
+export function getLessonStatusText(
+  isCompleted: boolean,
+  isPaid: boolean,
+  isCancelled: boolean,
+  lessonDate?: Date
+): string {
+  const statusInfo = getLessonStatusInfo(isCompleted, isPaid, isCancelled, lessonDate);
+  return statusInfo.label;
+}
+
+/**
+ * Определить статус после проведения занятия
+ * Используется для автоматического обновления статусов прошедших занятий
+ */
+export function getStatusAfterCompletion(lesson: {
+  isCompleted: boolean;
+  isPaid: boolean;
+  isCancelled: boolean;
+  date: Date;
+}): {
+  isCompleted: boolean;
+  isPaid: boolean;
+  newStatus: LessonStatus;
+} {
+  // Если занятие уже проведено или отменено, возвращаем текущие значения
+  if (lesson.isCompleted || lesson.isCancelled) {
+    return {
+      isCompleted: lesson.isCompleted,
+      isPaid: lesson.isPaid,
+      newStatus: getLessonStatus(lesson.isCompleted, lesson.isPaid, lesson.isCancelled, lesson.date)
+    };
+  }
+
+  // Занятие еще не проведено, но уже прошло по времени
+  // Согласно логике:
+  // 1. Если было предоплачено (isPaid = true) -> становится проведенным и остается оплаченным
+  // 2. Если не было оплачено (isPaid = false) -> становится проведенным, но не оплаченным (задолженность)
+  
+  const newIsCompleted = true; // Занятие теперь проведено
+  const newIsPaid = lesson.isPaid; // Статус оплаты остается прежним
+  
+  return {
+    isCompleted: newIsCompleted,
+    isPaid: newIsPaid,
+    newStatus: getLessonStatus(newIsCompleted, newIsPaid, lesson.isCancelled, lesson.date)
+  };
+}

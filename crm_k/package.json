@@ -9,6 +9,8 @@
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "npx prisma migrate reset --force && npm run db:seed",
+    "db:clean": "node scripts/clean-database.js",
+    "db:reset-clean": "node scripts/reset-database.js",
     "test": "cd tests && npm test",
     "test:watch": "cd tests && npm run test:watch",
     "test:coverage": "cd tests && npm run test:coverage",

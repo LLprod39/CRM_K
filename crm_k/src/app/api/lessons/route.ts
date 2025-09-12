@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { CreateLessonData } from '@/types'
 import { getAuthUser } from '@/lib/auth'
 import { checkTimeConflicts } from '@/lib/scheduleUtils'
+import { getLessonStatus } from '@/lib/lessonStatusUtils'
 
 // GET /api/lessons - получить все занятия
 export async function GET(request: NextRequest) {
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       where.studentId = parseInt(studentId)
     }
 
-    // Обработка фильтра по статусу
+    // Обработка фильтра по статусу согласно новой логике
     if (status) {
       switch (status) {
         case 'scheduled':
@@ -47,26 +48,26 @@ export async function GET(request: NextRequest) {
           where.isPaid = false
           where.isCancelled = false
           break
-        case 'completed':
-          where.isCompleted = true
-          where.isPaid = false
-          where.isCancelled = false
-          break
-        case 'paid':
-          where.isCompleted = true
+        case 'prepaid':
+          where.isCompleted = false
           where.isPaid = true
           where.isCancelled = false
           break
         case 'cancelled':
           where.isCancelled = true
           break
-        case 'prepaid':
-          where.isCompleted = false
+        case 'completed':
+          where.isCompleted = true
           where.isPaid = true
           where.isCancelled = false
           break
-        case 'unpaid':
+        case 'debt':
           where.isCompleted = true
+          where.isPaid = false
+          where.isCancelled = false
+          break
+        case 'unpaid':
+          where.isCompleted = false
           where.isPaid = false
           where.isCancelled = false
           break

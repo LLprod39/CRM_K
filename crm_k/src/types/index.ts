@@ -24,26 +24,26 @@ export interface AISuggestion {
   updatedAt: Date;
 }
 
-// Типы для статусов уроков (теперь используем булевые поля)
-export type LessonStatus = 'scheduled' | 'completed' | 'paid' | 'cancelled' | 'prepaid' | 'unpaid'
+// Типы для статусов уроков согласно новой логике
+export type LessonStatus = 'scheduled' | 'prepaid' | 'cancelled' | 'completed' | 'debt' | 'unpaid'
 
 // Утилиты для работы со статусами
 export function getLessonStatus(lesson: Lesson): LessonStatus {
   if (lesson.isCancelled) return 'cancelled'
-  if (lesson.isCompleted && lesson.isPaid) return 'paid'
-  if (lesson.isCompleted && !lesson.isPaid) return 'completed'
-  if (!lesson.isCompleted && lesson.isPaid) return 'prepaid'
-  if (!lesson.isCompleted && !lesson.isPaid) return 'scheduled'
-  return 'unpaid'
+  if (lesson.isCompleted && lesson.isPaid) return 'completed' // Проведено + Оплачено = Оплачено (доход)
+  if (lesson.isCompleted && !lesson.isPaid) return 'debt' // Проведено без оплаты = Задолженность
+  if (!lesson.isCompleted && lesson.isPaid) return 'prepaid' // Предоплачено
+  if (!lesson.isCompleted && !lesson.isPaid) return 'scheduled' // Запланировано
+  return 'unpaid' // Не оплачено (резервный статус)
 }
 
 export function getLessonStatusText(status: LessonStatus): string {
   const statusMap = {
     scheduled: 'Запланировано',
-    completed: 'Проведено',
-    paid: 'Оплачено',
-    cancelled: 'Отменено',
     prepaid: 'Предоплачено',
+    cancelled: 'Отменено',
+    completed: 'Проведено',
+    debt: 'Задолженность',
     unpaid: 'Не оплачено'
   }
   return statusMap[status] || 'Неизвестно'

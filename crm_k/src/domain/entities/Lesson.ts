@@ -29,7 +29,7 @@ export interface UpdateLessonData extends Partial<CreateLessonData> {
   id: number;
 }
 
-export type LessonStatus = 'scheduled' | 'completed' | 'paid' | 'cancelled' | 'prepaid' | 'unpaid';
+export type LessonStatus = 'scheduled' | 'prepaid' | 'cancelled' | 'completed' | 'debt' | 'unpaid';
 
 export interface LessonWithStudent extends Lesson {
   student: any; // Student type will be imported from types

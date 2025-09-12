@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
+import { getLessonStatus } from '@/lib/lessonStatusUtils'
 import { PeriodStats } from '@/types'
 
 // GET /api/finances/period - получить статистику за период
