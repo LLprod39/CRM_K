@@ -89,12 +89,14 @@ export async function GET(request: NextRequest) {
               payments: true
             }
           },
+          lessons: true, // Занятия, которые проводил этот учитель
           _count: {
             select: {
-              students: true
+              students: true,
+              lessons: true
             }
           }
-        },
+        } as any,
         orderBy: {
           createdAt: 'desc'
         }
@@ -102,30 +104,31 @@ export async function GET(request: NextRequest) {
     ])
 
     // Обрабатываем данные пользователей для детальной статистики
-    const usersWithStats = allUsers.map(user => {
-      const allLessons = user.students.flatMap(student => student.lessons)
-      const completedLessons = allLessons.filter(lesson => lesson.isCompleted)
-      const paidLessons = allLessons.filter(lesson => lesson.isPaid)
-      const scheduledLessons = allLessons.filter(lesson => !lesson.isCompleted && !lesson.isCancelled)
-      const cancelledLessons = allLessons.filter(lesson => lesson.isCancelled)
+    const usersWithStats = allUsers.map((user: any) => {
+      // Используем занятия, которые проводил этот учитель (по teacherId)
+      const allLessons = user.lessons || []
+      const completedLessons = allLessons.filter((lesson: any) => lesson.isCompleted)
+      const paidLessons = allLessons.filter((lesson: any) => lesson.isPaid)
+      const scheduledLessons = allLessons.filter((lesson: any) => !lesson.isCompleted && !lesson.isCancelled)
+      const cancelledLessons = allLessons.filter((lesson: any) => lesson.isCancelled)
       
       const totalRevenue = allLessons
-        .filter(lesson => lesson.isPaid)
-        .reduce((sum, lesson) => sum + lesson.cost, 0)
+        .filter((lesson: any) => lesson.isPaid)
+        .reduce((sum: number, lesson: any) => sum + lesson.cost, 0)
       
       const totalDebt = allLessons
-        .filter(lesson => lesson.isCompleted && !lesson.isPaid)
-        .reduce((sum, lesson) => sum + lesson.cost, 0)
+        .filter((lesson: any) => lesson.isCompleted && !lesson.isPaid)
+        .reduce((sum: number, lesson: any) => sum + lesson.cost, 0)
       
       const totalPrepaid = allLessons
-        .filter(lesson => lesson.isPaid && !lesson.isCompleted)
-        .reduce((sum, lesson) => sum + lesson.cost, 0)
+        .filter((lesson: any) => lesson.isPaid && !lesson.isCompleted)
+        .reduce((sum: number, lesson: any) => sum + lesson.cost, 0)
 
       return {
         ...user,
         stats: {
           totalStudents: user._count.students,
-          totalLessons: allLessons.length,
+          totalLessons: user._count.lessons, // Занятия, которые проводил этот учитель
           completedLessons: completedLessons.length,
           paidLessons: paidLessons.length,
           scheduledLessons: scheduledLessons.length,
@@ -134,7 +137,7 @@ export async function GET(request: NextRequest) {
           totalDebt,
           totalPrepaid,
           lastActivity: allLessons.length > 0 
-            ? Math.max(...allLessons.map(l => l.createdAt.getTime()))
+            ? Math.max(...allLessons.map((l: any) => l.createdAt.getTime()))
             : user.createdAt.getTime()
         }
       }

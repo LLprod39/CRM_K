@@ -83,11 +83,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Если не админ, показываем только занятия своих учеников
+    // Если не админ, показываем только занятия, которые он проводил
     if (authUser.role !== 'ADMIN') {
-      where.student = {
-        userId: authUser.id
-      }
+      (where as any).teacherId = authUser.id
     }
 
     const lessons = await prisma.lesson.findMany({
@@ -223,16 +221,8 @@ export async function POST(request: NextRequest) {
         )
       }
       
-      // Для админов: проверяем, что все ученики принадлежат выбранному учителю или являются "нечейными"
-      const unauthorizedStudents = students.filter(student => 
-        student.userId !== body.userId && student.userId !== null
-      );
-      if (unauthorizedStudents.length > 0) {
-        return NextResponse.json(
-          { error: 'Выбранные ученики не принадлежат указанному учителю или не являются "нечейными"' },
-          { status: 400 }
-        )
-      }
+      // Для админов: автоматически назначаем всех учеников выбранному учителю
+      // Админ может назначать занятия с любыми учениками любому учителю
     } else {
       // Для обычных пользователей проверяем, что все ученики принадлежат им
       const unauthorizedStudents = students.filter(student => student.userId !== authUser.id);
@@ -258,21 +248,8 @@ export async function POST(request: NextRequest) {
     // Получаем информацию об учителе для нового занятия
     const newLessonTeacherId = authUser.role === 'ADMIN' ? body.userId : students[0]?.userId;
 
-    // Если админ создает занятие, автоматически назначаем "нечейных" учеников учителю
-    if (authUser.role === 'ADMIN' && body.userId) {
-      const unassignedStudents = students.filter(student => !student.isAssigned);
-      if (unassignedStudents.length > 0) {
-        await prisma.student.updateMany({
-          where: {
-            id: { in: unassignedStudents.map(s => s.id) }
-          },
-          data: {
-            userId: body.userId,
-            isAssigned: true
-          }
-        });
-      }
-    }
+    // Убираем автоматическое назначение ученика учителю
+    // Теперь ученик остается у всех учителей, которые проводили с ним занятия
 
 
     if (body.lessonType === 'group') {
@@ -284,6 +261,7 @@ export async function POST(request: NextRequest) {
               date: new Date(body.date),
               endTime: new Date(body.endTime),
               studentId: studentId,
+              teacherId: newLessonTeacherId,
               cost: body.cost,
               isCompleted: body.isCompleted || false,
               isPaid: body.isPaid || false,
@@ -291,7 +269,7 @@ export async function POST(request: NextRequest) {
               notes: body.notes || null,
               comment: body.comment || null,
               lessonType: 'group'
-            },
+            } as any,
             include: {
               student: {
                 include: {
@@ -316,6 +294,7 @@ export async function POST(request: NextRequest) {
           date: new Date(body.date),
           endTime: new Date(body.endTime),
           studentId: body.studentId!,
+          teacherId: newLessonTeacherId,
           cost: body.cost,
           isCompleted: body.isCompleted || false,
           isPaid: body.isPaid || false,
@@ -323,7 +302,7 @@ export async function POST(request: NextRequest) {
           notes: body.notes || null,
           comment: body.comment || null,
           lessonType: 'individual'
-        },
+        } as any,
         include: {
           student: {
             include: {

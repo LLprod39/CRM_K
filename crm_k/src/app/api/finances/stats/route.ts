@@ -39,9 +39,7 @@ export async function GET(request: NextRequest) {
     const baseWhere = authUser.role === 'ADMIN' 
       ? {} 
       : {
-          student: {
-            userId: authUser.id
-          }
+          teacherId: authUser.id
         }
 
     const whereClause = dateFrom ? {
@@ -52,19 +50,20 @@ export async function GET(request: NextRequest) {
       isCompleted: true,
       isPaid: true,
       isCancelled: false
-    } : {
+    } as any : {
       ...baseWhere,
       isCompleted: true,
       isPaid: true,
       isCancelled: false
-    }
+    } as any
 
     // Получаем статистику по оплаченным занятиям (статус "Проведено" = доход)
     const paidLessons = await prisma.lesson.findMany({
       where: whereClause,
       include: {
-        student: true
-      }
+        student: true,
+        teacher: true
+      } as any
     })
 
     // Подсчитываем общую выручку (70% от оплаченных уроков)
@@ -98,7 +97,7 @@ export async function GET(request: NextRequest) {
         isCompleted: true,
         isPaid: false,
         isCancelled: false
-      }
+      } as any
     })
 
     // Подсчитываем предоплаченные занятия (статус "Предоплачено" - не проведенные, но оплаченные)
@@ -108,7 +107,7 @@ export async function GET(request: NextRequest) {
         isCompleted: false,
         isPaid: true,
         isCancelled: false
-      }
+      } as any
     })
 
     const totalDebt = debtLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
@@ -116,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     // Получаем все занятия для статистики по статусам
     const allLessons = await prisma.lesson.findMany({
-      where: baseWhere
+      where: baseWhere as any
     })
 
     // Группируем по статусам согласно новой логике

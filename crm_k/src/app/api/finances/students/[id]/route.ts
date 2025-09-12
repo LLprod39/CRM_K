@@ -47,12 +47,21 @@ export async function GET(
       )
     }
 
-    // Если не админ, проверяем, что ученик принадлежит пользователю
-    if (authUser.role !== 'ADMIN' && student.userId !== authUser.id) {
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      )
+    // Если не админ, проверяем, что у пользователя есть занятия с этим учеником
+    if (authUser.role !== 'ADMIN') {
+      const hasLessonsWithStudent = await prisma.lesson.findFirst({
+        where: {
+          studentId,
+          teacherId: authUser.id
+        }
+      })
+      
+      if (!hasLessonsWithStudent) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
     }
 
     // Получаем все занятия ученика
@@ -62,9 +71,9 @@ export async function GET(
     })
 
     // Подсчитываем статистику
-    const paidLessons = allLessons.filter(lesson => lesson.status === 'PAID')
-    const completedLessons = allLessons.filter(lesson => lesson.status === 'COMPLETED')
-    const unpaidLessons = allLessons.filter(lesson => lesson.status === 'COMPLETED')
+    const paidLessons = allLessons.filter(lesson => lesson.isPaid)
+    const completedLessons = allLessons.filter(lesson => lesson.isCompleted)
+    const unpaidLessons = allLessons.filter(lesson => lesson.isCompleted && !lesson.isPaid)
 
     const totalPaid = paidLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
     const totalDebt = unpaidLessons.reduce((sum, lesson) => sum + lesson.cost, 0)

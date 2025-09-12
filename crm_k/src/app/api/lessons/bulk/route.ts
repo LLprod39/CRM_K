@@ -98,14 +98,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Проверяем принадлежность учеников
-    const unauthorizedStudents = students.filter(student => student.userId !== body.userId);
-    if (unauthorizedStudents.length > 0) {
-      return NextResponse.json(
-        { error: 'Выбранные ученики не принадлежат указанному пользователю' },
-        { status: 400 }
-      )
-    }
+    // Убираем автоматическое назначение ученика учителю
+    // Теперь ученик остается у всех учителей, которые проводили с ним занятия
 
     // Генерируем даты занятий
     const lessonsToCreate = generateLessonDates(body.schedulePattern, studentIds, body.cost, body.isPaid, body.notes);
@@ -128,6 +122,7 @@ export async function POST(request: NextRequest) {
             date: lessonData.date,
             endTime: lessonData.endTime,
             studentId: lessonData.studentId,
+            teacherId: body.userId,
             cost: lessonData.cost,
             isCompleted: false,
             isPaid: lessonData.isPaid,
@@ -135,7 +130,7 @@ export async function POST(request: NextRequest) {
             notes: lessonData.notes || null,
             comment: null,
             lessonType: body.lessonType
-          },
+          } as any,
           include: {
             student: {
               include: {

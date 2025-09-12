@@ -18,9 +18,7 @@ export async function GET(request: NextRequest) {
     const baseWhere = authUser.role === 'ADMIN' 
       ? {} 
       : {
-          student: {
-            userId: authUser.id
-          }
+          teacherId: authUser.id
         }
 
     // Получаем все проведенные, но не оплаченные занятия

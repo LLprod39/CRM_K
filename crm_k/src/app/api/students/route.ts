@@ -14,13 +14,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Если админ - показываем всех учеников, иначе только своих
+    // Если админ - показываем всех учеников, иначе только тех, с кем проводил занятия
     const whereClause = authUser.role === 'ADMIN' 
       ? {} 
-      : { userId: authUser.id }
+      : {
+          lessons: {
+            some: {
+              teacherId: authUser.id
+            }
+          }
+        }
 
     const students = await prisma.student.findMany({
-      where: whereClause,
+      where: whereClause as any,
       include: {
         lessons: {
           orderBy: {
@@ -94,9 +100,9 @@ export async function POST(request: NextRequest) {
         parentName: body.parentName,
         diagnosis: body.diagnosis || null,
         comment: body.comment || null,
-        userId: userId,
+        userId: userId || undefined,
         isAssigned: isAssigned
-      }
+      } as any
     })
 
     return NextResponse.json(student, { status: 201 })

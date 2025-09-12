@@ -22,7 +22,11 @@ export async function GET(request: NextRequest) {
       ? {} 
       : {
           student: {
-            userId: authUser.id
+            lessons: {
+              some: {
+                teacherId: authUser.id
+              }
+            }
           }
         }
 
@@ -34,7 +38,7 @@ export async function GET(request: NextRequest) {
       : baseWhere
 
     const payments = await prisma.payment.findMany({
-      where: whereClause,
+      where: whereClause as any,
       include: {
         student: {
           include: {

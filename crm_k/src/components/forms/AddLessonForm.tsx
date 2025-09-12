@@ -77,12 +77,10 @@ export default function AddLessonForm({
     }
   }, [isOpen]);
 
-  // Для админа показываем всех учеников, для обычных пользователей - только своих
+  // Для админа показываем всех учеников, для обычных пользователей - только тех, с кем проводил занятия
   const filteredStudents = user?.role === 'ADMIN' 
     ? students // Админ видит всех учеников
-    : (formData.userId 
-        ? students.filter(student => student.userId === formData.userId)
-        : students.filter(student => student.userId === user?.id));
+    : students; // Обычные пользователи видят только тех учеников, с которыми проводили занятия (фильтрация происходит в API)
 
   // Обновляем форму при изменении selectedDate или selectedStudent
   useEffect(() => {

@@ -36,12 +36,21 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Если не админ, проверяем, что ученик принадлежит пользователю
-    if (authUser.role !== 'ADMIN' && student.userId !== authUser.id) {
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      )
+    // Если не админ, проверяем, что у пользователя есть занятия с этим учеником
+    if (authUser.role !== 'ADMIN') {
+      const hasLessonsWithStudent = await prisma.lesson.findFirst({
+        where: {
+          studentId: parseInt(studentId),
+          teacherId: authUser.id
+        } as any
+      })
+      
+      if (!hasLessonsWithStudent) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
     }
 
     // Получаем предстоящие занятия (не завершенные, не отмененные, дата >= сегодня)

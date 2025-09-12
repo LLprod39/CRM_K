@@ -23,6 +23,9 @@ model User {
   // Связь с учениками (только для учителей, не для админов)
   students  Student[]
   
+  // Связь с занятиями (занятия, которые проводил этот учитель)
+  lessons   Lesson[]
+  
   // Связь с временем обеда
   lunchBreaks LunchBreak[]
   
@@ -77,6 +80,7 @@ model Lesson {
   date        DateTime // Дата и время начала занятия
   endTime     DateTime // Дата и время окончания занятия
   studentId   Int      // ID ученика
+  teacherId   Int      // ID учителя, который проводил занятие
   cost        Float    // Стоимость занятия
   isCompleted Boolean  @default(false) // Проведено ли занятие
   isPaid      Boolean  @default(false) // Оплачено ли занятие
@@ -90,6 +94,9 @@ model Lesson {
   
   // Связь с учеником
   student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  // Связь с учителем
+  teacher     User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   
   // Связь с платежами
   payments    PaymentLesson[]
