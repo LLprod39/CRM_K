@@ -94,6 +94,20 @@ export async function PUT(
 
     const body: UpdateLessonData = await request.json()
 
+    // Если изменяется дата, проверяем, что она не в прошлом (только для не-админов)
+    if (body.date) {
+      const lessonDate = new Date(body.date);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Сбрасываем время для сравнения только по дате
+      
+      if (lessonDate < now && authUser.role !== 'ADMIN') {
+        return NextResponse.json(
+          { error: 'Нельзя изменять дату занятия на прошедшую' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Проверяем, существует ли занятие
     const existingLesson = await prisma.lesson.findUnique({
       where: { id },
@@ -115,6 +129,24 @@ export async function PUT(
         { error: 'Доступ запрещен' },
         { status: 403 }
       )
+    }
+
+    // Если не админ, ограничиваем изменение статуса - можно менять только на отменено
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, что пользователь пытается изменить только статус отмены
+      const isOnlyChangingCancelled = (
+        (body.isCompleted === undefined || body.isCompleted === existingLesson.isCompleted) &&
+        (body.isPaid === undefined || body.isPaid === existingLesson.isPaid) &&
+        (body.isCancelled !== undefined && body.isCancelled !== existingLesson.isCancelled)
+      )
+
+      // Если пользователь пытается изменить другие статусы, запрещаем
+      if (!isOnlyChangingCancelled && (body.isCompleted !== undefined || body.isPaid !== undefined)) {
+        return NextResponse.json(
+          { error: 'Вы можете изменить только статус отмены занятия' },
+          { status: 403 }
+        )
+      }
     }
 
     // Если изменяется studentId, проверяем существование ученика
@@ -140,7 +172,8 @@ export async function PUT(
         isCompleted: body.isCompleted,
         isPaid: body.isPaid,
         isCancelled: body.isCancelled,
-        notes: body.notes
+        notes: body.notes,
+        comment: body.comment
       },
       include: {
         student: true
@@ -168,6 +201,14 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Необходима аутентификация' },
         { status: 401 }
+      )
+    }
+
+    // Только администраторы могут удалять занятия
+    if (authUser.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Доступ запрещен. Только администраторы могут удалять занятия.' },
+        { status: 403 }
       )
     }
 

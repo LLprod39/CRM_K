@@ -9,7 +9,7 @@ const genAI = new GoogleGenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { studentId } = await request.json();
+    const { studentId, lessonId } = await request.json();
 
     if (!studentId) {
       return NextResponse.json({ error: 'ID ученика обязателен' }, { status: 400 });
@@ -31,6 +31,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ученик не найден' }, { status: 404 });
     }
 
+    // Получаем информацию о конкретном занятии, если lessonId предоставлен
+    let selectedLesson = null;
+    if (lessonId) {
+      selectedLesson = await prisma.lesson.findUnique({
+        where: { id: parseInt(lessonId) },
+        include: {
+          student: true
+        }
+      });
+
+      if (!selectedLesson || selectedLesson.studentId !== parseInt(studentId)) {
+        return NextResponse.json({ error: 'Занятие не найдено или не принадлежит ученику' }, { status: 404 });
+      }
+    }
+
     // Получаем доступные игрушки
     const availableToys = await prisma.toy.findMany({
       where: { isAvailable: true }
@@ -38,29 +53,60 @@ export async function POST(request: NextRequest) {
 
     // Формируем промпт для ИИ
     const prompt = `
-Ты - опытный специалист по коррекционной педагогике. Составь план занятия для следующего урока на основе следующей информации:
+# Инструкция для модели
 
-ИНФОРМАЦИЯ ОБ УЧЕНИКЕ:
-- ФИО: ${student.fullName}
-- Возраст: ${student.age} лет
-- Диагноз: ${student.diagnosis || 'не указан'}
-- Комментарий: ${student.comment || 'нет комментариев'}
+Ты — опытный специалист по коррекционной педагогике и детский клинический психолог с многолетним опытом работы с детьми с особыми образовательными потребностями. Твоя задача — на основе следующих данных составить подробный и адаптированный план предстоящего занятия.
 
-ИСТОРИЯ ЗАНЯТИЙ (последние занятия):
-${student.lessons.map(lesson => 
-  `- Дата: ${lesson.date.toLocaleDateString('ru-RU')}, Заметки: ${lesson.notes || 'нет заметок'}`
-).join('\n')}
+## Шаблон входных данных
 
-ДОСТУПНЫЕ ИГРУШКИ:
-${availableToys.map(toy => 
-  `- ${toy.name} (${toy.category || 'без категории'}): ${toy.description || 'без описания'}`
-).join('\n')}
+ИНФОРМАЦИЯ ОБ УЧЕНИКЕ  
+- ФИО: ${student.fullName}  
+- Возраст: ${student.age} лет  
+- Диагноз: ${student.diagnosis || 'не указан'}  
+- Комментарий: ${student.comment || 'нет комментариев'}  
+
+${selectedLesson ? `  
+ИНФОРМАЦИЯ О ВЫБРАННОМ ЗАНЯТИИ  
+- Дата и время: ${selectedLesson.date.toLocaleString('ru-RU')}  
+- Продолжительность: ${selectedLesson.endTime ? `${Math.round((new Date(selectedLesson.endTime) - new Date(selectedLesson.date)) / 60000)} минут` : 'не указана'}  
+- Тип занятия: ${selectedLesson.lessonType || 'индивидуальное'}  
+- Место проведения: ${selectedLesson.location || 'офис'}  
+- Заметки: ${selectedLesson.notes || 'нет заметок'}  
+` : ''}  
+
+ИСТОРИЯ ПОСЛЕДНИХ ЗАНЯТИЙ  
+${student.lessons.map(l => `- ${l.date.toLocaleDateString('ru-RU')}: ${l.notes || 'нет заметок'}`).join('\n')}  
+
+ДОСТУПНЫЕ ИГРУШКИ И МАТЕРИАЛЫ  
+${availableToys.map(t => `- ${t.name} (${t.category || 'без категории'}): ${t.description || 'без описания'}`).join('\n')}  
+
+---
+
+## Задача
+
+На основе этих данных составь текстовый план занятия, структурированный по разделам:
+
+1. **Название занятия**  
+2. **Длительность**  
+3. **Цели** (3–5 адаптированных целей)  
+4. **Материалы и игрушки** (название, категория, как использовать)  
+5. **Структура занятия**  
+   - Разминка (5–10 минут, активности)  
+   - Основная часть (20–30 минут, активности)  
+   - Заключение (5–10 минут, активности)  
+6. **Рекомендации** (учитывая диагноз и возраст)  
+7. **Ожидаемые результаты**  
+8. **Дополнительные заметки для педагога**
+
+Старайся давать конкретные, практические описания упражнений и объяснять, почему они важны для данного ребёнка.
 
 ВАЖНО: Ответь ТОЛЬКО в формате JSON без дополнительного текста. Структура должна быть такой:
 
 {
-  "title": "Название занятия",
-  "duration": "Продолжительность в минутах",
+  "title": "Название занятия${selectedLesson ? ` на ${selectedLesson.date.toLocaleDateString('ru-RU')}` : ''}",
+  "duration": "${selectedLesson && selectedLesson.endTime ? 
+    Math.round((new Date(selectedLesson.endTime).getTime() - new Date(selectedLesson.date).getTime()) / (1000 * 60)) : 
+    '45'} минут",
   "goals": [
     "Цель 1",
     "Цель 2",
@@ -118,7 +164,7 @@ ${availableToys.map(toy =>
     let parsedSuggestions;
     try {
       // Очищаем текст от возможных markdown блоков
-      const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const cleanText = (text || '').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       parsedSuggestions = JSON.parse(cleanText);
     } catch (parseError) {
       console.error('Ошибка парсинга JSON:', parseError);

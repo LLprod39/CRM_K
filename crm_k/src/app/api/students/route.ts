@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body: CreateStudentData = await request.json()
+    const body: CreateStudentData & { userId?: number } = await request.json()
     
     // Валидация обязательных полей
     if (!body.fullName || !body.phone || !body.age || !body.parentName) {
@@ -70,6 +70,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Для админов: если userId не указан, используем ID админа
+    // Для обычных пользователей: используем их ID
+
     const student = await prisma.student.create({
       data: {
         fullName: body.fullName,
@@ -78,7 +81,7 @@ export async function POST(request: NextRequest) {
         parentName: body.parentName,
         diagnosis: body.diagnosis || null,
         comment: body.comment || null,
-        userId: authUser.id
+        userId: authUser.role === 'ADMIN' ? (body.userId || authUser.id) : authUser.id
       }
     })
 

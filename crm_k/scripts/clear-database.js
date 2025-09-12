@@ -18,6 +18,15 @@ async function clearDatabase() {
     console.log('🗑️ Удаляем всех учеников...');
     await prisma.student.deleteMany();
 
+    console.log('🗑️ Удаляем все предложения ИИ...');
+    await prisma.aISuggestion.deleteMany();
+
+    console.log('🗑️ Удаляем все время обеда...');
+    await prisma.lunchBreak.deleteMany();
+
+    console.log('🗑️ Удаляем все игрушки...');
+    await prisma.toy.deleteMany();
+
     console.log('🗑️ Удаляем всех пользователей...');
     await prisma.user.deleteMany();
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { DollarSign, AlertCircle, User } from 'lucide-react'
 import type { FinancialStats } from '@/types'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/presentation/contexts'
 
 interface FinancialStatsProps {
   period: string

@@ -137,45 +137,45 @@ export default function LessonFilters({ onFiltersChange, selectedDate }: LessonF
     <div className="bg-white p-4 rounded-lg shadow-sm border">
       <div className="flex flex-col gap-4">
         {/* Основные фильтры */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           {/* Период */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => handlePeriodChange('today')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 filters.period === 'today'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
               }`}
             >
               Сегодня
             </button>
             <button
               onClick={() => handlePeriodChange('week')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 filters.period === 'week'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
               }`}
             >
               Неделя
             </button>
             <button
               onClick={() => handlePeriodChange('month')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 filters.period === 'month'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
               }`}
             >
               Месяц
             </button>
             <button
               onClick={() => handlePeriodChange('all')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 filters.period === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
               }`}
             >
               Все
@@ -185,10 +185,10 @@ export default function LessonFilters({ onFiltersChange, selectedDate }: LessonF
           {/* Кнопка расширенных фильтров */}
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition-colors"
           >
             <Filter className="w-4 h-4 mr-2" />
-            Фильтры
+            Фильтр
           </button>
         </div>
 
@@ -265,10 +265,10 @@ export default function LessonFilters({ onFiltersChange, selectedDate }: LessonF
 
         {/* Кнопка очистки фильтров */}
         {(filters.studentId || filters.status || filters.period !== 'today') && (
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-2">
             <button
               onClick={clearFilters}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-gray-500 hover:text-gray-700 underline hover:no-underline transition-all"
             >
               Очистить фильтры
             </button>

@@ -173,7 +173,13 @@ export default function UserCard({ user, onEdit, onDelete, className }: UserCard
                         <User className="w-5 h-5 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h5 className="font-medium text-gray-900 truncate">{student.fullName}</h5>
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="font-medium text-gray-900 truncate">{student.fullName}</h5>
+                          <div className="flex items-center space-x-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                            <span>👨‍🏫</span>
+                            <span className="font-medium">{user.name}</span>
+                          </div>
+                        </div>
                         <div className="mt-1 space-y-1">
                           <div className="flex items-center text-sm text-gray-600">
                             <Phone className="w-3 h-3 mr-1 flex-shrink-0" />

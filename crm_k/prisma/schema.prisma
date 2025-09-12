@@ -23,6 +23,9 @@ model User {
   // Связь с учениками (один пользователь может иметь много учеников)
   students  Student[]
   
+  // Связь с временем обеда
+  lunchBreaks LunchBreak[]
+  
   @@map("users")
 }
 
@@ -41,6 +44,7 @@ model Student {
   parentName  String   // ФИО родителя (обязательно)
   diagnosis   String?  // Диагноз (опционально)
   comment     String?  // Комментарий (опционально)
+  photoUrl    String?  // URL фото ученика (опционально)
   userId      Int      // ID пользователя-владельца
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -71,6 +75,7 @@ model Lesson {
   isPaid      Boolean  @default(false) // Оплачено ли занятие
   isCancelled Boolean  @default(false) // Отменено ли занятие
   notes       String?  // Заметки к занятию
+  comment     String?  // Комментарий о поведении ребенка на занятии
   lessonType  String   @default("individual") // Тип занятия: individual, group
   location    String   @default("office") // Место проведения: office, online, home
   createdAt   DateTime @default(now())
@@ -151,4 +156,21 @@ model AISuggestion {
   student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   
   @@map("ai_suggestions")
+}
+
+// Модель времени обеда
+model LunchBreak {
+  id        Int      @id @default(autoincrement())
+  date      DateTime // Дата обеда (только дата, время не важно)
+  startTime DateTime // Время начала обеда
+  endTime   DateTime // Время окончания обеда
+  userId    Int      // ID пользователя (чтобы каждый пользователь мог иметь свое время обеда)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Связь с пользователем
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([date, userId]) // Один обед в день на пользователя
+  @@map("lunch_breaks")
 }

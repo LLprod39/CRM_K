@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, DollarSign, Calendar, User, FileText, CheckCircle } from 'lucide-react'
 import { Student, PaymentFormData, CreatePaymentData } from '@/types'
-import { useToastContext } from '@/contexts/ToastContext'
+import { useToastContext } from '@/presentation/contexts'
 import { apiRequest } from '@/lib/api'
 
 interface AddPaymentFormProps {

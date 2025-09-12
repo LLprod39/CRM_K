@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/presentation/contexts'
 import { useRouter } from 'next/navigation'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { apiRequest } from '@/lib/api'
@@ -14,6 +14,7 @@ import ToysManagement from '@/components/admin/ToysManagement'
 import LessonsManagement from '@/components/admin/LessonsManagement'
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard'
 import SystemSettings from '@/components/admin/SystemSettings'
+import SecurityLogs from '@/components/admin/SecurityLogs'
 import { 
   Users, 
   UserCheck, 
@@ -56,7 +57,7 @@ export default function AdminPage() {
   const [showAddUserModal, setShowAddUserModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'lessons' | 'analytics' | 'settings' | 'toys'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security'>('overview')
   const [showNotifications, setShowNotifications] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -152,7 +153,7 @@ export default function AdminPage() {
   }
 
   // Функции для экспорта данных
-  const generateUsersCSV = (users: any[]) => {
+  const generateUsersCSV = (users: UserWithStats[]) => {
     const headers = ['ID', 'Имя', 'Email', 'Роль', 'Учеников', 'Занятий', 'Доход', 'Долг', 'Дата создания']
     const rows = users.map(user => [
       user.id,
@@ -568,13 +569,14 @@ export default function AdminPage() {
                   { tab: 'lessons', name: 'Занятия', icon: Calendar },
                   { tab: 'toys', name: 'Игрушки', icon: Target },
                   { tab: 'analytics', name: 'Аналитика', icon: BarChart3 },
+                  { tab: 'security', name: 'Безопасность', icon: Shield },
                   { tab: 'settings', name: 'Настройки', icon: Settings }
                 ].map((item) => {
                   const isActive = activeTab === item.tab
                   return (
                     <button
                       key={item.tab}
-                      onClick={() => setActiveTab(item.tab as any)}
+                      onClick={() => setActiveTab(item.tab as 'overview' | 'users' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security')}
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                         isActive
                           ? 'bg-white text-red-600 shadow-sm'
@@ -610,6 +612,7 @@ export default function AdminPage() {
                     { tab: 'lessons', name: 'Занятия', icon: Calendar },
                     { tab: 'toys', name: 'Игрушки', icon: Target },
                     { tab: 'analytics', name: 'Аналитика', icon: BarChart3 },
+                    { tab: 'security', name: 'Безопасность', icon: Shield },
                     { tab: 'settings', name: 'Настройки', icon: Settings }
                   ].map((item) => {
                     const isActive = activeTab === item.tab
@@ -617,7 +620,7 @@ export default function AdminPage() {
                       <button
                         key={item.tab}
                         onClick={() => {
-                          setActiveTab(item.tab as any)
+                          setActiveTab(item.tab as 'overview' | 'users' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security')
                           setShowMobileMenu(false)
                         }}
                         className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -719,6 +722,7 @@ export default function AdminPage() {
               {activeTab === 'lessons' && 'Занятия'}
               {activeTab === 'toys' && 'Игрушки'}
               {activeTab === 'analytics' && 'Аналитика'}
+              {activeTab === 'security' && 'Безопасность'}
               {activeTab === 'settings' && 'Настройки'}
             </span>
           </nav>
@@ -757,6 +761,11 @@ export default function AdminPage() {
               {activeTab === 'analytics' && (
                 <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
                   <AnalyticsDashboard />
+                </div>
+              )}
+              {activeTab === 'security' && (
+                <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                  <SecurityLogs />
                 </div>
               )}
               {activeTab === 'settings' && (

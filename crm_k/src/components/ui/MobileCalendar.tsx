@@ -1,24 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock, User, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, User, Calendar as CalendarIcon, History } from 'lucide-react';
 import { Lesson, LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
+import DayLessonsModal from './DayLessonsModal';
 
 interface MobileCalendarProps {
   lessons: LessonWithOptionalStudent[];
-  onLessonClick: (lesson: LessonWithOptionalStudent) => void;
   onDateClick: (date: Date) => void;
+  onLessonClick?: (lesson: LessonWithOptionalStudent) => void;
+  onAddLesson?: (date: Date) => void;
   currentDate?: Date;
+  userRole?: 'ADMIN' | 'USER';
 }
 
 export default function MobileCalendar({ 
   lessons, 
-  onLessonClick, 
   onDateClick, 
-  currentDate = new Date() 
+  onLessonClick, 
+  onAddLesson,
+  currentDate = new Date(),
+  userRole
 }: MobileCalendarProps) {
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+  const [showDayModal, setShowDayModal] = useState(false);
+  const [selectedDayLessons, setSelectedDayLessons] = useState<LessonWithOptionalStudent[]>([]);
+  const [selectedDayDate, setSelectedDayDate] = useState<Date>(new Date());
 
   // Получаем занятия для выбранного месяца
   const monthLessons = lessons.filter(lesson => {
@@ -81,11 +89,38 @@ export default function MobileCalendar({
   const handleDateClick = (day: number) => {
     const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     setSelectedDate(newDate);
-    onDateClick(newDate);
+    
+    const dayLessons = lessonsByDay[day] || [];
+    
+    // Если день пустой и есть функция onAddLesson, и пользователь - админ, открываем форму добавления занятия
+    if (dayLessons.length === 0 && onAddLesson && userRole === 'ADMIN') {
+      onAddLesson(newDate);
+      return;
+    }
+    
+    // Если есть занятия, показываем модальное окно
+    setSelectedDayLessons(dayLessons);
+    setSelectedDayDate(newDate);
+    setShowDayModal(true);
   };
 
   const getStatusColor = (lesson: Lesson) => {
     const status = getLessonStatus(lesson);
+    const isBackdate = new Date(lesson.date) < new Date();
+    
+    // Для занятий задним числом добавляем специальную индикацию
+    if (isBackdate) {
+      switch (status) {
+        case 'scheduled': return 'bg-orange-100 text-orange-800 border-l-4 border-orange-400';
+        case 'completed': return 'bg-green-100 text-green-800 border-l-4 border-green-400';
+        case 'cancelled': return 'bg-red-100 text-red-800 border-l-4 border-red-400';
+        case 'paid': return 'bg-purple-100 text-purple-800 border-l-4 border-purple-400';
+        case 'prepaid': return 'bg-yellow-100 text-yellow-800 border-l-4 border-yellow-400';
+        case 'unpaid': return 'bg-orange-100 text-orange-800 border-l-4 border-orange-400';
+        default: return 'bg-gray-100 text-gray-800 border-l-4 border-gray-400';
+      }
+    }
+    
     switch (status) {
       case 'scheduled': return 'bg-blue-100 text-blue-800';
       case 'completed': return 'bg-green-100 text-green-800';
@@ -121,14 +156,22 @@ export default function MobileCalendar({
           className={`h-16 border border-gray-200 p-2 cursor-pointer hover:bg-gray-50 ${
             isCurrentDay ? 'bg-blue-50' : ''
           } ${isSelectedDay ? 'bg-blue-100' : ''}`}
-          onClick={() => handleDateClick(day)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleDateClick(day);
+          }}
         >
           <div className="flex justify-between items-center mb-1">
             <span className={`text-sm font-medium ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
               {day}
             </span>
             {dayLessons.length > 0 && (
-              <span className="text-xs bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+              <span className={`text-xs text-white rounded-full w-5 h-5 flex items-center justify-center font-bold ${
+                dayLessons.length === 1 ? 'bg-green-500' : 
+                dayLessons.length === 2 ? 'bg-yellow-500' : 
+                dayLessons.length >= 3 ? 'bg-red-500' : 'bg-blue-500'
+              }`}>
                 {dayLessons.length}
               </span>
             )}
@@ -185,33 +228,51 @@ export default function MobileCalendar({
 
       {/* Легенда статусов */}
       <div className="p-4 border-t border-gray-200">
-        <div className="flex flex-wrap gap-3 text-xs">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-blue-100 rounded"></div>
-            <span>Запланировано</span>
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-3 text-xs">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-blue-100 rounded"></div>
+              <span>Запланировано</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-green-100 rounded"></div>
+              <span>Проведено</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-yellow-100 rounded"></div>
+              <span>Предоплачено</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-purple-100 rounded"></div>
+              <span>Оплачено</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-orange-100 rounded"></div>
+              <span>Не оплачено</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-red-100 rounded"></div>
+              <span>Отменено</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-100 rounded"></div>
-            <span>Проведено</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-yellow-100 rounded"></div>
-            <span>Предоплачено</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-purple-100 rounded"></div>
-            <span>Оплачено</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-orange-100 rounded"></div>
-            <span>Не оплачено</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-red-100 rounded"></div>
-            <span>Отменено</span>
+          <div className="flex items-center gap-1 text-xs text-gray-600">
+            <History className="w-3 h-3" />
+            <span>Задним числом (с полосой)</span>
           </div>
         </div>
       </div>
+
+      {/* Модальное окно для мобильной версии */}
+      {onLessonClick && (
+        <DayLessonsModal
+          isOpen={showDayModal}
+          onClose={() => setShowDayModal(false)}
+          lessons={selectedDayLessons}
+          date={selectedDayDate}
+          onLessonClick={onLessonClick}
+          userRole={userRole}
+        />
+      )}
     </div>
   );
 }
