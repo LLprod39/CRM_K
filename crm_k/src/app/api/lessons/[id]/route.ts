@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
-import { validateStatusTransition, getCancellationResult } from '@/lib/lessonStatusUtils'
+import { isValidStatusTransition, getCancellationInfo, getLessonStatus } from '@/lib/lessonStatusUtils'
 import { UpdateLessonData } from '@/types'
 
 // GET /api/lessons/[id] - получить занятие по ID
@@ -133,16 +133,23 @@ export async function PUT(
     }
 
     // Валидация переходов статусов согласно новой логике
-    const validation = validateStatusTransition(
-      existingLesson,
-      body.isCompleted,
-      body.isPaid,
-      body.isCancelled
-    )
+    const currentStatus = getLessonStatus(
+      existingLesson.isCompleted,
+      existingLesson.isPaid,
+      existingLesson.isCancelled,
+      existingLesson.date
+    );
+    
+    const newStatus = getLessonStatus(
+      body.isCompleted ?? existingLesson.isCompleted,
+      body.isPaid ?? existingLesson.isPaid,
+      body.isCancelled ?? existingLesson.isCancelled,
+      existingLesson.date
+    );
 
-    if (!validation.isValid) {
+    if (!isValidStatusTransition(currentStatus, newStatus)) {
       return NextResponse.json(
-        { error: validation.error },
+        { error: `Недопустимый переход статуса с "${currentStatus}" на "${newStatus}"` },
         { status: 400 }
       )
     }
@@ -167,11 +174,11 @@ export async function PUT(
 
     // Если отменяем занятие, проверяем правила отмены
     if (body.isCancelled === true && !existingLesson.isCancelled) {
-      const cancellationResult = getCancellationResult(existingLesson)
+      const cancellationResult = getCancellationInfo(existingLesson.date, existingLesson.cost)
       
       // Логируем результат отмены для админов
       if (authUser.role === 'ADMIN') {
-        console.log(`Отмена занятия ${id}: ${cancellationResult.reason}`)
+        console.log(`Отмена занятия ${id}: ${cancellationResult.refundDescription}`)
       }
     }
 

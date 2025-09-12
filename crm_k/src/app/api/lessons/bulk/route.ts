@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: BulkLessonData = await request.json()
+    console.log('Получены данные для массового создания занятий:', JSON.stringify(body, null, 2))
     
     // Валидация обязательных полей
     if (!body.schedulePattern.startDate || !body.schedulePattern.endDate) {
@@ -135,6 +136,10 @@ export async function POST(request: NextRequest) {
       studentId: number;
       conflict: string;
     }> = [];
+    
+    console.log(`Проверяем конфликты для ${lessonsToCreate.length} занятий`)
+    console.log(`Найдено ${existingLessons.length} существующих занятий в периоде`)
+    
     for (const lesson of lessonsToCreate) {
       const timeConflict = checkTimeConflicts(
         lesson,
@@ -145,6 +150,12 @@ export async function POST(request: NextRequest) {
       );
 
       if (timeConflict.hasConflict) {
+        console.log(`Конфликт обнаружен для занятия:`, {
+          date: lesson.date,
+          endTime: lesson.endTime,
+          studentId: lesson.studentId,
+          conflict: timeConflict.message
+        })
         conflictingLessons.push({
           ...lesson,
           conflict: timeConflict.message

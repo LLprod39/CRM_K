@@ -62,16 +62,22 @@ export async function GET(request: NextRequest) {
 // POST /api/flexible-subscriptions - создать новый гибкий абонемент
 export async function POST(request: NextRequest) {
   try {
+    console.log('Получен запрос на создание гибкого абонемента')
+    
     const authUser = getAuthUser(request)
     if (!authUser) {
+      console.log('Пользователь не аутентифицирован')
       return NextResponse.json(
         { error: 'Необходима аутентификация' },
         { status: 401 }
       )
     }
 
+    console.log('Пользователь аутентифицирован:', authUser.role)
+
     // Только администраторы могут создавать абонементы
     if (authUser.role !== 'ADMIN') {
+      console.log('Доступ запрещен для роли:', authUser.role)
       return NextResponse.json(
         { error: 'Доступ запрещен. Только администраторы могут создавать абонементы.' },
         { status: 403 }
@@ -79,9 +85,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body: CreateFlexibleSubscriptionData = await request.json()
+    console.log('Получены данные для создания абонемента:', body)
     
     // Валидация обязательных полей
     if (!body.name || !body.studentId || !body.userId || !body.startDate || !body.endDate) {
+      console.log('Валидация не прошла - отсутствуют обязательные поля:', {
+        name: !!body.name,
+        studentId: !!body.studentId,
+        userId: !!body.userId,
+        startDate: !!body.startDate,
+        endDate: !!body.endDate
+      })
       return NextResponse.json(
         { error: 'Необходимо заполнить все обязательные поля' },
         { status: 400 }
@@ -89,6 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!body.weekSchedules || body.weekSchedules.length === 0) {
+      console.log('Валидация не прошла - отсутствует расписание недель')
       return NextResponse.json(
         { error: 'Необходимо добавить хотя бы одну неделю расписания' },
         { status: 400 }
@@ -125,6 +140,7 @@ export async function POST(request: NextRequest) {
     }, 0)
 
     // Создаем абонемент с расписанием
+    console.log('Начинаем создание абонемента в базе данных')
     const subscription = await prisma.flexibleSubscription.create({
       data: {
         name: body.name,
@@ -167,6 +183,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log('Абонемент успешно создан:', subscription.id)
     return NextResponse.json(subscription, { status: 201 })
   } catch (error) {
     console.error('Ошибка при создании гибкого абонемента:', error)

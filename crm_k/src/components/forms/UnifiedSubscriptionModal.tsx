@@ -903,6 +903,7 @@ export default function UnifiedSubscriptionModal({
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [suggestAlternativeTime, setSuggestAlternativeTime] = useState(false);
 
   // Состояние для обычного абонемента
   const [regularData, setRegularData] = useState<RegularSubscriptionData>({
@@ -1057,6 +1058,198 @@ export default function UnifiedSubscriptionModal({
     }));
   }, [subscriptionType, regularData.schedulePattern.type]);
 
+  // Функция для предложения альтернативного времени
+  const suggestAlternativeTimeSlot = () => {
+    if (subscriptionType !== 'regular') return;
+    
+    // Простое предложение: сдвигаем время на час вперед
+    const currentTime = regularData.schedulePattern.time;
+    const [hours, minutes] = currentTime.split(':').map(Number);
+    let newHours = hours + 1;
+    
+    // Если время выходит за рабочие часы (после 18:00), начинаем с утра
+    if (newHours > 18) {
+      newHours = 9; // Начинаем с 9:00
+    }
+    
+    const newTime = `${newHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    
+    setRegularData(prev => ({
+      ...prev,
+      schedulePattern: {
+        ...prev.schedulePattern,
+        time: newTime
+      }
+    }));
+    
+    setSuggestAlternativeTime(false);
+    setError('');
+  };
+
+  // Функция валидации формы
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (subscriptionType === 'regular') {
+      if (!regularData.studentId) {
+        errors.studentId = 'Выберите ученика';
+      }
+      if (!regularData.userId) {
+        errors.userId = 'Выберите преподавателя';
+      }
+      if (!regularData.cost || parseFloat(regularData.cost) <= 0) {
+        errors.cost = 'Введите корректную стоимость занятия';
+      }
+      if (!regularData.schedulePattern.startDate) {
+        errors.startDate = 'Выберите дату начала';
+      }
+      if (!regularData.schedulePattern.endDate) {
+        errors.endDate = 'Выберите дату окончания';
+      }
+      if (regularData.schedulePattern.days.length === 0) {
+        errors.days = 'Выберите дни недели';
+      }
+      if (!regularData.schedulePattern.time) {
+        errors.time = 'Выберите время занятия';
+      }
+    } else if (subscriptionType === 'flexible') {
+      if (!flexibleData.name) {
+        errors.name = 'Введите название абонемента';
+      }
+      if (!flexibleData.studentId) {
+        errors.studentId = 'Выберите ученика';
+      }
+      if (!flexibleData.userId) {
+        errors.userId = 'Выберите преподавателя';
+      }
+      if (!flexibleData.startDate) {
+        errors.startDate = 'Выберите дату начала';
+      }
+      if (!flexibleData.endDate) {
+        errors.endDate = 'Выберите дату окончания';
+      }
+      if (!flexibleData.weekSchedules || flexibleData.weekSchedules.length === 0) {
+        errors.weekSchedules = 'Добавьте расписание недель';
+      }
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Функция отправки формы
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuggestAlternativeTime(false);
+    
+    console.log('Начинаем создание абонемента:', {
+      subscriptionType,
+      regularData: subscriptionType === 'regular' ? regularData : null,
+      flexibleData: subscriptionType === 'flexible' ? flexibleData : null
+    });
+
+    try {
+      if (subscriptionType === 'regular') {
+        // Создание обычного абонемента
+        const requestData = {
+          ...regularData,
+          studentId: regularData.lessonType === 'individual' ? regularData.studentId : undefined,
+          studentIds: regularData.lessonType === 'group' ? selectedStudents.map(s => s.id) : undefined,
+          cost: parseFloat(regularData.cost),
+          userId: regularData.userId,
+          isPaid: true
+        };
+        
+        console.log('Отправляем данные для создания занятий:', JSON.stringify(requestData, null, 2));
+        
+        const lessonsResponse = await apiRequest('/api/lessons/bulk', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
+        });
+
+        if (!lessonsResponse.ok) {
+          const errorData = await lessonsResponse.json();
+          
+          // Обрабатываем конфликты времени более детально
+          if (lessonsResponse.status === 409 && errorData.conflictingLessons) {
+            const conflictDetails = errorData.conflictingLessons
+              .map((conflict: any) => 
+                `${new Date(conflict.date).toLocaleDateString('ru-RU')} в ${new Date(conflict.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${conflict.conflict}`
+              )
+              .join('\n');
+            
+            setSuggestAlternativeTime(true);
+            throw new Error(`Обнаружены конфликты времени:\n${conflictDetails}\n\nПожалуйста, выберите другое время или даты для занятий.`);
+          }
+          
+          throw new Error(errorData.error || 'Ошибка при создании занятий');
+        }
+
+        // Создание предоплаты
+        const paymentData = {
+          studentId: parseInt(regularData.studentId),
+          amount: regularData.paymentInfo.amount,
+          date: regularData.paymentInfo.paymentDate,
+          description: regularData.paymentInfo.description || `Абонемент на ${lessonsCount} занятий`,
+          period: {
+            startDate: regularData.schedulePattern.startDate,
+            endDate: regularData.schedulePattern.endDate
+          }
+        };
+        
+        console.log('Отправляем данные для создания предоплаты:', JSON.stringify(paymentData, null, 2));
+        
+        const paymentResponse = await apiRequest('/api/payments/prepayment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(paymentData),
+        });
+
+        if (!paymentResponse.ok) {
+          const errorData = await paymentResponse.json();
+          throw new Error(errorData.error || 'Ошибка при создании предоплаты');
+        }
+      } else if (subscriptionType === 'flexible') {
+        // Создание гибкого абонемента
+        const requestData = {
+          ...flexibleData,
+          totalCost: flexibleTotalAmount
+        };
+
+        const response = await apiRequest('/api/flexible-subscriptions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка при создании гибкого абонемента');
+        }
+      }
+
+      setSuggestAlternativeTime(false);
+      onSuccess();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка при создании абонемента');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -1069,7 +1262,7 @@ export default function UnifiedSubscriptionModal({
           onConfirm={
             (subscriptionType === 'regular' && lessonsCount > 0) || 
             (subscriptionType === 'flexible' && flexibleTotalAmount > 0) 
-              ? () => {/* TODO: implement submit */} 
+              ? handleSubmit 
               : undefined
           }
           confirmText={
@@ -1085,9 +1278,23 @@ export default function UnifiedSubscriptionModal({
     >
       <div className="space-y-6">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center">
-            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+            <div className="flex items-start">
+              <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <div className="font-medium mb-1">Ошибка при создании абонемента</div>
+                <div className="text-sm whitespace-pre-line mb-3">{error}</div>
+                {suggestAlternativeTime && subscriptionType === 'regular' && (
+                  <button
+                    type="button"
+                    onClick={suggestAlternativeTimeSlot}
+                    className="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors font-medium"
+                  >
+                    Предложить другое время
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

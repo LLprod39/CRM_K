@@ -235,7 +235,10 @@ export default function FlexibleSubscriptionForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('Начало отправки формы:', formData)
+    
     if (!validateForm()) {
+      console.log('Валидация не прошла')
       return
     }
     
@@ -243,25 +246,34 @@ export default function FlexibleSubscriptionForm({
     setError('')
 
     try {
+      const requestData = {
+        ...formData,
+        totalCost: calculateTotalCost()
+      }
+      
+      console.log('Отправляемые данные:', requestData)
+      
       const response = await apiRequest('/api/flexible-subscriptions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          totalCost: calculateTotalCost()
-        }),
+        body: JSON.stringify(requestData),
       })
 
+      console.log('Ответ сервера:', response.status, response.statusText)
+
       if (response.ok) {
+        console.log('Абонемент успешно создан')
         onSuccess()
         onClose()
       } else {
         const errorData = await response.json()
+        console.error('Ошибка сервера:', errorData)
         setError(errorData.error || 'Ошибка при создании абонемента')
       }
     } catch (err) {
+      console.error('Ошибка при отправке запроса:', err)
       setError('Ошибка при создании абонемента')
     } finally {
       setLoading(false)

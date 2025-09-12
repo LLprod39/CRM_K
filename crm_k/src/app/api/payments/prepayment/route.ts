@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: PrepaymentData = await request.json()
+    console.log('Получены данные для создания предоплаты:', JSON.stringify(body, null, 2))
     
     // Валидация обязательных полей
     if (!body.studentId || !body.amount || !body.date || !body.period.startDate || !body.period.endDate) {
