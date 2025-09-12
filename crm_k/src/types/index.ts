@@ -245,3 +245,123 @@ export interface AdminStats {
   recentLessons: Lesson[];
   usersWithStats: UserWithStats[];
 }
+
+// Типы для гибких абонементов
+export interface FlexibleSubscription {
+  id: number;
+  name: string;
+  studentId: number;
+  userId: number;
+  startDate: Date;
+  endDate: Date;
+  totalCost: number;
+  isPaid: boolean;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  student?: Student;
+  user?: User;
+  weekSchedules?: FlexibleSubscriptionWeek[];
+  payments?: FlexibleSubscriptionPayment[];
+}
+
+export interface FlexibleSubscriptionWeek {
+  id: number;
+  subscriptionId: number;
+  weekNumber: number;
+  startDate: Date;
+  endDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  subscription?: FlexibleSubscription;
+  weekDays?: FlexibleSubscriptionDay[];
+}
+
+export interface FlexibleSubscriptionDay {
+  id: number;
+  weekId: number;
+  dayOfWeek: number; // 0=воскресенье, 1=понедельник, ..., 6=суббота
+  startTime: Date;
+  endTime: Date;
+  cost: number;
+  location: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  week?: FlexibleSubscriptionWeek;
+}
+
+export interface FlexibleSubscriptionPayment {
+  id: number;
+  subscriptionId: number;
+  amount: number;
+  date: Date;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  subscription?: FlexibleSubscription;
+}
+
+// Типы для создания гибкого абонемента
+export interface CreateFlexibleSubscriptionData {
+  name: string;
+  studentId: number;
+  userId: number;
+  startDate: Date;
+  endDate: Date;
+  description?: string;
+  weekSchedules: CreateFlexibleSubscriptionWeekData[];
+}
+
+export interface CreateFlexibleSubscriptionWeekData {
+  weekNumber: number;
+  startDate: Date;
+  endDate: Date;
+  weekDays: CreateFlexibleSubscriptionDayData[];
+}
+
+export interface CreateFlexibleSubscriptionDayData {
+  dayOfWeek: number;
+  startTime: Date;
+  endTime: Date;
+  cost: number;
+  location?: string;
+  notes?: string;
+}
+
+// Типы для формы создания гибкого абонемента
+export interface FlexibleSubscriptionFormData {
+  name: string;
+  studentId: number;
+  userId: number;
+  startDate: string;
+  endDate: string;
+  description: string;
+  weekSchedules: FlexibleSubscriptionWeekFormData[];
+}
+
+export interface FlexibleSubscriptionWeekFormData {
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+  weekDays: FlexibleSubscriptionDayFormData[];
+}
+
+export interface FlexibleSubscriptionDayFormData {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  cost: string;
+  location: string;
+  notes: string;
+}
+
+// Тип для гибкого абонемента с полными данными
+export type FlexibleSubscriptionWithDetails = FlexibleSubscription & {
+  student: StudentWithUser;
+  user: User;
+  weekSchedules: (FlexibleSubscriptionWeek & {
+    weekDays: FlexibleSubscriptionDay[];
+  })[];
+  payments: FlexibleSubscriptionPayment[];
+}

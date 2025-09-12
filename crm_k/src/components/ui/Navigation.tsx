@@ -12,7 +12,8 @@ import {
   X,
   LogOut,
   User,
-  Settings
+  Settings,
+  BookOpen
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/presentation/contexts';
@@ -25,6 +26,7 @@ const navigation = [
 ];
 
 const adminNavigation = [
+  { name: 'Абонементы', href: '/flexible-subscriptions', icon: BookOpen },
   { name: 'Админ панель', href: '/admin', icon: Settings, description: 'Управление системой' },
 ];
 

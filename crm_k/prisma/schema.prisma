@@ -26,6 +26,9 @@ model User {
   // Связь с временем обеда
   lunchBreaks LunchBreak[]
   
+  // Связь с гибкими абонементами
+  flexibleSubscriptions FlexibleSubscription[]
+  
   @@map("users")
 }
 
@@ -60,6 +63,9 @@ model Student {
   
   // Связь с предложениями ИИ
   aiSuggestions AISuggestion[]
+  
+  // Связь с гибкими абонементами
+  flexibleSubscriptions FlexibleSubscription[]
   
   @@map("students")
 }
@@ -173,4 +179,85 @@ model LunchBreak {
   
   @@unique([date, userId]) // Один обед в день на пользователя
   @@map("lunch_breaks")
+}
+
+// Модель гибкого абонемента
+model FlexibleSubscription {
+  id          Int      @id @default(autoincrement())
+  name        String   // Название абонемента
+  studentId   Int      // ID ученика
+  userId      Int      // ID пользователя-владельца
+  startDate   DateTime // Дата начала абонемента
+  endDate     DateTime // Дата окончания абонемента
+  totalCost   Float    // Общая стоимость абонемента
+  isPaid      Boolean  @default(false) // Оплачен ли абонемент
+  description String?  // Описание абонемента
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Связи
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Связь с расписанием недель
+  weekSchedules FlexibleSubscriptionWeek[]
+  
+  // Связь с платежами
+  payments    FlexibleSubscriptionPayment[]
+  
+  @@map("flexible_subscriptions")
+}
+
+// Модель расписания недели для гибкого абонемента
+model FlexibleSubscriptionWeek {
+  id                Int      @id @default(autoincrement())
+  subscriptionId   Int      // ID абонемента
+  weekNumber        Int      // Номер недели (1, 2, 3, ...)
+  startDate         DateTime // Дата начала недели
+  endDate           DateTime // Дата окончания недели
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Связи
+  subscription      FlexibleSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  
+  // Связь с днями недели
+  weekDays          FlexibleSubscriptionDay[]
+  
+  @@map("flexible_subscription_weeks")
+}
+
+// Модель дня недели для гибкого абонемента
+model FlexibleSubscriptionDay {
+  id                Int      @id @default(autoincrement())
+  weekId            Int      // ID недели
+  dayOfWeek         Int      // День недели (0=воскресенье, 1=понедельник, ..., 6=суббота)
+  startTime         DateTime // Время начала занятия
+  endTime           DateTime // Время окончания занятия
+  cost              Float    // Стоимость занятия
+  location          String   @default("office") // Место проведения
+  notes             String?  // Заметки к занятию
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Связи
+  week              FlexibleSubscriptionWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  
+  @@map("flexible_subscription_days")
+}
+
+// Модель платежа для гибкого абонемента
+model FlexibleSubscriptionPayment {
+  id                Int      @id @default(autoincrement())
+  subscriptionId   Int      // ID абонемента
+  amount            Float    // Сумма платежа
+  date              DateTime // Дата платежа
+  description       String?  // Описание платежа
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Связи
+  subscription      FlexibleSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  
+  @@map("flexible_subscription_payments")
 }

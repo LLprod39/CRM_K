@@ -10,7 +10,7 @@ import Input from '@/components/ui/Input';
 import PhotoUpload from './PhotoUpload';
 import DateTimePicker from '@/components/ui/DateTimePicker';
 import UserSelector from '@/components/ui/UserSelector';
-import SubscriptionModal from './SubscriptionModal';
+import UnifiedSubscriptionModal from './UnifiedSubscriptionModal';
 
 interface AddStudentFormProps {
   isOpen: boolean;
@@ -45,7 +45,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [createLesson, setCreateLesson] = useState(false);
   const [step, setStep] = useState<'student' | 'lesson'>('student');
-  const [showSubscriptionForm, setShowSubscriptionForm] = useState(false);
+  const [showUnifiedSubscriptionForm, setShowUnifiedSubscriptionForm] = useState(false);
   const [createdStudent, setCreatedStudent] = useState<any>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -171,7 +171,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
       }
 
       // Сбрасываем форму только если не создаем абонемент
-      if (!showSubscriptionForm) {
+      if (!showUnifiedSubscriptionForm) {
         resetForm();
         onSuccess();
         onClose();
@@ -233,20 +233,22 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
             </div>
             <div className="flex items-center gap-2">
               {step === 'lesson' && user?.role === 'ADMIN' && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const newStudent = await createStudent();
-                    if (newStudent) {
-                      setCreatedStudent(newStudent);
-                      setShowSubscriptionForm(true);
-                    }
-                  }}
-                  className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors font-medium"
-                  title="Создать абонемент с расписанием и предоплатой"
-                >
-                  Абонемент
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const newStudent = await createStudent();
+                      if (newStudent) {
+                        setCreatedStudent(newStudent);
+                        setShowUnifiedSubscriptionForm(true);
+                      }
+                    }}
+                    className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors font-medium"
+                    title="Создать абонемент (обычный или гибкий)"
+                  >
+                    Создать абонемент
+                  </button>
+                </>
               )}
               <button
                 onClick={onClose}
@@ -564,17 +566,17 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
         </div>
       </div>
       
-      {/* Модальное окно абонемента */}
-      <SubscriptionModal
-        isOpen={showSubscriptionForm}
+      {/* Унифицированное модальное окно абонемента */}
+      <UnifiedSubscriptionModal
+        isOpen={showUnifiedSubscriptionForm}
         onClose={() => {
-          setShowSubscriptionForm(false);
+          setShowUnifiedSubscriptionForm(false);
           resetForm();
           onSuccess();
           onClose();
         }}
         onSuccess={() => {
-          setShowSubscriptionForm(false);
+          setShowUnifiedSubscriptionForm(false);
           resetForm();
           onSuccess();
           onClose();

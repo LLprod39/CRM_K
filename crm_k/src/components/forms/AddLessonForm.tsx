@@ -8,7 +8,7 @@ import { useAuth } from '@/presentation/contexts';
 import DateTimePicker from '../ui/DateTimePicker';
 import StudentSearch from '@/components/ui/StudentSearch';
 import UserSelector from '@/components/ui/UserSelector';
-import SubscriptionModal from './SubscriptionModal';
+import UnifiedSubscriptionModal from './UnifiedSubscriptionModal';
 
 interface AddLessonFormProps {
   isOpen: boolean;
@@ -54,7 +54,7 @@ export default function AddLessonForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [showSubscriptionForm, setShowSubscriptionForm] = useState(false);
+  const [showUnifiedSubscriptionForm, setShowUnifiedSubscriptionForm] = useState(false);
 
   // Загружаем список учеников
   useEffect(() => {
@@ -285,11 +285,11 @@ export default function AddLessonForm({
               <>
                 <button
                   type="button"
-                  onClick={() => setShowSubscriptionForm(true)}
+                  onClick={() => setShowUnifiedSubscriptionForm(true)}
                   className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors font-medium"
-                  title="Создать абонемент с расписанием и предоплатой"
+                  title="Создать абонемент (обычный или гибкий)"
                 >
-                  Абонемент
+                  Создать абонемент
                 </button>
                 <button
                   type="button"
@@ -588,6 +588,22 @@ export default function AddLessonForm({
             </div>
           )}
 
+          {/* Кнопка абонемента для админов */}
+          {user?.role === 'ADMIN' && (
+            <div className="flex gap-2 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setShowUnifiedSubscriptionForm(true)}
+                className="px-4 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors font-medium text-sm"
+              >
+                Создать абонемент
+              </button>
+              <span className="text-xs text-gray-500 ml-2 self-center">
+                Обычный или гибкий абонемент
+              </span>
+            </div>
+          )}
+
           {/* Кнопки */}
           <div className="flex gap-3 pt-6 border-t border-gray-200">
             <button
@@ -618,12 +634,12 @@ export default function AddLessonForm({
         </form>
       </div>
       
-      {/* Модальное окно абонемента */}
-      <SubscriptionModal
-        isOpen={showSubscriptionForm}
-        onClose={() => setShowSubscriptionForm(false)}
+      {/* Унифицированное модальное окно абонемента */}
+      <UnifiedSubscriptionModal
+        isOpen={showUnifiedSubscriptionForm}
+        onClose={() => setShowUnifiedSubscriptionForm(false)}
         onSuccess={() => {
-          setShowSubscriptionForm(false);
+          setShowUnifiedSubscriptionForm(false);
           onSuccess();
         }}
         selectedStudent={selectedStudents.length > 0 ? selectedStudents[0] : undefined}
