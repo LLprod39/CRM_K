@@ -21,14 +21,21 @@ export async function GET(request: NextRequest) {
     const whereClause: any = {}
     
     if (authUser.role !== 'ADMIN') {
-      whereClause.userId = authUser.id
+      // Показываем абонементы для учеников, с которыми пользователь проводил занятия
+      whereClause.student = {
+        lessons: {
+          some: {
+            teacherId: authUser.id
+          }
+        }
+      }
     }
     
     if (studentId) {
       whereClause.studentId = parseInt(studentId)
     }
 
-    const subscriptions = await prisma.flexibleSubscription.findMany({
+    const subscriptions = await (prisma as any).flexibleSubscription.findMany({
       where: whereClause,
       include: {
         student: {
@@ -141,7 +148,7 @@ export async function POST(request: NextRequest) {
 
     // Создаем абонемент с расписанием
     console.log('Начинаем создание абонемента в базе данных')
-    const subscription = await prisma.flexibleSubscription.create({
+    const subscription = await (prisma as any).flexibleSubscription.create({
       data: {
         name: body.name,
         studentId: body.studentId,

@@ -246,10 +246,10 @@ export default function SubscriptionModal({
     }
   }, [isOpen]);
 
-  // Фильтруем учеников по выбранному пользователю
-  const filteredStudents = formData.userId 
-    ? students.filter(student => student.userId === formData.userId)
-    : students;
+  // Для админа показываем всех учеников, для обычных пользователей - только тех, с кем проводил занятия
+  const filteredStudents = user?.role === 'ADMIN' 
+    ? students // Админ видит всех учеников
+    : students; // Обычные пользователи видят только тех учеников, с которыми проводили занятия (фильтрация происходит в API)
 
   // Обновляем форму при изменении selectedStudent
   useEffect(() => {

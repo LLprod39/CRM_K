@@ -226,9 +226,10 @@ const RegularSubscriptionForm = ({
   validationErrors,
   user 
 }: any) => {
-  const filteredStudents = data.userId 
-    ? students.filter((student: Student) => student.userId === data.userId)
-    : students;
+  // Для админа показываем всех учеников, для обычных пользователей - только тех, с кем проводил занятия
+  const filteredStudents = user?.role === 'ADMIN' 
+    ? students // Админ видит всех учеников
+    : students; // Обычные пользователи видят только тех учеников, с которыми проводили занятия (фильтрация происходит в API)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
