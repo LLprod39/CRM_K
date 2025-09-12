@@ -309,6 +309,7 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
         <MobileCalendar
           lessons={lessons}
           onDateClick={onDateClick}
+          onLessonClick={onLessonClick}
           onAddLesson={onAddLesson}
           currentDate={currentDate}
           userRole={userRole}

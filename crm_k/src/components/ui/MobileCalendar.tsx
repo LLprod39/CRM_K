@@ -27,6 +27,7 @@ export default function MobileCalendar({
   const [showDayModal, setShowDayModal] = useState(false);
   const [selectedDayLessons, setSelectedDayLessons] = useState<LessonWithOptionalStudent[]>([]);
   const [selectedDayDate, setSelectedDayDate] = useState<Date>(new Date());
+  const [activeDay, setActiveDay] = useState<number | null>(null);
 
   // Получаем занятия для выбранного месяца
   const monthLessons = lessons.filter(lesson => {
@@ -87,21 +88,37 @@ export default function MobileCalendar({
   };
 
   const handleDateClick = (day: number) => {
+    console.log('MobileCalendar: handleDateClick вызван для дня:', day);
+    console.log('MobileCalendar: currentMonth:', currentMonth);
+    console.log('MobileCalendar: lessonsByDay:', lessonsByDay);
+    
     const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     setSelectedDate(newDate);
     
     const dayLessons = lessonsByDay[day] || [];
+    console.log('MobileCalendar: занятия на день:', dayLessons.length);
+    console.log('MobileCalendar: userRole:', userRole);
+    console.log('MobileCalendar: onAddLesson:', !!onAddLesson);
     
     // Если день пустой и есть функция onAddLesson, и пользователь - админ, открываем форму добавления занятия
     if (dayLessons.length === 0 && onAddLesson && userRole === 'ADMIN') {
+      console.log('MobileCalendar: открываем форму добавления занятия');
       onAddLesson(newDate);
       return;
     }
     
     // Если есть занятия, показываем модальное окно
+    console.log('MobileCalendar: открываем модальное окно с занятиями');
     setSelectedDayLessons(dayLessons);
     setSelectedDayDate(newDate);
     setShowDayModal(true);
+    console.log('MobileCalendar: showDayModal установлен в true');
+  };
+
+  // Упрощенная обработка событий для мобильных устройств
+  const handleDayPress = (day: number) => {
+    console.log('MobileCalendar: handleDayPress для дня:', day);
+    handleDateClick(day);
   };
 
   const getStatusColor = (lesson: Lesson) => {
@@ -149,25 +166,38 @@ export default function MobileCalendar({
       const dayLessons = lessonsByDay[day] || [];
       const isCurrentDay = isToday(day);
       const isSelectedDay = isSelected(day);
+      const isActiveDay = activeDay === day;
 
       days.push(
         <div
           key={day}
-          className={`h-16 border border-gray-200 p-2 cursor-pointer hover:bg-gray-50 ${
+          className={`mobile-calendar-day h-20 border border-gray-200 p-2 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation ${
             isCurrentDay ? 'bg-blue-50' : ''
-          } ${isSelectedDay ? 'bg-blue-100' : ''}`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleDateClick(day);
+          } ${isSelectedDay ? 'bg-blue-100' : ''} ${
+            isActiveDay ? 'touch-active' : ''
+          }`}
+          onClick={() => {
+            console.log('MobileCalendar: onClick для дня:', day);
+            handleDayPress(day);
+          }}
+          onTouchEnd={() => {
+            console.log('MobileCalendar: onTouchEnd для дня:', day);
+            handleDayPress(day);
+          }}
+          style={{ 
+            minHeight: '80px',
+            WebkitTapHighlightColor: 'transparent',
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            userSelect: 'none'
           }}
         >
           <div className="flex justify-between items-center mb-1">
-            <span className={`text-sm font-medium ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
+            <span className={`text-base font-semibold ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
               {day}
             </span>
             {dayLessons.length > 0 && (
-              <span className={`text-xs text-white rounded-full w-5 h-5 flex items-center justify-center font-bold ${
+              <span className={`text-sm text-white rounded-full w-6 h-6 flex items-center justify-center font-bold ${
                 dayLessons.length === 1 ? 'bg-green-500' : 
                 dayLessons.length === 2 ? 'bg-yellow-500' : 
                 dayLessons.length >= 3 ? 'bg-red-500' : 'bg-blue-500'
@@ -178,7 +208,7 @@ export default function MobileCalendar({
           </div>
           {/* На мобильной версии показываем только количество занятий */}
           {dayLessons.length > 0 && (
-            <div className="text-xs text-gray-500 text-center">
+            <div className="text-sm text-gray-500 text-center font-medium">
               {dayLessons.length} занят{dayLessons.length === 1 ? 'ие' : dayLessons.length < 5 ? 'ия' : 'ий'}
             </div>
           )}
@@ -192,22 +222,32 @@ export default function MobileCalendar({
   return (
     <div className="bg-white rounded-lg shadow-sm border">
       {/* Заголовок календаря */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">
+      <div className="mobile-calendar-header flex items-center justify-between p-4 border-b border-gray-200">
+        <h3 className="text-xl font-semibold text-gray-900">
           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </h3>
         <div className="flex gap-2">
           <button
             onClick={() => navigateMonth('prev')}
-            className="p-2 hover:bg-gray-100 rounded-md"
+            className="mobile-calendar-nav-button p-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg touch-manipulation transition-colors duration-150"
+            style={{ 
+              WebkitTapHighlightColor: 'transparent',
+              minWidth: '44px',
+              minHeight: '44px'
+            }}
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-6 h-6" />
           </button>
           <button
             onClick={() => navigateMonth('next')}
-            className="p-2 hover:bg-gray-100 rounded-md"
+            className="mobile-calendar-nav-button p-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg touch-manipulation transition-colors duration-150"
+            style={{ 
+              WebkitTapHighlightColor: 'transparent',
+              minWidth: '44px',
+              minHeight: '44px'
+            }}
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-6 h-6" />
           </button>
         </div>
       </div>
@@ -215,7 +255,7 @@ export default function MobileCalendar({
       {/* Дни недели */}
       <div className="grid grid-cols-7 border-b border-gray-200">
         {dayNames.map((day) => (
-          <div key={day} className="p-2 text-center text-sm font-medium text-gray-500 bg-gray-50">
+          <div key={day} className="p-3 text-center text-base font-semibold text-gray-600 bg-gray-50">
             {day}
           </div>
         ))}
@@ -266,12 +306,24 @@ export default function MobileCalendar({
       {onLessonClick && (
         <DayLessonsModal
           isOpen={showDayModal}
-          onClose={() => setShowDayModal(false)}
+          onClose={() => {
+            console.log('MobileCalendar: закрываем модальное окно');
+            setShowDayModal(false);
+          }}
           lessons={selectedDayLessons}
           date={selectedDayDate}
           onLessonClick={onLessonClick}
           userRole={userRole}
         />
+      )}
+      
+      {/* Отладочная информация */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 left-4 bg-black text-white p-2 text-xs rounded">
+          showDayModal: {showDayModal.toString()}<br/>
+          selectedDayLessons: {selectedDayLessons.length}<br/>
+          activeDay: {activeDay}
+        </div>
       )}
     </div>
   );

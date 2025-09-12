@@ -23,7 +23,7 @@ export default function DayLessonsModal({
   onLessonClick,
   userRole
 }: DayLessonsModalProps) {
-  console.log('DayLessonsModal: isOpen =', isOpen, 'lessons =', lessons.length);
+  console.log('DayLessonsModal: isOpen =', isOpen, 'lessons =', lessons.length, 'date =', date);
   const [sortField, setSortField] = useState<'time' | 'student' | 'status' | 'cost'>('time');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
@@ -262,6 +262,7 @@ export default function DayLessonsModal({
       title={modalTitle}
       size="full"
       footer={modalFooter}
+      className="modal-mobile"
     >
 
 

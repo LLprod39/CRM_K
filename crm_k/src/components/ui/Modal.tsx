@@ -36,8 +36,9 @@ export default function Modal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 overflow-y-auto"
+      className="fixed inset-0 z-[9999] overflow-y-auto"
       onClick={onClose}
+      style={{ zIndex: 9999 }}
     >
       {/* Backdrop с единым стилем */}
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
@@ -47,6 +48,7 @@ export default function Modal({
         <div 
           className={`relative w-full ${sizeClasses[size]} transform transition-all ${className}`}
           onClick={(e) => e.stopPropagation()}
+          style={{ zIndex: 10000 }}
         >
           {/* Modal content с единым стилем */}
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-in">

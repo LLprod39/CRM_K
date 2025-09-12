@@ -1,5 +1,44 @@
 @import "tailwindcss";
 
+/* Мобильная адаптивность для календаря */
+@media (max-width: 768px) {
+  .mobile-calendar-day {
+    min-height: 80px !important;
+    padding: 12px !important;
+  }
+  
+  .mobile-calendar-day:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease-in-out;
+  }
+  
+  .mobile-calendar-day.touch-active {
+    background-color: #e5e7eb !important;
+    transform: scale(0.95);
+  }
+  
+  .mobile-calendar-header {
+    padding: 16px !important;
+  }
+  
+  .mobile-calendar-nav-button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 12px !important;
+  }
+  
+  /* Модальные окна на мобильных устройствах */
+  .modal-mobile {
+    max-height: 90vh !important;
+    margin: 20px !important;
+  }
+  
+  .modal-mobile .modal-content {
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+  }
+}
+
 :root {
   color-scheme: light;
   
