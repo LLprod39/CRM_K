@@ -270,12 +270,43 @@ export async function DELETE(
       )
     }
 
-    // Удаляем абонемент (каскадное удаление удалит связанные записи)
-    await (prisma as any).flexibleSubscription.delete({
-      where: { id: subscriptionId }
+    // Удаляем абонемент и связанные уроки в транзакции
+    await prisma.$transaction(async (tx) => {
+      // Сначала удаляем все уроки, созданные из этого абонемента
+      // Находим уроки по ученику, учителю и периоду времени абонемента
+      const subscription = await (tx as any).flexibleSubscription.findUnique({
+        where: { id: subscriptionId },
+        include: {
+          weekSchedules: {
+            include: {
+              weekDays: true
+            }
+          }
+        }
+      })
+
+      if (subscription) {
+        // Удаляем уроки, которые могли быть созданы из этого абонемента
+        // Находим уроки в период действия абонемента для данного ученика и учителя
+        await tx.lesson.deleteMany({
+          where: {
+            studentId: subscription.studentId,
+            teacherId: subscription.userId,
+            date: {
+              gte: subscription.startDate,
+              lte: subscription.endDate
+            }
+          }
+        })
+      }
+
+      // Затем удаляем сам абонемент (каскадное удаление удалит связанные записи)
+      await (tx as any).flexibleSubscription.delete({
+        where: { id: subscriptionId }
+      })
     })
 
-    return NextResponse.json({ message: 'Абонемент успешно удален' })
+    return NextResponse.json({ message: 'Абонемент и связанные уроки успешно удалены' })
   } catch (error) {
     console.error('Ошибка при удалении абонемента:', error)
     return NextResponse.json(

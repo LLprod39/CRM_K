@@ -67,12 +67,39 @@ export async function POST(
     // Генерируем уроки для каждой недели
     const lessonsToCreate = []
     
+    console.log('Начинаем генерацию уроков для абонемента:', {
+      subscriptionId,
+      startDate: subscription.startDate,
+      endDate: subscription.endDate,
+      weekSchedulesCount: subscription.weekSchedules.length,
+      paymentStatus: subscription.paymentStatus,
+      paidDaysCount: subscription.paidDays.length
+    })
+    
     for (const week of subscription.weekSchedules) {
+      console.log('Обрабатываем неделю:', {
+        weekNumber: week.weekNumber,
+        weekStartDate: week.startDate,
+        weekEndDate: week.endDate,
+        daysCount: week.weekDays.length
+      })
+      
       for (const day of week.weekDays) {
         // Вычисляем дату урока
         const lessonDate = calculateLessonDate(week.startDate, day.dayOfWeek, day.startTime)
+        const inRange = lessonDate >= subscription.startDate && lessonDate <= subscription.endDate
         
-        if (lessonDate >= subscription.startDate && lessonDate <= subscription.endDate) {
+        console.log('День недели:', {
+          dayId: day.id,
+          dayOfWeek: day.dayOfWeek,
+          startTime: day.startTime,
+          lessonDate: lessonDate.toISOString(),
+          subscriptionStart: subscription.startDate.toISOString(),
+          subscriptionEnd: subscription.endDate.toISOString(),
+          inRange: inRange
+        })
+        
+        if (inRange) {
           // Определяем статус платежа урока
           let lessonPaymentStatus = 'UNPAID'
           
@@ -82,12 +109,13 @@ export async function POST(
           } else if (subscription.paymentStatus === 'PARTIAL') {
             // Если абонемент частично оплачен, проверяем конкретный день
             const paidDay = paidDaysMap.get(day.id)
+            console.log('Проверяем оплату дня:', { dayId: day.id, paidDay: paidDay, isPaid: paidDay?.isPaid })
             if (paidDay && paidDay.isPaid) {
               lessonPaymentStatus = 'PAID'
             }
           }
 
-          lessonsToCreate.push({
+          const lessonToCreate = {
             date: lessonDate,
             endTime: new Date(lessonDate.getTime() + (new Date(day.endTime).getTime() - new Date(day.startTime).getTime())),
             studentId: subscription.studentId,
@@ -98,10 +126,17 @@ export async function POST(
             notes: day.notes,
             lessonType: 'individual',
             location: day.location
-          })
+          }
+          
+          console.log('Создаем урок:', { date: lessonDate.toISOString(), paymentStatus: lessonPaymentStatus })
+          lessonsToCreate.push(lessonToCreate)
+        } else {
+          console.log('Урок не попадает в диапазон дат абонемента, пропускаем')
         }
       }
     }
+    
+    console.log('Итого уроков для создания:', lessonsToCreate.length)
 
     if (lessonsToCreate.length === 0) {
       return NextResponse.json(

@@ -779,11 +779,32 @@ const FlexibleSubscriptionForm = ({
             </label>
             <select
               value={data.paymentStatus}
-              onChange={(e) => setData((prev: FlexibleSubscriptionData) => ({ 
-                ...prev, 
-                paymentStatus: e.target.value as PaymentStatus,
-                paidDayIds: e.target.value === 'PARTIAL' ? prev.paidDayIds : []
-              }))}
+              onChange={(e) => {
+                const newStatus = e.target.value as PaymentStatus;
+                setData((prev: FlexibleSubscriptionData) => {
+                  let newPaidDayIds: string[] = [];
+                  
+                  if (newStatus === 'PARTIAL') {
+                    // При выборе частичной оплаты сохраняем текущие выбранные дни
+                    newPaidDayIds = prev.paidDayIds;
+                  } else if (newStatus === 'PAID') {
+                    // При выборе полной оплаты автоматически отмечаем все дни как оплаченные
+                    newPaidDayIds = [];
+                    prev.weekSchedules.forEach((week: any, weekIndex: number) => {
+                      week.weekDays.forEach((day: any, dayIndex: number) => {
+                        newPaidDayIds.push(`${weekIndex}-${dayIndex}`);
+                      });
+                    });
+                  }
+                  // При UNPAID очищаем все
+                  
+                  return {
+                    ...prev, 
+                    paymentStatus: newStatus,
+                    paidDayIds: newPaidDayIds
+                  };
+                });
+              }}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 validationErrors.paymentStatus ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -804,9 +825,44 @@ const FlexibleSubscriptionForm = ({
                 Выберите оплаченные дни
               </label>
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-3">
-                  Отметьте дни, которые уже оплачены. Остальные дни будут созданы как неоплаченные.
-                </p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm text-gray-600">
+                    Отметьте дни, которые уже оплачены. Остальные дни будут созданы как неоплаченные.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Отмечаем все дни как оплаченные
+                        const allDayIds: string[] = [];
+                        data.weekSchedules.forEach((week: any, weekIndex: number) => {
+                          week.weekDays.forEach((day: any, dayIndex: number) => {
+                            allDayIds.push(`${weekIndex}-${dayIndex}`);
+                          });
+                        });
+                        setData((prev: FlexibleSubscriptionData) => ({
+                          ...prev,
+                          paidDayIds: allDayIds
+                        }));
+                      }}
+                      className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors font-medium"
+                    >
+                      Выбрать все
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setData((prev: FlexibleSubscriptionData) => ({
+                          ...prev,
+                          paidDayIds: []
+                        }));
+                      }}
+                      className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors font-medium"
+                    >
+                      Снять все
+                    </button>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   {data.weekSchedules.map((week: any, weekIndex: number) => (
                     <div key={weekIndex} className="border rounded-lg p-3">
@@ -1365,8 +1421,8 @@ export default function UnifiedSubscriptionModal({
           studentIds: regularData.lessonType === 'group' ? selectedStudents.map(s => s.id) : undefined,
           cost: parseFloat(regularData.cost),
           userId: regularData.userId,
-          isPaid: regularData.paymentStatus === 'PAID', // Синхронизируем с paymentStatus
-          paymentStatus: regularData.paymentStatus
+          isPaid: false, // Всегда создаем занятия как неоплаченные, предоплата их пометит как оплаченные
+          paymentStatus: 'UNPAID' // Изначально все занятия неоплачены
         };
         
         console.log('Отправляем данные для создания занятий:', JSON.stringify(requestData, null, 2));
@@ -1386,31 +1442,33 @@ export default function UnifiedSubscriptionModal({
           throw new Error(errorData.error || 'Ошибка при создании занятий');
         }
 
-        // Создание предоплаты
-        const paymentData = {
-          studentId: parseInt(regularData.studentId),
-          amount: regularData.paymentInfo.amount,
-          date: regularData.paymentInfo.paymentDate,
-          description: regularData.paymentInfo.description || `Абонемент на ${lessonsCount} занятий`,
-          period: {
-            startDate: regularData.schedulePattern.startDate,
-            endDate: regularData.schedulePattern.endDate
-          }
-        };
-        
-        console.log('Отправляем данные для создания предоплаты:', JSON.stringify(paymentData, null, 2));
-        
-        const paymentResponse = await apiRequest('/api/payments/prepayment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(paymentData),
-        });
+        // Создание предоплаты только если пользователь указал, что абонемент оплачен
+        if (regularData.paymentStatus === 'PAID') {
+          const paymentData = {
+            studentId: parseInt(regularData.studentId),
+            amount: regularData.paymentInfo.amount,
+            date: regularData.paymentInfo.paymentDate,
+            description: regularData.paymentInfo.description || `Абонемент на ${lessonsCount} занятий`,
+            period: {
+              startDate: regularData.schedulePattern.startDate,
+              endDate: regularData.schedulePattern.endDate
+            }
+          };
+          
+          console.log('Отправляем данные для создания предоплаты:', JSON.stringify(paymentData, null, 2));
+          
+          const paymentResponse = await apiRequest('/api/payments/prepayment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(paymentData),
+          });
 
-        if (!paymentResponse.ok) {
-          const errorData = await paymentResponse.json();
-          throw new Error(errorData.error || 'Ошибка при создании предоплаты');
+          if (!paymentResponse.ok) {
+            const errorData = await paymentResponse.json();
+            throw new Error(errorData.error || 'Ошибка при создании предоплаты');
+          }
         }
       } else if (subscriptionType === 'flexible') {
         // Создание или редактирование гибкого абонемента
