@@ -60,6 +60,7 @@ model Student {
   photoUrl    String?  // URL фото ученика (опционально)
   userId      Int?     // ID пользователя-владельца (nullable для "нечейных" учеников)
   isAssigned  Boolean  @default(false) // Назначен ли ученик учителю
+  balance     Float    @default(0) // Баланс ученика (предоплата - задолженность)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   

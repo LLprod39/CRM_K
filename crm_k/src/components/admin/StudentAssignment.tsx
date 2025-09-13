@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User, Student, UserRole } from '@/types'
-import { apiRequest } from '@/lib/api'
-import UserSelector from '@/components/ui/UserSelector'
+import { User, Student, UserRole } from '../../types'
+import { apiRequest } from '../../lib/api'
+import UserSelector from '../ui/UserSelector'
 import { 
   Users, 
   UserCheck, 
@@ -13,9 +13,13 @@ import {
   RefreshCw,
   Search,
   Filter,
-  Plus
+  Plus,
+  CreditCard,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react'
-import AddStudentForm from '@/components/forms/AddStudentForm'
+import AddStudentForm from '../forms/AddStudentForm'
+import StudentBalanceCard from './StudentBalanceCard'
 
 interface StudentWithUser extends Student {
   user?: {
@@ -33,6 +37,7 @@ export default function StudentAssignment() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'assigned' | 'unassigned'>('all')
   const [showAddStudentForm, setShowAddStudentForm] = useState(false)
+  const [selectedStudentForBalance, setSelectedStudentForBalance] = useState<number | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -270,6 +275,16 @@ export default function StudentAssignment() {
                             <span className="text-sm font-medium">Не назначен</span>
                           </div>
                         )}
+                        
+                        {/* Баланс ученика */}
+                        <div className="flex items-center space-x-1">
+                          <CreditCard className="w-4 h-4 text-blue-600" />
+                          <span className={`text-sm font-medium ${
+                            (student.balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {student.balance ? student.balance.toLocaleString() : '0'} ₸
+                          </span>
+                        </div>
                       </div>
                     </div>
                     
@@ -281,6 +296,14 @@ export default function StudentAssignment() {
                   </div>
                   
                   <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setSelectedStudentForBalance(student.id)}
+                      className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors flex items-center space-x-1"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span>Баланс</span>
+                    </button>
+                    
                     {!student.isAssigned ? (
                       <div className="flex items-center space-x-2">
                         <UserSelector
@@ -333,6 +356,33 @@ export default function StudentAssignment() {
           fetchData() // Обновляем данные после создания ученика
         }}
       />
+
+      {/* Модальное окно с балансом ученика */}
+      {selectedStudentForBalance && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Баланс ученика
+                </h2>
+                <button
+                  onClick={() => setSelectedStudentForBalance(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <UserX className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <StudentBalanceCard
+                studentId={selectedStudentForBalance}
+                studentName={students.find(s => s.id === selectedStudentForBalance)?.fullName || 'Неизвестный ученик'}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

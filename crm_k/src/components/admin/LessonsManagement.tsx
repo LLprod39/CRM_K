@@ -41,6 +41,7 @@ interface LessonWithDetails extends Lesson {
   student?: Student & {
     user?: UserType
   }
+  teacher?: UserType
 }
 
 export default function LessonsManagement({ className }: LessonsManagementProps) {
@@ -456,11 +457,11 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
                           <div className="flex items-center space-x-2 text-sm text-gray-600">
                             <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
                               <span className="text-xs font-medium text-green-800">
-                                {lesson.student?.user?.name?.charAt(0).toUpperCase() || '?'}
+                                {lesson.teacher?.name?.charAt(0).toUpperCase() || '?'}
                               </span>
                             </div>
                             <span className="truncate">
-                              👨‍🏫 {lesson.student?.user?.name || 'Неизвестный преподаватель'}
+                              👨‍🏫 {lesson.teacher?.name || 'Неизвестный преподаватель'}
                             </span>
                           </div>
                         </div>

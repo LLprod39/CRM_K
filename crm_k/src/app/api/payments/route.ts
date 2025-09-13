@@ -186,6 +186,16 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      // Обновляем баланс ученика
+      await tx.student.update({
+        where: { id: studentId },
+        data: {
+          balance: {
+            increment: amount
+          }
+        }
+      })
+
       return payment
     })
 
