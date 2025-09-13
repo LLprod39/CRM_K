@@ -13,7 +13,8 @@ import {
   LogOut,
   User,
   Settings,
-  BookOpen
+  BookOpen,
+  FileText
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/presentation/contexts';
@@ -23,6 +24,7 @@ const navigation = [
   { name: 'Ученики', href: '/students', icon: Users },
   { name: 'Расписание', href: '/schedule', icon: Calendar },
   { name: 'Финансы', href: '/finances', icon: DollarSign },
+  { name: 'Отчеты', href: '/reports', icon: FileText },
 ];
 
 const adminNavigation = [

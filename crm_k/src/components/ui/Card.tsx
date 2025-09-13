@@ -106,3 +106,16 @@ export function CardContent({ children, className }: CardContentProps) {
     </div>
   );
 }
+
+interface CardDescriptionProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export function CardDescription({ children, className }: CardDescriptionProps) {
+  return (
+    <p className={cn('text-sm text-gray-500 mt-1', className)}>
+      {children}
+    </p>
+  );
+}

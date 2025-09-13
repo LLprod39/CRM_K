@@ -32,6 +32,9 @@ model User {
   // Связь с гибкими абонементами
   flexibleSubscriptions FlexibleSubscription[]
   
+  // Связь с ежедневными отчетами
+  dailyReports DailyReport[]
+  
   @@map("users")
 }
 
@@ -303,4 +306,39 @@ model FlexibleSubscriptionPaidDay {
   
   @@unique([subscriptionId, dayId])
   @@map("flexible_subscription_paid_days")
+}
+
+// Модель ежедневного отчета
+model DailyReport {
+  id              Int      @id @default(autoincrement())
+  date            DateTime // Дата отчета
+  userId          Int      // ID пользователя, который создал отчет
+  
+  // Информация о проведенных занятиях
+  lessonsPlanned  Int      // Запланировано занятий
+  lessonsHeld     Int      // Проведено занятий
+  lessonsCanceled Int      // Отменено занятий
+  
+  // Финансовая информация
+  cashOnHand      Float    // Деньги на руках
+  totalEarned     Float    // Общая сумма заработанная за день
+  paymentsReceived Float   // Полученные платежи
+  
+  // Дополнительная информация
+  notes           String?  // Заметки о дне
+  issues          String?  // Проблемы и вопросы
+  studentFeedback String?  // Обратная связь от родителей/учеников
+  
+  // Метки для административного контроля
+  isReviewed      Boolean  @default(false) // Просмотрен ли отчет администратором
+  reviewNotes     String?  // Комментарии администратора
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Связь с пользователем
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([date, userId]) // Один отчет в день на пользователя
+  @@map("daily_reports")
 }

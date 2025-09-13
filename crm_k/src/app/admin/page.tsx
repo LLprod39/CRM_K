@@ -16,6 +16,7 @@ import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard'
 import SystemSettings from '@/components/admin/SystemSettings'
 import SecurityLogs from '@/components/admin/SecurityLogs'
 import StudentAssignment from '@/components/admin/StudentAssignment'
+import ReportsManagement from '@/components/admin/ReportsManagement'
 import { 
   Users, 
   UserCheck, 
@@ -47,7 +48,8 @@ import {
   PieChart,
   LineChart,
   Target,
-  Zap
+  Zap,
+  FileText
 } from 'lucide-react'
 
 export default function AdminPage() {
@@ -58,7 +60,7 @@ export default function AdminPage() {
   const [showAddUserModal, setShowAddUserModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'lessons' | 'reports' | 'analytics' | 'settings' | 'toys' | 'security'>('overview')
   const [showNotifications, setShowNotifications] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -569,6 +571,7 @@ export default function AdminPage() {
                   { tab: 'users', name: 'Пользователи', icon: Users },
                   { tab: 'students', name: 'Ученики', icon: UserCheck },
                   { tab: 'lessons', name: 'Занятия', icon: Calendar },
+                  { tab: 'reports', name: 'Отчеты', icon: FileText },
                   { tab: 'toys', name: 'Игрушки', icon: Target },
                   { tab: 'analytics', name: 'Аналитика', icon: BarChart3 },
                   { tab: 'security', name: 'Безопасность', icon: Shield },
@@ -578,7 +581,7 @@ export default function AdminPage() {
                   return (
                     <button
                       key={item.tab}
-                      onClick={() => setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security')}
+                      onClick={() => setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'reports' | 'analytics' | 'settings' | 'toys' | 'security')}
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                         isActive
                           ? 'bg-white text-red-600 shadow-sm'
@@ -760,6 +763,11 @@ export default function AdminPage() {
               {activeTab === 'lessons' && (
                 <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
                   <LessonsManagement />
+                </div>
+              )}
+              {activeTab === 'reports' && (
+                <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                  <ReportsManagement />
                 </div>
               )}
               {activeTab === 'toys' && (

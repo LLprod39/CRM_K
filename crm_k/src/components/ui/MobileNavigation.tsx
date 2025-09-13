@@ -9,7 +9,8 @@ import {
   DollarSign, 
   Home,
   Settings,
-  Plus
+  Plus,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts';
 import { UserRole } from '@/domain/entities/User';
@@ -20,6 +21,7 @@ const mobileNavigation = [
   { name: 'Ученики', href: '/students', icon: Users, gradient: 'from-green-500 to-emerald-600' },
   { name: 'Расписание', href: '/schedule', icon: Calendar, gradient: 'from-purple-500 to-purple-600' },
   { name: 'Финансы', href: '/finances', icon: DollarSign, gradient: 'from-yellow-500 to-orange-600' },
+  { name: 'Отчеты', href: '/reports', icon: FileText, gradient: 'from-indigo-500 to-indigo-600' },
   { name: 'Админ', href: '/admin', icon: Settings, gradient: 'from-gray-600 to-gray-700' },
 ];
 
@@ -33,7 +35,7 @@ export default function MobileNavigation() {
   // Определяем пункты навигации в зависимости от роли пользователя
   const navItems = user?.role === UserRole.ADMIN 
     ? mobileNavigation
-    : mobileNavigation.slice(0, 4); // Без админ панели для обычных пользователей
+    : mobileNavigation.slice(0, 5); // Включаем отчеты, но без админ панели для обычных пользователей
 
   return (
     <>
