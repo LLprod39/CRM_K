@@ -224,8 +224,27 @@ export async function POST(request: NextRequest) {
       // Для админов: автоматически назначаем всех учеников выбранному учителю
       // Админ может назначать занятия с любыми учениками любому учителю
     } else {
-      // Для обычных пользователей проверяем, что все ученики принадлежат им
-      const unauthorizedStudents = students.filter(student => student.userId !== authUser.id);
+      // Для обычных пользователей проверяем доступ к каждому ученику
+      const unauthorizedStudents = [];
+      
+      for (const student of students) {
+        // Проверяем, принадлежит ли ученик пользователю напрямую
+        const isDirectOwner = student.userId === authUser.id;
+        
+        // Проверяем, есть ли у пользователя занятия с этим учеником (как учитель)
+        const hasLessonsWithStudent = await prisma.lesson.findFirst({
+          where: {
+            studentId: student.id,
+            teacherId: authUser.id
+          }
+        });
+        
+        // Если нет доступа, добавляем в список недоступных
+        if (!isDirectOwner && !hasLessonsWithStudent) {
+          unauthorizedStudents.push(student);
+        }
+      }
+      
       if (unauthorizedStudents.length > 0) {
         return NextResponse.json(
           { error: 'Доступ запрещен к одному или нескольким ученикам' },

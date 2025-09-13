@@ -157,7 +157,7 @@ export default function MobileCalendar({
     // Пустые ячейки для начала месяца
     for (let i = 0; i < firstDay; i++) {
       days.push(
-        <div key={`empty-${i}`} className="h-16 border border-gray-200"></div>
+        <div key={`empty-${i}`} className="bg-white"></div>
       );
     }
 
@@ -166,38 +166,30 @@ export default function MobileCalendar({
       const dayLessons = lessonsByDay[day] || [];
       const isCurrentDay = isToday(day);
       const isSelectedDay = isSelected(day);
-      const isActiveDay = activeDay === day;
 
       days.push(
         <div
           key={day}
-          className={`mobile-calendar-day h-20 border border-gray-200 p-2 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation ${
+          className={`mobile-calendar-day p-3 cursor-pointer hover:bg-gray-50 touch-manipulation ${
             isCurrentDay ? 'bg-blue-50' : ''
-          } ${isSelectedDay ? 'bg-blue-100' : ''} ${
-            isActiveDay ? 'touch-active' : ''
-          }`}
+          } ${isSelectedDay ? 'bg-blue-100' : ''}`}
           onClick={() => {
-            console.log('MobileCalendar: onClick для дня:', day);
-            handleDayPress(day);
-          }}
-          onTouchEnd={() => {
-            console.log('MobileCalendar: onTouchEnd для дня:', day);
             handleDayPress(day);
           }}
           style={{ 
-            minHeight: '80px',
             WebkitTapHighlightColor: 'transparent',
             WebkitTouchCallout: 'none',
             WebkitUserSelect: 'none',
             userSelect: 'none'
           }}
         >
-          <div className="flex justify-between items-center mb-1">
-            <span className={`text-base font-semibold ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
+          {/* Верхняя часть с номером дня и индикатором */}
+          <div className="flex justify-between items-start">
+            <span className={`text-lg font-semibold ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
               {day}
             </span>
             {dayLessons.length > 0 && (
-              <span className={`text-sm text-white rounded-full w-6 h-6 flex items-center justify-center font-bold ${
+              <span className={`text-xs text-white rounded-full w-5 h-5 flex items-center justify-center font-bold ${
                 dayLessons.length === 1 ? 'bg-green-500' : 
                 dayLessons.length === 2 ? 'bg-yellow-500' : 
                 dayLessons.length >= 3 ? 'bg-red-500' : 'bg-blue-500'
@@ -206,12 +198,28 @@ export default function MobileCalendar({
               </span>
             )}
           </div>
-          {/* На мобильной версии показываем только количество занятий */}
-          {dayLessons.length > 0 && (
-            <div className="text-sm text-gray-500 text-center font-medium">
-              {dayLessons.length} занят{dayLessons.length === 1 ? 'ие' : dayLessons.length < 5 ? 'ия' : 'ий'}
-            </div>
-          )}
+          
+          {/* Нижняя часть с информацией о занятиях */}
+          <div className="flex-1 flex flex-col justify-end">
+            {dayLessons.length > 0 ? (
+              <div className="space-y-1">
+                {/* Показываем первое занятие */}
+                {dayLessons.slice(0, 1).map((lesson, index) => (
+                  <div key={index} className="text-xs p-1 bg-blue-100 text-blue-800 rounded truncate">
+                    {lesson.startTime || new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                ))}
+                {/* Если занятий больше одного, показываем "+N" */}
+                {dayLessons.length > 1 && (
+                  <div className="text-xs text-gray-500 text-center font-medium">
+                    +{dayLessons.length - 1}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="h-4"></div>
+            )}
+          </div>
         </div>
       );
     }
@@ -220,86 +228,50 @@ export default function MobileCalendar({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border">
-      {/* Заголовок календаря */}
-      <div className="mobile-calendar-header flex items-center justify-between p-4 border-b border-gray-200">
-        <h3 className="text-xl font-semibold text-gray-900">
+    <div className="mobile-calendar-container">
+      {/* Компактный заголовок календаря */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900">
           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </h3>
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <button
             onClick={() => navigateMonth('prev')}
-            className="mobile-calendar-nav-button p-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg touch-manipulation transition-colors duration-150"
+            className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg touch-manipulation transition-colors duration-150"
             style={{ 
               WebkitTapHighlightColor: 'transparent',
-              minWidth: '44px',
-              minHeight: '44px'
+              minWidth: '40px',
+              minHeight: '40px'
             }}
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={() => navigateMonth('next')}
-            className="mobile-calendar-nav-button p-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg touch-manipulation transition-colors duration-150"
+            className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg touch-manipulation transition-colors duration-150"
             style={{ 
               WebkitTapHighlightColor: 'transparent',
-              minWidth: '44px',
-              minHeight: '44px'
+              minWidth: '40px',
+              minHeight: '40px'
             }}
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {/* Дни недели */}
-      <div className="grid grid-cols-7 border-b border-gray-200">
+      <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
         {dayNames.map((day) => (
-          <div key={day} className="p-3 text-center text-base font-semibold text-gray-600 bg-gray-50">
+          <div key={day} className="py-2 text-center text-sm font-semibold text-gray-600">
             {day}
           </div>
         ))}
       </div>
 
-      {/* Календарная сетка */}
-      <div className="grid grid-cols-7">
+      {/* Календарная сетка - увеличенная */}
+      <div className="mobile-calendar-grid">
         {renderCalendarDays()}
-      </div>
-
-      {/* Легенда статусов */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-3 text-xs">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-blue-100 rounded"></div>
-              <span>Запланировано</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-100 rounded"></div>
-              <span>Проведено</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-yellow-100 rounded"></div>
-              <span>Предоплачено</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-purple-100 rounded"></div>
-              <span>Оплачено</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-orange-100 rounded"></div>
-              <span>Не оплачено</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-red-100 rounded"></div>
-              <span>Отменено</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 text-xs text-gray-600">
-            <History className="w-3 h-3" />
-            <span>Задним числом (с полосой)</span>
-          </div>
-        </div>
       </div>
 
       {/* Модальное окно для мобильной версии */}

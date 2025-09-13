@@ -51,12 +51,21 @@ export async function GET(
       )
     }
 
-    // Если не админ, проверяем, что занятие принадлежит пользователю
-    if (authUser.role !== 'ADMIN' && lesson.student.userId !== authUser.id) {
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      )
+    // Если не админ, проверяем права доступа к занятию
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, принадлежит ли ученик пользователю напрямую
+      const isStudentOwner = lesson.student.userId === authUser.id;
+      
+      // Проверяем, является ли пользователь учителем этого занятия
+      const isTeacher = lesson.teacherId === authUser.id;
+      
+      // Доступ разрешен, если пользователь владелец ученика или учитель занятия
+      if (!isStudentOwner && !isTeacher) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
     }
 
     return NextResponse.json(lesson)
@@ -124,12 +133,21 @@ export async function PUT(
       )
     }
 
-    // Если не админ, проверяем, что занятие принадлежит пользователю
-    if (authUser.role !== 'ADMIN' && existingLesson.student.userId !== authUser.id) {
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      )
+    // Если не админ, проверяем права доступа к занятию
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, принадлежит ли ученик пользователю напрямую
+      const isStudentOwner = existingLesson.student.userId === authUser.id;
+      
+      // Проверяем, является ли пользователь учителем этого занятия
+      const isTeacher = existingLesson.teacherId === authUser.id;
+      
+      // Доступ разрешен, если пользователь владелец ученика или учитель занятия
+      if (!isStudentOwner && !isTeacher) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
     }
 
     // Валидация переходов статусов согласно новой логике
@@ -270,12 +288,21 @@ export async function DELETE(
       )
     }
 
-    // Если не админ, проверяем, что занятие принадлежит пользователю
-    if (authUser.role !== 'ADMIN' && existingLesson.student.userId !== authUser.id) {
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      )
+    // Если не админ, проверяем права доступа к занятию
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, принадлежит ли ученик пользователю напрямую
+      const isStudentOwner = existingLesson.student.userId === authUser.id;
+      
+      // Проверяем, является ли пользователь учителем этого занятия
+      const isTeacher = existingLesson.teacherId === authUser.id;
+      
+      // Доступ разрешен, если пользователь владелец ученика или учитель занятия
+      if (!isStudentOwner && !isTeacher) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
     }
 
     await prisma.lesson.delete({

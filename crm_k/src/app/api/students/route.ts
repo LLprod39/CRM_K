@@ -14,15 +14,21 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Если админ - показываем всех учеников, иначе только тех, с кем проводил занятия
+    // Если админ - показываем всех учеников
+    // Если учитель - показываем своих назначенных учеников ИЛИ учеников, с которыми проводит/проводил занятия
     const whereClause = authUser.role === 'ADMIN' 
       ? {} 
       : {
-          lessons: {
-            some: {
-              teacherId: authUser.id
+          OR: [
+            { userId: authUser.id }, // Свои назначенные ученики
+            { 
+              lessons: {
+                some: {
+                  teacherId: authUser.id // Ученики, с которыми проводит/проводил занятия
+                }
+              }
             }
-          }
+          ]
         }
 
     const students = await prisma.student.findMany({

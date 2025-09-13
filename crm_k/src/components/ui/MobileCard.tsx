@@ -5,73 +5,40 @@ import { ReactNode } from 'react';
 
 interface MobileCardProps {
   children: ReactNode;
-  variant?: 'default' | 'stat' | 'glass' | 'gradient';
-  hover?: boolean;
-  padding?: 'none' | 'sm' | 'md' | 'lg';
   className?: string;
+  variant?: 'default' | 'modern' | 'stat' | 'gradient';
+  interactive?: boolean;
   onClick?: () => void;
-  animation?: 'fadeIn' | 'slideUp' | 'popIn' | 'bounceIn';
-  animationDelay?: number;
 }
 
-export default function MobileCard({
-  children,
+export default function MobileCard({ 
+  children, 
+  className, 
   variant = 'default',
-  hover = false,
-  padding = 'md',
-  className,
-  onClick,
-  animation = 'fadeIn',
-  animationDelay = 0,
+  interactive = false,
+  onClick
 }: MobileCardProps) {
-  const baseClasses = 'touch-manipulation';
+  const baseClasses = "relative overflow-hidden transition-all duration-300";
   
   const variantClasses = {
-    default: 'mobile-app-card',
-    stat: 'mobile-stat-card',
-    glass: 'bg-white/85 backdrop-blur-xl border border-white/30 rounded-2xl shadow-xl',
-    gradient: 'bg-gradient-to-br from-white/95 to-blue-50/90 backdrop-blur-xl border border-blue-100/20 rounded-2xl shadow-lg',
+    default: "mobile-app-card",
+    modern: "mobile-card-modern",
+    stat: "mobile-stat-modern",
+    gradient: "mobile-card-modern bg-gradient-to-br from-blue-50/80 via-purple-50/80 to-pink-50/80 border-blue-200/50"
   };
 
-  const paddingClasses = {
-    none: 'p-0',
-    sm: 'p-3',
-    md: 'p-5',
-    lg: 'p-6',
-  };
-
-  const animationClasses = {
-    fadeIn: 'animate-mobile-fade-in',
-    slideUp: 'animate-mobile-slide-up',
-    popIn: 'animate-mobile-pop-in',
-    bounceIn: 'animate-mobile-bounce-in',
-  };
-
-  const cardClasses = cn(
-    baseClasses,
-    variantClasses[variant],
-    paddingClasses[padding],
-    hover && 'mobile-app-card-hover cursor-pointer',
-    animationClasses[animation],
-    className
-  );
-
-  const style = animationDelay > 0 ? { animationDelay: `${animationDelay}ms` } : undefined;
-
-  if (onClick) {
-    return (
-      <button
-        className={cardClasses}
-        onClick={onClick}
-        style={style}
-      >
-        {children}
-      </button>
-    );
-  }
+  const interactiveClasses = interactive ? "mobile-interactive-modern cursor-pointer" : "";
 
   return (
-    <div className={cardClasses} style={style}>
+    <div 
+      className={cn(
+        baseClasses,
+        variantClasses[variant],
+        interactiveClasses,
+        className
+      )}
+      onClick={onClick}
+    >
       {children}
     </div>
   );

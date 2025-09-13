@@ -73,10 +73,17 @@ export default function RootLayout({
               </div>
               
               {/* Мобильная версия */}
-              <div className="min-h-screen lg:hidden">
+              <div className="min-h-screen lg:hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
+                {/* Декоративные элементы фона */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse" />
+                  <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-300/10 to-indigo-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }} />
+                </div>
+                
                 <MobileHeader />
-                <main className="mobile-main-content mobile-scroll">
-                  <div className="animate-mobile-fade-in">
+                <main className="mobile-main-content mobile-scroll-smooth relative z-10 pb-safe-area">
+                  <div className="animate-mobile-fade-in px-1">
                     {children}
                   </div>
                 </main>

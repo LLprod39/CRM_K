@@ -304,8 +304,8 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
         </div>
       </div>
 
-      {/* Мобильная версия */}
-      <div className="md:hidden">
+      {/* Мобильная версия - полноэкранная */}
+      <div className="md:hidden mobile-fullscreen-calendar">
         <MobileCalendar
           lessons={lessons}
           onDateClick={onDateClick}

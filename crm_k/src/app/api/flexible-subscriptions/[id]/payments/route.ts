@@ -27,7 +27,10 @@ export async function GET(
 
     // Проверяем существование абонемента и права доступа
     const subscription = await (prisma as any).flexibleSubscription.findUnique({
-      where: { id: subscriptionId }
+      where: { id: subscriptionId },
+      include: {
+        student: true
+      }
     })
 
     if (!subscription) {
@@ -37,11 +40,28 @@ export async function GET(
       )
     }
 
-    if (authUser.role !== 'ADMIN' && subscription.userId !== authUser.id) {
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      )
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, принадлежит ли абонемент пользователю напрямую
+      const isDirectOwner = subscription.userId === authUser.id;
+      
+      // Проверяем, принадлежит ли ученик пользователю напрямую
+      const isStudentOwner = subscription.student.userId === authUser.id;
+      
+      // Проверяем, есть ли у пользователя занятия с этим учеником (как учитель)
+      const hasLessonsWithStudent = await prisma.lesson.findFirst({
+        where: {
+          studentId: subscription.studentId,
+          teacherId: authUser.id
+        }
+      });
+      
+      // Доступ разрешен, если пользователь владелец абонемента, владелец ученика или преподает ему
+      if (!isDirectOwner && !isStudentOwner && !hasLessonsWithStudent) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
     }
 
     const payments = await (prisma as any).flexibleSubscriptionPayment.findMany({

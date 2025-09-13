@@ -160,15 +160,17 @@ export default function SchedulePage() {
   }).slice(0, 3);
 
   return (
-    <div className="space-y-6">
-      {/* Заголовок и действия */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Расписание</h1>
-          <p className="mt-2 text-gray-600">
-            Управление расписанием занятий
-          </p>
-        </div>
+    <>
+      {/* Десктопная версия */}
+      <div className="space-y-6 hidden lg:block">
+        {/* Заголовок и действия */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Расписание</h1>
+            <p className="mt-2 text-gray-600">
+              Управление расписанием занятий
+            </p>
+          </div>
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3">
           <button 
             onClick={() => {
@@ -201,6 +203,7 @@ export default function SchedulePage() {
               Добавить занятие
             </button>
           )}
+        </div>
         </div>
       </div>
 
@@ -301,6 +304,93 @@ export default function SchedulePage() {
         </div>
       </div>
 
+      {/* Мобильная версия */}
+      <div className="lg:hidden">
+        {/* Минимальный заголовок */}
+        <div className="p-2 mb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900">Расписание</h1>
+              <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                {lessons.length}
+              </span>
+            </div>
+            
+            {/* Переключатель вида в компактном виде */}
+            <div className="flex bg-gray-100 rounded-xl p-0.5">
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'calendar'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600'
+                }`}
+              >
+                📅
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600'
+                }`}
+              >
+                📋
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Основной контент - календарь в полноэкранном режиме */}
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Загрузка...</p>
+          </div>
+        ) : viewMode === 'calendar' ? (
+          <CalendarComponent
+            lessons={lessons}
+            onLessonClick={handleLessonClick}
+            onDateClick={handleDateClick}
+            onAddLesson={handleAddLesson}
+            currentDate={selectedDate}
+            userRole={user?.role}
+          />
+        ) : (
+          <div className="p-2">
+            {/* Компактные фильтры только для списка */}
+            <div className="mb-4 p-3 bg-white rounded-xl border border-gray-200">
+              <LessonFilters
+                filters={filters}
+                onFiltersChange={setFilters}
+                students={[]}
+              />
+            </div>
+            
+            <div className="bg-white rounded-xl border border-gray-200">
+              <LessonsList
+                lessons={lessons}
+                onLessonClick={handleLessonClick}
+                onEditLesson={handleEditLesson}
+                selectedDate={selectedDate}
+                userRole={user?.role}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Кнопка добавления в нижнем правом углу */}
+        {user?.role === 'ADMIN' && (
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="fixed bottom-20 right-4 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center z-40 hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
+        )}
+      </div>
+
       {/* Формы */}
       <AddLessonForm
         isOpen={showAddForm}
@@ -320,6 +410,6 @@ export default function SchedulePage() {
         lesson={selectedLesson}
         userRole={user?.role}
       />
-    </div>
+    </>
   );
 }

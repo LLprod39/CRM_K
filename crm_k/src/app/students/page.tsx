@@ -472,6 +472,170 @@ export default function StudentsPage() {
         </div>
       </div>
 
+      {/* Мобильная версия */}
+      <div className="lg:hidden space-y-6 p-4">
+        {/* Заголовок и поиск */}
+        <div className="mobile-card-modern animate-mobile-bounce-in">
+          <div className="flex items-center mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 rounded-3xl mr-4 flex items-center justify-center shadow-lg">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h1 className="mobile-title-gradient text-left mb-0">Ученики</h1>
+              <p className="text-sm text-gray-600 font-medium">
+                {filteredStudents.length} {filteredStudents.length === 1 ? 'ученик' : 'учеников'}
+              </p>
+            </div>
+          </div>
+
+          {/* Поиск */}
+          <div className="relative mb-4">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Поиск по имени или телефону..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="mobile-input-modern pl-12"
+            />
+          </div>
+
+          {/* Фильтры */}
+          <div className="grid grid-cols-2 gap-3">
+            <select
+              value={ageFilter}
+              onChange={(e) => setAgeFilter(e.target.value)}
+              className="mobile-input-modern text-sm py-3"
+            >
+              <option value="">Все возрасты</option>
+              <option value="3-5">3-5 лет</option>
+              <option value="6-10">6-10 лет</option>
+              <option value="11-15">11-15 лет</option>
+              <option value="16+">16+ лет</option>
+            </select>
+            <select
+              value={diagnosisFilter}
+              onChange={(e) => setDiagnosisFilter(e.target.value)}
+              className="mobile-input-modern text-sm py-3"
+            >
+              <option value="">Все диагнозы</option>
+              <option value="РАС">РАС</option>
+              <option value="СДВГ">СДВГ</option>
+              <option value="ДЦП">ДЦП</option>
+              <option value="Другое">Другое</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Кнопка добавления */}
+        <button
+          onClick={() => setIsAddFormOpen(true)}
+          className="mobile-btn-gradient mobile-btn-primary w-full py-4 font-bold text-lg"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Добавить ученика
+        </button>
+
+        {/* Список учеников */}
+        <div className="space-y-3">
+          {loading ? (
+            <div className="mobile-card-modern text-center py-12">
+              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600 font-medium">Загрузка учеников...</p>
+            </div>
+          ) : filteredStudents.length === 0 ? (
+            <div className="mobile-card-modern text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-3xl mx-auto mb-4 flex items-center justify-center">
+                <Users className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Нет учеников</h3>
+              <p className="text-gray-600 mb-4">
+                {searchTerm || ageFilter || diagnosisFilter
+                  ? 'По вашему запросу ничего не найдено'
+                  : 'Добавьте первого ученика'}
+              </p>
+              <button
+                onClick={() => setIsAddFormOpen(true)}
+                className="mobile-btn-gradient mobile-btn-primary px-6 py-3"
+              >
+                Добавить ученика
+              </button>
+            </div>
+          ) : (
+            filteredStudents.map((student, index) => (
+              <div
+                key={student.id}
+                className="mobile-card-modern mobile-interactive-modern animate-mobile-pop-in"
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => handleView(student)}
+              >
+                <div className="flex items-center space-x-4">
+                  {/* Аватар */}
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                    {student.photoUrl ? (
+                      <img
+                        src={student.photoUrl}
+                        alt={student.fullName}
+                        className="w-full h-full object-cover rounded-2xl"
+                      />
+                    ) : (
+                      <span className="text-white font-bold text-lg">
+                        {student.fullName.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Информация */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">
+                      {student.fullName}
+                    </h3>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">
+                        {student.age} лет
+                      </span>
+                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">
+                        {student.diagnosis}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                      📱 {student.phone}
+                    </p>
+                    {student.parentName && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        👨‍👩‍👧‍👦 {student.parentName}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Действия */}
+                  <div className="flex flex-col space-y-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(student);
+                      }}
+                      className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center hover:bg-blue-200 transition-colors"
+                    >
+                      <Edit className="w-4 h-4 text-blue-600" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(student.id!);
+                      }}
+                      className="w-8 h-8 bg-red-100 rounded-xl flex items-center justify-center hover:bg-red-200 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* Форма добавления ученика */}
       <AddStudentForm
         isOpen={isAddFormOpen}
