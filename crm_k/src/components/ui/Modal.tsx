@@ -44,14 +44,14 @@ export default function Modal({
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
       
       {/* Modal container */}
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center p-4 lg:p-4 md:p-2 sm:p-1">
         <div 
-          className={`relative w-full ${sizeClasses[size]} transform transition-all ${className}`}
+          className={`relative w-full ${sizeClasses[size]} transform transition-all modal-mobile lg:modal-auto ${className}`}
           onClick={(e) => e.stopPropagation()}
           style={{ zIndex: 10000 }}
         >
           {/* Modal content с единым стилем */}
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+          <div className="bg-white rounded-2xl lg:rounded-2xl shadow-2xl overflow-hidden animate-scale-in lg:animate-scale-in animate-mobile-pop-in lg:animate-scale-in">
             {/* Header */}
             {(title || showCloseButton) && (
               <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-50/50">

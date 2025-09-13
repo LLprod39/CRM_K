@@ -118,7 +118,8 @@ export default function Home() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-8">
+      {/* Десктопная версия */}
+      <div className="space-y-8 hidden lg:block">
         {/* Заголовок */}
         <div className="text-center">
           <div className="flex items-center justify-center mb-4">
@@ -226,6 +227,118 @@ export default function Home() {
           </div>
         </div>
       </div>
+      </div>
+
+      {/* Мобильная версия */}
+      <div className="lg:hidden space-y-6 p-4">
+        {/* Приветственная карточка */}
+        <div className="mobile-app-card animate-mobile-bounce-in">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg animate-mobile-glow">
+              <span className="text-white text-2xl font-bold">
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
+              </span>
+            </div>
+            <h1 className="mobile-app-title">
+              Добро пожаловать!
+            </h1>
+            <p className="text-gray-600 font-medium">
+              {user?.name} • {user?.role === UserRole.ADMIN ? 'Администратор' : 'Пользователь'}
+            </p>
+          </div>
+        </div>
+
+        {/* Статистические карточки */}
+        <div className="grid grid-cols-2 gap-4">
+          {statCards.map((card, index) => (
+            <Link
+              key={card.title}
+              href={card.href}
+              className="animate-mobile-pop-in"
+              style={{ animationDelay: `${index * 150}ms` }}
+            >
+              <div className="mobile-stat-card text-center">
+                <div className={`w-12 h-12 mx-auto mb-3 rounded-2xl flex items-center justify-center bg-gradient-to-br ${
+                  card.color === 'blue' ? 'from-blue-400 to-blue-600' :
+                  card.color === 'green' ? 'from-green-400 to-green-600' :
+                  card.color === 'yellow' ? 'from-yellow-400 to-yellow-600' :
+                  'from-red-400 to-red-600'
+                } shadow-lg`}>
+                  <card.icon className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-lg font-bold text-gray-900 mb-1">
+                  {card.value}
+                </p>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  {card.title}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Быстрые действия */}
+        <div className="mobile-app-card animate-mobile-slide-up" style={{ animationDelay: '800ms' }}>
+          <h2 className="mobile-app-subtitle flex items-center mb-4">
+            <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg mr-2"></div>
+            Быстрые действия
+          </h2>
+          <div className="space-y-3">
+            {quickActions.map((action, index) => (
+              <Link
+                key={action.title}
+                href={action.href}
+                className="flex items-center p-4 bg-gradient-to-r from-gray-50 to-white rounded-2xl border border-gray-100 hover:shadow-md transition-all duration-300 active:scale-98"
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-4 bg-gradient-to-br ${
+                  action.color === 'blue' ? 'from-blue-400 to-blue-600' :
+                  action.color === 'green' ? 'from-green-400 to-green-600' :
+                  'from-yellow-400 to-yellow-600'
+                } shadow-md`}>
+                  <action.icon className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 text-base leading-tight">
+                    {action.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {action.description}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Советы для начала работы */}
+        <div className="mobile-app-card animate-mobile-slide-up bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200" style={{ animationDelay: '1000ms' }}>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center animate-mobile-glow">
+              <span className="text-white text-2xl">💡</span>
+            </div>
+            <h3 className="font-bold text-gray-900 mb-2">Начните с базовых настроек</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              {user?.role === UserRole.ADMIN 
+                ? 'Добавьте первого ученика и запланируйте занятие для начала работы с системой'
+                : 'Просмотрите расписание и добавьте первого ученика'
+              }
+            </p>
+            <div className="flex space-x-2">
+              <Link
+                href="/students"
+                className="flex-1 mobile-app-button mobile-app-button-primary text-sm py-3"
+              >
+                Добавить ученика
+              </Link>
+              <Link
+                href="/schedule"
+                className="flex-1 mobile-app-button mobile-app-button-secondary text-sm py-3"
+              >
+                Расписание
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </ProtectedRoute>
   );

@@ -1,41 +1,317 @@
 @import "tailwindcss";
 
-/* Мобильная адаптивность для календаря */
+/* ===== МОБИЛЬНАЯ АДАПТИВНОСТЬ - APP-LIKE ДИЗАЙН ===== */
 @media (max-width: 768px) {
+  /* Базовые настройки для мобильного приложения */
+  html {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+  
+  body {
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    min-height: 100vh;
+  }
+  
+  /* Мобильная навигация в стиле приложения */
+  .mobile-app-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    height: 70px;
+    z-index: 1000;
+    padding: 8px 0 12px 0;
+    box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.08);
+  }
+  
+  .mobile-app-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 50px;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    margin: 0 4px;
+  }
+  
+  .mobile-app-nav-item:active {
+    transform: scale(0.95);
+    background: rgba(59, 130, 246, 0.1);
+  }
+  
+  .mobile-app-nav-item.active {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+  }
+  
+  .mobile-app-nav-icon {
+    width: 20px;
+    height: 20px;
+    margin-bottom: 4px;
+    transition: all 0.3s ease;
+  }
+  
+  .mobile-app-nav-item.active .mobile-app-nav-icon {
+    transform: scale(1.1);
+  }
+  
+  .mobile-app-nav-text {
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    opacity: 0.8;
+  }
+  
+  .mobile-app-nav-item.active .mobile-app-nav-text {
+    opacity: 1;
+  }
+  
+  /* Главный контент с отступом для навигации */
+  .mobile-main-content {
+    padding-bottom: 90px !important;
+    min-height: calc(100vh - 90px);
+  }
+  
+  /* Карточки в стиле приложения */
+  .mobile-app-card {
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    padding: 20px;
+    margin: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .mobile-app-card:active {
+    transform: scale(0.98);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  .mobile-app-card-hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+  
+  /* Кнопки в стиле приложения */
+  .mobile-app-button {
+    min-height: 48px;
+    min-width: 48px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-app-button:active {
+    transform: scale(0.95);
+  }
+  
+  .mobile-app-button-primary {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: none;
+  }
+  
+  .mobile-app-button-secondary {
+    background: rgba(255, 255, 255, 0.9);
+    color: #374151;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Инпуты в стиле приложения */
+  .mobile-app-input {
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 16px 20px;
+    font-size: 16px !important; /* Предотвращает зум на iOS */
+    min-height: 48px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  
+  .mobile-app-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+  }
+  
+  /* Календарь для мобильных */
   .mobile-calendar-day {
     min-height: 80px !important;
     padding: 12px !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px) !important;
+    margin: 2px !important;
+    transition: all 0.3s ease !important;
   }
   
   .mobile-calendar-day:active {
     transform: scale(0.95);
-    transition: transform 0.1s ease-in-out;
-  }
-  
-  .mobile-calendar-day.touch-active {
-    background-color: #e5e7eb !important;
-    transform: scale(0.95);
+    background: rgba(59, 130, 246, 0.1) !important;
   }
   
   .mobile-calendar-header {
-    padding: 16px !important;
+    padding: 20px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border-radius: 20px 20px 0 0 !important;
   }
   
   .mobile-calendar-nav-button {
-    min-width: 44px !important;
-    min-height: 44px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
     padding: 12px !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.3s ease !important;
   }
   
-  /* Модальные окна на мобильных устройствах */
+  .mobile-calendar-nav-button:active {
+    transform: scale(0.95);
+    background: rgba(59, 130, 246, 0.1) !important;
+  }
+  
+  /* Модальные окна в стиле приложения */
   .modal-mobile {
     max-height: 90vh !important;
-    margin: 20px !important;
+    margin: 16px !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
   }
   
   .modal-mobile .modal-content {
-    max-height: 80vh !important;
+    max-height: 75vh !important;
     overflow-y: auto !important;
+    border-radius: 20px !important;
+    padding: 24px !important;
+  }
+  
+  /* Заголовки в стиле приложения */
+  .mobile-app-title {
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  
+  .mobile-app-subtitle {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    color: #374151;
+    margin-bottom: 16px;
+  }
+  
+  /* Статистические карточки */
+  .mobile-stat-card {
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 20px;
+    margin: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .mobile-stat-card:active {
+    transform: scale(0.97);
+  }
+  
+  /* Анимации для мобильного приложения */
+  .mobile-fade-in {
+    animation: mobileFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .mobile-slide-up {
+    animation: mobileSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Улучшенная прокрутка */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Безопасная зона для iPhone */
+  .mobile-safe-area {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  
+  /* Улучшенные тени для глубины */
+  .mobile-depth-1 {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .mobile-depth-2 {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .mobile-depth-3 {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Эффекты для лучшего UX */
+  .mobile-gradient-border {
+    position: relative;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    padding: 2px;
+    border-radius: 20px;
+  }
+
+  .mobile-gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: white;
+    border-radius: 18px;
+    z-index: -1;
+  }
+
+  /* Улучшенные состояния для интерактивных элементов */
+  .mobile-interactive {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mobile-interactive:active {
+    transform: scale(0.98);
+  }
+
+  .mobile-interactive:hover {
+    transform: translateY(-1px);
   }
 }
 
@@ -174,7 +450,7 @@ h3 {
   font-size: 1.5rem;
 }
 
-/* Анимации */
+/* ===== АНИМАЦИИ ДЛЯ ДЕСКТОПА И МОБИЛЬНЫХ ===== */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -219,6 +495,101 @@ h3 {
   }
 }
 
+/* Мобильные анимации */
+@keyframes mobileFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mobileSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobileSlideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mobileSlideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mobilePopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  50% {
+    transform: scale(1.05) translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes mobileBounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mobileGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  }
+}
+
+@keyframes mobileNavPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
 }
@@ -233,6 +604,39 @@ h3 {
 
 .animate-scale-in {
   animation: scaleIn 0.2s ease-out;
+}
+
+/* Мобильные анимации */
+.animate-mobile-fade-in {
+  animation: mobileFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-mobile-slide-up {
+  animation: mobileSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-mobile-slide-in-left {
+  animation: mobileSlideInLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-mobile-slide-in-right {
+  animation: mobileSlideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-mobile-pop-in {
+  animation: mobilePopIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-mobile-bounce-in {
+  animation: mobileBounceIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-mobile-glow {
+  animation: mobileGlow 2s ease-in-out infinite;
+}
+
+.animate-mobile-nav-pulse {
+  animation: mobileNavPulse 1s ease-in-out infinite;
 }
 
 /* Улучшенные переходы */
