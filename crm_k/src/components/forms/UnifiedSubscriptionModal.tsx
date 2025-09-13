@@ -815,7 +815,8 @@ const FlexibleSubscriptionForm = ({
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {week.weekDays.map((day: any, dayIndex: number) => {
-                          const dayId = day.id || `${weekIndex}-${dayIndex}`;
+                          // Всегда используем строковый формат "weekIndex-dayIndex" для совместимости
+                          const dayId = `${weekIndex}-${dayIndex}`;
                           const isPaid = data.paidDayIds.includes(dayId);
                           const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
                           

@@ -42,6 +42,11 @@ export async function POST(
           include: {
             weekDays: true
           }
+        },
+        paidDays: {
+          include: {
+            day: true
+          }
         }
       }
     })
@@ -53,6 +58,12 @@ export async function POST(
       )
     }
 
+    // Создаем карту оплаченных дней для быстрого поиска
+    const paidDaysMap = new Map()
+    subscription.paidDays.forEach((paidDay: any) => {
+      paidDaysMap.set(paidDay.dayId, paidDay)
+    })
+
     // Генерируем уроки для каждой недели
     const lessonsToCreate = []
     
@@ -62,13 +73,28 @@ export async function POST(
         const lessonDate = calculateLessonDate(week.startDate, day.dayOfWeek, day.startTime)
         
         if (lessonDate >= subscription.startDate && lessonDate <= subscription.endDate) {
+          // Определяем статус платежа урока
+          let lessonPaymentStatus = 'UNPAID'
+          
+          if (subscription.paymentStatus === 'PAID') {
+            // Если абонемент полностью оплачен, все уроки оплачены
+            lessonPaymentStatus = 'PAID'
+          } else if (subscription.paymentStatus === 'PARTIAL') {
+            // Если абонемент частично оплачен, проверяем конкретный день
+            const paidDay = paidDaysMap.get(day.id)
+            if (paidDay && paidDay.isPaid) {
+              lessonPaymentStatus = 'PAID'
+            }
+          }
+
           lessonsToCreate.push({
             date: lessonDate,
             endTime: new Date(lessonDate.getTime() + (new Date(day.endTime).getTime() - new Date(day.startTime).getTime())),
             studentId: subscription.studentId,
             teacherId: subscription.userId,
             cost: day.cost,
-            isPaid: subscription.isPaid,
+            paymentStatus: lessonPaymentStatus,
+            isPaid: lessonPaymentStatus === 'PAID', // Для совместимости
             notes: day.notes,
             lessonType: 'individual',
             location: day.location

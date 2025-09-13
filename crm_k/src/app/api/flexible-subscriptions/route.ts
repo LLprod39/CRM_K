@@ -252,33 +252,88 @@ export async function POST(request: NextRequest) {
       if (body.paymentStatus === 'PARTIAL' && body.paidDayIds && body.paidDayIds.length > 0) {
         console.log('Создаем записи об оплаченных днях:', body.paidDayIds)
         
-        // Получаем все дни абонемента
+        // Получаем все дни абонемента с информацией о неделях
         const allDays = await (tx as any).flexibleSubscriptionDay.findMany({
           where: {
             week: {
               subscriptionId: newSubscription.id
             }
-          }
+          },
+          include: {
+            week: true
+          },
+          orderBy: [
+            { week: { weekNumber: 'asc' } },
+            { dayOfWeek: 'asc' }
+          ]
         })
 
-        // Создаем записи об оплаченных днях
-        const paidDaysData = body.paidDayIds.map((dayId: number) => {
-          const day = allDays.find((d: any) => d.id === dayId)
-          if (day) {
-            return {
+        // Создаем записи об оплаченных днях на основе позиции в неделе
+        const paidDaysData: any[] = []
+        
+        // Группируем дни по неделям
+        const daysByWeek = allDays.reduce((acc: any, day: any) => {
+          const weekNumber = day.week.weekNumber
+          if (!acc[weekNumber]) {
+            acc[weekNumber] = []
+          }
+          acc[weekNumber].push(day)
+          return acc
+        }, {})
+
+        // Обрабатываем каждый временный ID
+        body.paidDayIds.forEach((tempId: string | number, index: number) => {
+          console.log('Обрабатываем tempId:', tempId, 'тип:', typeof tempId, 'индекс:', index)
+          
+          let weekIndex: number, dayIndex: number
+          
+          if (typeof tempId === 'string' && tempId.includes('-')) {
+            // tempId имеет формат "weekIndex-dayIndex"
+            const parts = tempId.split('-').map(Number)
+            weekIndex = parts[0]
+            dayIndex = parts[1]
+          } else if (typeof tempId === 'number') {
+            // tempId - это число (timestamp или другой числовой ID)
+            // Используем индекс в массиве для определения позиции
+            weekIndex = 0 // Всегда первая неделя
+            dayIndex = index // Используем индекс в массиве paidDayIds
+            console.log(`Числовой tempId, используем позицию ${weekIndex}-${dayIndex} (индекс: ${index})`)
+          } else {
+            console.log('Неизвестный формат tempId:', tempId)
+            return
+          }
+          
+          const weekNumber = weekIndex + 1 // weekIndex начинается с 0, weekNumber с 1
+          console.log(`Обрабатываем позицию: weekIndex=${weekIndex}, dayIndex=${dayIndex}, weekNumber=${weekNumber}`)
+          
+          if (daysByWeek[weekNumber] && daysByWeek[weekNumber][dayIndex]) {
+            const day = daysByWeek[weekNumber][dayIndex]
+            console.log(`Найден день: ID ${day.id}, день недели ${day.dayOfWeek}`)
+            paidDaysData.push({
               subscriptionId: newSubscription.id,
               dayId: day.id,
               isPaid: true,
               paymentAmount: day.cost
-            }
+            })
+          } else {
+            console.log(`День не найден для позиции weekNumber=${weekNumber}, dayIndex=${dayIndex}`)
           }
-          return null
-        }).filter(Boolean)
+        })
 
         if (paidDaysData.length > 0) {
+          // Удаляем дублирующиеся записи по dayId
+          const uniquePaidDaysData = paidDaysData.filter((item, index, self) => 
+            index === self.findIndex(t => t.dayId === item.dayId)
+          )
+          
+          if (uniquePaidDaysData.length !== paidDaysData.length) {
+            console.log(`Удалено ${paidDaysData.length - uniquePaidDaysData.length} дублирующихся записей`)
+          }
+          
           await (tx as any).flexibleSubscriptionPaidDay.createMany({
-            data: paidDaysData
+            data: uniquePaidDaysData
           })
+          console.log('Создано записей об оплаченных днях:', uniquePaidDaysData.length)
         }
       }
 
