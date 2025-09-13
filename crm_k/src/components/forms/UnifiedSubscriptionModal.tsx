@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  X, Calendar, User, DollarSign, Clock, AlertCircle, 
+  X, Calendar, User as UserIcon, DollarSign, Clock, AlertCircle, 
   CheckCircle, Users, CalendarDays, Repeat, CreditCard,
   ChevronRight, Info, Calculator, Zap, Settings, Plus, Minus
 } from 'lucide-react';
-import { Student } from '@/types';
+import { Student, User, PaymentStatus, getPaymentStatusText, getPaymentStatusDescription } from '@/types';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/presentation/contexts';
 import Modal, { ModalSection, ModalFooter } from '@/components/ui/Modal';
@@ -30,6 +30,7 @@ interface RegularSubscriptionData {
   lessonType: 'individual' | 'group';
   notes: string;
   isPaid: boolean;
+  paymentStatus: PaymentStatus;
   schedulePattern: {
     type: 'weekly' | 'monthly' | 'custom';
     days: number[];
@@ -52,11 +53,14 @@ interface FlexibleSubscriptionData {
   startDate: string;
   endDate: string;
   description: string;
+  paymentStatus: PaymentStatus;
+  paidDayIds: number[]; // ID дней, которые оплачены (для PARTIAL статуса)
   weekSchedules: {
     weekNumber: number;
     startDate: string;
     endDate: string;
     weekDays: {
+      id?: number; // Добавляем ID для отслеживания оплаченных дней
       dayOfWeek: number;
       startTime: string;
       endTime: string;
@@ -484,6 +488,35 @@ const RegularSubscriptionForm = ({
         </div>
       </ModalSection>
 
+      {/* Статус платежа */}
+      <ModalSection icon={<CreditCard />} title="Статус платежа">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Статус платежа *
+          </label>
+          <select
+            name="paymentStatus"
+            value={data.paymentStatus}
+            onChange={handleChange}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              validationErrors.paymentStatus ? 'border-red-300' : 'border-gray-300'
+            }`}
+          >
+            <option value="UNPAID">Не оплачено - запланировано не оплачено</option>
+            <option value="PAID">Оплачено - идет в предоплату ученика</option>
+          </select>
+          {validationErrors.paymentStatus && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.paymentStatus}</p>
+          )}
+          <p className="mt-2 text-sm text-gray-600">
+            {data.paymentStatus === 'PAID' 
+              ? 'Все занятия будут созданы как оплаченные и добавлены в предоплату ученика'
+              : 'Все занятия будут созданы как неоплаченные'
+            }
+          </p>
+        </div>
+      </ModalSection>
+
       {/* Информационный блок */}
       {lessonsCount > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start">
@@ -526,10 +559,27 @@ const FlexibleSubscriptionForm = ({
   ];
 
   const addWeek = () => {
+    // Проверяем, что даты начала и окончания абонемента заполнены
+    if (!data.startDate || !data.endDate) {
+      alert('Сначала заполните даты начала и окончания абонемента');
+      return;
+    }
+    
+    // Вычисляем даты для новой недели на основе общей даты начала абонемента
+    const subscriptionStartDate = new Date(data.startDate);
+    const weekNumber = data.weekSchedules.length + 1;
+    
+    // Начинаем с даты начала абонемента + (номер недели - 1) * 7 дней
+    const weekStartDate = new Date(subscriptionStartDate);
+    weekStartDate.setDate(weekStartDate.getDate() + (weekNumber - 1) * 7);
+    
+    const weekEndDate = new Date(weekStartDate);
+    weekEndDate.setDate(weekEndDate.getDate() + 6); // Неделя = 7 дней, но конец на 6 дней позже
+    
     const newWeek = {
-      weekNumber: data.weekSchedules.length + 1,
-      startDate: '',
-      endDate: '',
+      weekNumber: weekNumber,
+      startDate: weekStartDate.toISOString().split('T')[0],
+      endDate: weekEndDate.toISOString().split('T')[0],
       weekDays: []
     };
     
@@ -548,6 +598,7 @@ const FlexibleSubscriptionForm = ({
 
   const addDayToWeek = (weekIndex: number) => {
     const newDay = {
+      id: Date.now() + Math.random(), // Генерируем уникальный ID
       dayOfWeek: 1,
       startTime: '10:00',
       endTime: '11:00',
@@ -654,6 +705,24 @@ const FlexibleSubscriptionForm = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Учитель *
+            </label>
+            <UserSelector
+              selectedUserId={data.userId || undefined}
+              onUserChange={(userId) => {
+                setData((prev: FlexibleSubscriptionData) => ({ ...prev, userId: userId || 0 }));
+              }}
+              placeholder="Выберите учителя..."
+              showUserCount={true}
+              className={validationErrors.userId ? 'border-red-300' : ''}
+            />
+            {validationErrors.userId && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.userId}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Дата начала *
             </label>
             <input
@@ -698,6 +767,92 @@ const FlexibleSubscriptionForm = ({
               placeholder="Описание абонемента"
             />
           </div>
+        </div>
+      </ModalSection>
+
+      {/* Статус платежа */}
+      <ModalSection icon={<CreditCard />} title="Статус платежа">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Статус платежа *
+            </label>
+            <select
+              value={data.paymentStatus}
+              onChange={(e) => setData((prev: FlexibleSubscriptionData) => ({ 
+                ...prev, 
+                paymentStatus: e.target.value as PaymentStatus,
+                paidDayIds: e.target.value === 'PARTIAL' ? prev.paidDayIds : []
+              }))}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                validationErrors.paymentStatus ? 'border-red-300' : 'border-gray-300'
+              }`}
+            >
+              <option value="UNPAID">Не оплачено - запланировано не оплачено</option>
+              <option value="PAID">Оплачено - идет в предоплату ученика</option>
+              <option value="PARTIAL">Частично оплачено - оплачены только выбранные дни</option>
+            </select>
+            {validationErrors.paymentStatus && (
+              <p className="mt-1 text-sm text-red-600">{validationErrors.paymentStatus}</p>
+            )}
+          </div>
+
+          {/* Выбор оплаченных дней для частичной оплаты */}
+          {data.paymentStatus === 'PARTIAL' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Выберите оплаченные дни
+              </label>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 mb-3">
+                  Отметьте дни, которые уже оплачены. Остальные дни будут созданы как неоплаченные.
+                </p>
+                <div className="space-y-2">
+                  {data.weekSchedules.map((week: any, weekIndex: number) => (
+                    <div key={weekIndex} className="border rounded-lg p-3">
+                      <h4 className="font-medium text-sm text-gray-800 mb-2">
+                        Неделя {week.weekNumber} ({week.startDate} - {week.endDate})
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {week.weekDays.map((day: any, dayIndex: number) => {
+                          const dayId = day.id || `${weekIndex}-${dayIndex}`;
+                          const isPaid = data.paidDayIds.includes(dayId);
+                          const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+                          
+                          return (
+                            <label key={dayIndex} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isPaid}
+                                onChange={(e) => {
+                                  const newPaidDayIds = e.target.checked
+                                    ? [...data.paidDayIds, dayId]
+                                    : data.paidDayIds.filter((id: any) => id !== dayId);
+                                  setData((prev: FlexibleSubscriptionData) => ({
+                                    ...prev,
+                                    paidDayIds: newPaidDayIds
+                                  }));
+                                }}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700">
+                                {dayNames[day.dayOfWeek]} ({day.startTime}-{day.endTime})
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {data.weekSchedules.length === 0 && (
+                  <p className="text-sm text-gray-500 italic">
+                    Сначала добавьте расписание недель, чтобы выбрать оплаченные дни.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </ModalSection>
 
@@ -916,6 +1071,7 @@ export default function UnifiedSubscriptionModal({
     lessonType: 'individual',
     notes: '',
     isPaid: false,
+    paymentStatus: 'UNPAID',
     schedulePattern: {
       type: 'weekly',
       days: [1, 3, 5], // По умолчанию Пн, Ср, Пт
@@ -939,6 +1095,8 @@ export default function UnifiedSubscriptionModal({
     startDate: '',
     endDate: '',
     description: '',
+    paymentStatus: 'UNPAID',
+    paidDayIds: [],
     weekSchedules: []
   });
 
@@ -987,11 +1145,14 @@ export default function UnifiedSubscriptionModal({
         startDate: new Date(editingSubscription.startDate).toISOString().split('T')[0],
         endDate: new Date(editingSubscription.endDate).toISOString().split('T')[0],
         description: editingSubscription.description || '',
+        paymentStatus: editingSubscription.paymentStatus || 'UNPAID',
+        paidDayIds: editingSubscription.paidDays?.map((pd: any) => pd.dayId) || [],
         weekSchedules: editingSubscription.weekSchedules.map((week: any) => ({
           weekNumber: week.weekNumber,
           startDate: new Date(week.startDate).toISOString().split('T')[0],
           endDate: new Date(week.endDate).toISOString().split('T')[0],
           weekDays: week.weekDays.map((day: any) => ({
+            id: day.id,
             dayOfWeek: day.dayOfWeek,
             startTime: new Date(day.startTime).toISOString().split('T')[0] + 'T' + new Date(day.startTime).toTimeString().split(' ')[0],
             endTime: new Date(day.endTime).toISOString().split('T')[0] + 'T' + new Date(day.endTime).toTimeString().split(' ')[0],
@@ -1144,6 +1305,9 @@ export default function UnifiedSubscriptionModal({
       if (!regularData.schedulePattern.time) {
         errors.time = 'Выберите время занятия';
       }
+      if (!regularData.paymentStatus) {
+        errors.paymentStatus = 'Выберите статус платежа';
+      }
     } else if (subscriptionType === 'flexible') {
       if (!flexibleData.name) {
         errors.name = 'Введите название абонемента';
@@ -1162,6 +1326,12 @@ export default function UnifiedSubscriptionModal({
       }
       if (!flexibleData.weekSchedules || flexibleData.weekSchedules.length === 0) {
         errors.weekSchedules = 'Добавьте расписание недель';
+      }
+      if (!flexibleData.paymentStatus) {
+        errors.paymentStatus = 'Выберите статус платежа';
+      }
+      if (flexibleData.paymentStatus === 'PARTIAL' && flexibleData.paidDayIds.length === 0) {
+        errors.paidDays = 'Выберите хотя бы один оплаченный день';
       }
     }
 
@@ -1194,7 +1364,8 @@ export default function UnifiedSubscriptionModal({
           studentIds: regularData.lessonType === 'group' ? selectedStudents.map(s => s.id) : undefined,
           cost: parseFloat(regularData.cost),
           userId: regularData.userId,
-          isPaid: false // Создаем как неоплаченные, предоплата их пометит как оплаченные
+          isPaid: regularData.paymentStatus === 'PAID', // Синхронизируем с paymentStatus
+          paymentStatus: regularData.paymentStatus
         };
         
         console.log('Отправляем данные для создания занятий:', JSON.stringify(requestData, null, 2));
@@ -1244,7 +1415,9 @@ export default function UnifiedSubscriptionModal({
         // Создание или редактирование гибкого абонемента
         const requestData = {
           ...flexibleData,
-          totalCost: flexibleTotalAmount
+          totalCost: flexibleTotalAmount,
+          // Преобразуем paidDayIds в правильный формат для API
+          paidDayIds: flexibleData.paymentStatus === 'PARTIAL' ? flexibleData.paidDayIds : []
         };
 
         const isEditing = !!editingSubscription;

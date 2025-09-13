@@ -10,6 +10,7 @@ interface BulkLessonData {
   lessonType: 'individual' | 'group';
   notes?: string;
   isPaid: boolean;
+  paymentStatus?: 'PAID' | 'UNPAID' | 'PARTIAL';
   schedulePattern: {
     type: 'weekly' | 'monthly';
     days: number[];
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
     // Теперь ученик остается у всех учителей, которые проводили с ним занятия
 
     // Генерируем даты занятий
-    const lessonsToCreate = generateLessonDates(body.schedulePattern, studentIds, body.cost, body.isPaid, body.notes);
+    const lessonsToCreate = generateLessonDates(body.schedulePattern, studentIds, body.cost, body.isPaid, body.notes, body.paymentStatus);
 
     if (lessonsToCreate.length === 0) {
       return NextResponse.json(
@@ -126,6 +127,7 @@ export async function POST(request: NextRequest) {
             cost: lessonData.cost,
             isCompleted: false,
             isPaid: lessonData.isPaid,
+            paymentStatus: lessonData.paymentStatus || 'UNPAID',
             isCancelled: false,
             notes: lessonData.notes || null,
             comment: null,
@@ -172,7 +174,8 @@ function generateLessonDates(
   studentIds: number[],
   cost: number,
   isPaid: boolean,
-  notes?: string
+  notes?: string,
+  paymentStatus?: 'PAID' | 'UNPAID' | 'PARTIAL'
 ) {
   const lessons: Array<{
     date: Date;
@@ -180,6 +183,7 @@ function generateLessonDates(
     studentId: number;
     cost: number;
     isPaid: boolean;
+    paymentStatus?: 'PAID' | 'UNPAID' | 'PARTIAL';
     notes?: string;
   }> = [];
   const startDate = new Date(schedulePattern.startDate);
@@ -205,6 +209,7 @@ function generateLessonDates(
           studentId: studentId,
           cost: cost,
           isPaid: isPaid,
+          paymentStatus: paymentStatus || 'UNPAID',
           notes: notes
         });
       }

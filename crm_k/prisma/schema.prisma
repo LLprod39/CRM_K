@@ -41,6 +41,13 @@ enum UserRole {
   USER   // Обычный пользователь - видит только своих учеников
 }
 
+// Статусы платежей для абонементов
+enum PaymentStatus {
+  PAID     // Оплачено - идет в предоплату ученика
+  UNPAID   // Не оплачено - запланировано не оплачено
+  PARTIAL  // Частично оплачено - оплачены только выбранные дни
+}
+
 // Модель ученика
 model Student {
   id          Int      @id @default(autoincrement())
@@ -76,21 +83,22 @@ model Student {
 
 // Модель занятия
 model Lesson {
-  id          Int      @id @default(autoincrement())
-  date        DateTime // Дата и время начала занятия
-  endTime     DateTime // Дата и время окончания занятия
-  studentId   Int      // ID ученика
-  teacherId   Int      // ID учителя, который проводил занятие
-  cost        Float    // Стоимость занятия
-  isCompleted Boolean  @default(false) // Проведено ли занятие
-  isPaid      Boolean  @default(false) // Оплачено ли занятие
-  isCancelled Boolean  @default(false) // Отменено ли занятие
-  notes       String?  // Заметки к занятию
-  comment     String?  // Комментарий о поведении ребенка на занятии
-  lessonType  String   @default("individual") // Тип занятия: individual, group
-  location    String   @default("office") // Место проведения: office, online, home
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            Int           @id @default(autoincrement())
+  date          DateTime      // Дата и время начала занятия
+  endTime       DateTime      // Дата и время окончания занятия
+  studentId     Int           // ID ученика
+  teacherId     Int           // ID учителя, который проводил занятие
+  cost          Float         // Стоимость занятия
+  isCompleted   Boolean       @default(false) // Проведено ли занятие
+  isPaid        Boolean       @default(false) // Оплачено ли занятие (deprecated, используйте paymentStatus)
+  paymentStatus PaymentStatus @default(UNPAID) // Статус платежа занятия
+  isCancelled   Boolean       @default(false) // Отменено ли занятие
+  notes         String?       // Заметки к занятию
+  comment       String?       // Комментарий о поведении ребенка на занятии
+  lessonType    String         @default("individual") // Тип занятия: individual, group
+  location      String         @default("office") // Место проведения: office, online, home
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   
   // Связь с учеником
   student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -192,17 +200,18 @@ model LunchBreak {
 
 // Модель гибкого абонемента
 model FlexibleSubscription {
-  id          Int      @id @default(autoincrement())
-  name        String   // Название абонемента
-  studentId   Int      // ID ученика
-  userId      Int      // ID пользователя-владельца
-  startDate   DateTime // Дата начала абонемента
-  endDate     DateTime // Дата окончания абонемента
-  totalCost   Float    // Общая стоимость абонемента
-  isPaid      Boolean  @default(false) // Оплачен ли абонемент
-  description String?  // Описание абонемента
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            Int           @id @default(autoincrement())
+  name          String        // Название абонемента
+  studentId     Int           // ID ученика
+  userId        Int           // ID пользователя-владельца
+  startDate     DateTime      // Дата начала абонемента
+  endDate       DateTime      // Дата окончания абонемента
+  totalCost     Float         // Общая стоимость абонемента
+  isPaid        Boolean       @default(false) // Оплачен ли абонемент (deprecated, используйте paymentStatus)
+  paymentStatus PaymentStatus @default(UNPAID) // Статус платежа абонемента
+  description   String?       // Описание абонемента
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   
   // Связи
   student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -213,6 +222,9 @@ model FlexibleSubscription {
   
   // Связь с платежами
   payments    FlexibleSubscriptionPayment[]
+  
+  // Связь с оплаченными днями
+  paidDays    FlexibleSubscriptionPaidDay[]
   
   @@map("flexible_subscriptions")
 }
@@ -252,6 +264,9 @@ model FlexibleSubscriptionDay {
   // Связи
   week              FlexibleSubscriptionWeek @relation(fields: [weekId], references: [id], onDelete: Cascade)
   
+  // Связь с оплаченными днями
+  paidDays          FlexibleSubscriptionPaidDay[]
+  
   @@map("flexible_subscription_days")
 }
 
@@ -269,4 +284,22 @@ model FlexibleSubscriptionPayment {
   subscription      FlexibleSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   
   @@map("flexible_subscription_payments")
+}
+
+// Модель для отслеживания оплаченных дней в абонементе
+model FlexibleSubscriptionPaidDay {
+  id                Int      @id @default(autoincrement())
+  subscriptionId   Int      // ID абонемента
+  dayId            Int      // ID дня недели в абонементе
+  isPaid            Boolean  @default(false) // Оплачен ли этот день
+  paymentAmount     Float?   // Сумма оплаты за этот день (если отличается от стандартной стоимости)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Связи
+  subscription      FlexibleSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  day               FlexibleSubscriptionDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  
+  @@unique([subscriptionId, dayId])
+  @@map("flexible_subscription_paid_days")
 }

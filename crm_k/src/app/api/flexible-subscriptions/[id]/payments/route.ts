@@ -5,7 +5,7 @@ import { getAuthUser } from '@/lib/auth'
 // GET /api/flexible-subscriptions/[id]/payments - получить платежи по абонементу
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authUser = getAuthUser(request)
@@ -16,7 +16,8 @@ export async function GET(
       )
     }
 
-    const subscriptionId = parseInt(params.id)
+    const resolvedParams = await params
+    const subscriptionId = parseInt(resolvedParams.id)
     if (isNaN(subscriptionId)) {
       return NextResponse.json(
         { error: 'Неверный ID абонемента' },
@@ -25,7 +26,7 @@ export async function GET(
     }
 
     // Проверяем существование абонемента и права доступа
-    const subscription = await prisma.flexibleSubscription.findUnique({
+    const subscription = await (prisma as any).flexibleSubscription.findUnique({
       where: { id: subscriptionId }
     })
 
@@ -43,7 +44,7 @@ export async function GET(
       )
     }
 
-    const payments = await prisma.flexibleSubscriptionPayment.findMany({
+    const payments = await (prisma as any).flexibleSubscriptionPayment.findMany({
       where: { subscriptionId },
       orderBy: { date: 'desc' }
     })
@@ -61,7 +62,7 @@ export async function GET(
 // POST /api/flexible-subscriptions/[id]/payments - добавить платеж по абонементу
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authUser = getAuthUser(request)
@@ -80,7 +81,8 @@ export async function POST(
       )
     }
 
-    const subscriptionId = parseInt(params.id)
+    const resolvedParams = await params
+    const subscriptionId = parseInt(resolvedParams.id)
     if (isNaN(subscriptionId)) {
       return NextResponse.json(
         { error: 'Неверный ID абонемента' },
@@ -99,7 +101,7 @@ export async function POST(
     }
 
     // Проверяем существование абонемента
-    const subscription = await prisma.flexibleSubscription.findUnique({
+    const subscription = await (prisma as any).flexibleSubscription.findUnique({
       where: { id: subscriptionId }
     })
 
@@ -111,7 +113,7 @@ export async function POST(
     }
 
     // Создаем платеж
-    const payment = await prisma.flexibleSubscriptionPayment.create({
+    const payment = await (prisma as any).flexibleSubscriptionPayment.create({
       data: {
         subscriptionId,
         amount: parseFloat(body.amount),
@@ -121,7 +123,7 @@ export async function POST(
     })
 
     // Проверяем, полностью ли оплачен абонемент
-    const totalPaid = await prisma.flexibleSubscriptionPayment.aggregate({
+    const totalPaid = await (prisma as any).flexibleSubscriptionPayment.aggregate({
       where: { subscriptionId },
       _sum: { amount: true }
     })
@@ -130,7 +132,7 @@ export async function POST(
 
     // Обновляем статус оплаты абонемента
     if (isFullyPaid && !subscription.isPaid) {
-      await prisma.flexibleSubscription.update({
+      await (prisma as any).flexibleSubscription.update({
         where: { id: subscriptionId },
         data: { isPaid: true }
       })

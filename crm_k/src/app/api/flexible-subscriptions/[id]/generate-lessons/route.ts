@@ -5,7 +5,7 @@ import { getAuthUser } from '@/lib/auth'
 // POST /api/flexible-subscriptions/[id]/generate-lessons - сгенерировать уроки из абонемента
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authUser = getAuthUser(request)
@@ -24,7 +24,8 @@ export async function POST(
       )
     }
 
-    const subscriptionId = parseInt(params.id)
+    const resolvedParams = await params
+    const subscriptionId = parseInt(resolvedParams.id)
     if (isNaN(subscriptionId)) {
       return NextResponse.json(
         { error: 'Неверный ID абонемента' },
@@ -33,7 +34,7 @@ export async function POST(
     }
 
     // Получаем абонемент с полными данными
-    const subscription = await prisma.flexibleSubscription.findUnique({
+    const subscription = await (prisma as any).flexibleSubscription.findUnique({
       where: { id: subscriptionId },
       include: {
         student: true,
@@ -65,6 +66,7 @@ export async function POST(
             date: lessonDate,
             endTime: new Date(lessonDate.getTime() + (new Date(day.endTime).getTime() - new Date(day.startTime).getTime())),
             studentId: subscription.studentId,
+            teacherId: subscription.userId,
             cost: day.cost,
             isPaid: subscription.isPaid,
             notes: day.notes,

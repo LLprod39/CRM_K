@@ -149,7 +149,7 @@ export default function FlexibleSubscriptionsList({ studentId }: FlexibleSubscri
             </div>
             <div className="text-right">
               <div className="text-lg font-semibold text-gray-900">
-                {subscription.totalCost.toLocaleString('ru-RU')} ₽
+                {subscription.totalCost.toLocaleString('ru-RU')} ₸
               </div>
               <div className={`text-sm ${subscription.isPaid ? 'text-green-600' : 'text-red-600'}`}>
                 {subscription.isPaid ? 'Оплачено' : 'Не оплачено'}
@@ -175,7 +175,7 @@ export default function FlexibleSubscriptionsList({ studentId }: FlexibleSubscri
                       <div key={day.id} className="bg-white p-2 rounded border text-xs">
                         <div className="font-medium">{getDayName(day.dayOfWeek)}</div>
                         <div>{formatTime(day.startTime)} - {formatTime(day.endTime)}</div>
-                        <div className="text-green-600">{day.cost} ₽</div>
+                        <div className="text-green-600">{day.cost} ₸</div>
                         <div className="text-gray-500">{day.location}</div>
                       </div>
                     ))}
@@ -193,7 +193,7 @@ export default function FlexibleSubscriptionsList({ studentId }: FlexibleSubscri
                 {subscription.payments.map(payment => (
                   <div key={payment.id} className="flex justify-between text-sm">
                     <span>{formatDate(payment.date)} - {payment.description}</span>
-                    <span className="text-green-600">{payment.amount.toLocaleString('ru-RU')} ₽</span>
+                    <span className="text-green-600">{payment.amount.toLocaleString('ru-RU')} ₸</span>
                   </div>
                 ))}
               </div>

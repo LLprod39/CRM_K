@@ -551,7 +551,7 @@ export default function FlexibleSubscriptionForm({
           {/* Общая стоимость */}
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="text-lg font-semibold text-blue-900">
-              Общая стоимость: {calculateTotalCost().toLocaleString('ru-RU')} ₽
+              Общая стоимость: {calculateTotalCost().toLocaleString('ru-RU')} ₸
             </div>
           </div>
 

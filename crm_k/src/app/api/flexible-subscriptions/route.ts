@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
-import { CreateFlexibleSubscriptionData } from '@/types'
+import { CreateFlexibleSubscriptionData, FlexibleSubscriptionDayFormData } from '@/types'
 
 // GET /api/flexible-subscriptions - получить все гибкие абонементы
 export async function GET(request: NextRequest) {
@@ -46,10 +46,19 @@ export async function GET(request: NextRequest) {
         user: true,
         weekSchedules: {
           include: {
-            weekDays: true
+            weekDays: {
+              include: {
+                paidDays: true
+              }
+            }
           }
         },
-        payments: true
+        payments: true,
+        paidDays: {
+          include: {
+            day: true
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'
@@ -91,7 +100,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body: CreateFlexibleSubscriptionData = await request.json()
+    const body: any = await request.json()
     console.log('Получены данные для создания абонемента:', body)
     
     // Валидация обязательных полей
@@ -115,6 +124,52 @@ export async function POST(request: NextRequest) {
         { error: 'Необходимо добавить хотя бы одну неделю расписания' },
         { status: 400 }
       )
+    }
+
+    // Валидация дат в расписании недель
+    for (const week of body.weekSchedules) {
+      if (!week.startDate || !week.endDate) {
+        console.log('Валидация не прошла - отсутствуют даты недели:', week)
+        return NextResponse.json(
+          { error: 'Необходимо заполнить даты начала и окончания для всех недель' },
+          { status: 400 }
+        )
+      }
+      
+      // Проверяем валидность дат
+      const startDate = new Date(week.startDate)
+      const endDate = new Date(week.endDate)
+      
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        console.log('Валидация не прошла - неверные даты недели:', week)
+        return NextResponse.json(
+          { error: 'Неверный формат дат в расписании недель' },
+          { status: 400 }
+        )
+      }
+      
+      // Проверяем даты дней недели
+      for (const day of week.weekDays) {
+        if (!day.startTime || !day.endTime) {
+          console.log('Валидация не прошла - отсутствует время дня:', day)
+          return NextResponse.json(
+            { error: 'Необходимо заполнить время начала и окончания для всех дней' },
+            { status: 400 }
+          )
+        }
+        
+        // Проверяем валидность времени
+        const startTime = new Date(`2000-01-01T${day.startTime}`)
+        const endTime = new Date(`2000-01-01T${day.endTime}`)
+        
+        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+          console.log('Валидация не прошла - неверное время дня:', day)
+          return NextResponse.json(
+            { error: 'Неверный формат времени в расписании дней' },
+            { status: 400 }
+          )
+        }
+      }
     }
 
     // Проверяем, что ученик существует
@@ -142,52 +197,92 @@ export async function POST(request: NextRequest) {
     }
 
     // Вычисляем общую стоимость
-    const totalCost = body.weekSchedules.reduce((total, week) => {
-      return total + week.weekDays.reduce((weekTotal, day) => weekTotal + day.cost, 0)
+    const totalCost = body.weekSchedules.reduce((total: number, week: any) => {
+      return total + week.weekDays.reduce((weekTotal: number, day: any) => weekTotal + (parseFloat(day.cost) || 0), 0)
     }, 0)
 
-    // Создаем абонемент с расписанием
+    // Создаем абонемент с расписанием в транзакции
     console.log('Начинаем создание абонемента в базе данных')
-    const subscription = await (prisma as any).flexibleSubscription.create({
-      data: {
-        name: body.name,
-        studentId: body.studentId,
-        userId: body.userId,
-        startDate: new Date(body.startDate),
-        endDate: new Date(body.endDate),
-        totalCost,
-        description: body.description,
-        weekSchedules: {
-          create: body.weekSchedules.map(week => ({
-            weekNumber: week.weekNumber,
-            startDate: new Date(week.startDate),
-            endDate: new Date(week.endDate),
-            weekDays: {
-              create: week.weekDays.map(day => ({
-                dayOfWeek: day.dayOfWeek,
-                startTime: new Date(day.startTime),
-                endTime: new Date(day.endTime),
-                cost: day.cost,
-                location: day.location || 'office',
-                notes: day.notes
-              }))
-            }
-          }))
-        }
-      },
-      include: {
-        student: {
-          include: {
-            user: true
+    const subscription = await prisma.$transaction(async (tx) => {
+      // Создаем абонемент
+      const newSubscription = await (tx as any).flexibleSubscription.create({
+        data: {
+          name: body.name,
+          studentId: body.studentId,
+          userId: body.userId,
+          startDate: new Date(body.startDate),
+          endDate: new Date(body.endDate),
+          totalCost,
+          paymentStatus: body.paymentStatus || 'UNPAID',
+          description: body.description,
+          weekSchedules: {
+            create: body.weekSchedules.map((week: any) => ({
+              weekNumber: week.weekNumber,
+              startDate: new Date(week.startDate),
+              endDate: new Date(week.endDate),
+              weekDays: {
+                create: week.weekDays.map((day: any) => ({
+                  dayOfWeek: day.dayOfWeek,
+                  startTime: new Date(`2000-01-01T${day.startTime}`),
+                  endTime: new Date(`2000-01-01T${day.endTime}`),
+                  cost: parseFloat(day.cost) || 0,
+                  location: day.location || 'office',
+                  notes: day.notes
+                }))
+              }
+            }))
           }
         },
-        user: true,
-        weekSchedules: {
-          include: {
-            weekDays: true
+        include: {
+          student: {
+            include: {
+              user: true
+            }
+          },
+          user: true,
+          weekSchedules: {
+            include: {
+              weekDays: true
+            }
           }
         }
+      })
+
+      // Если статус PARTIAL, создаем записи об оплаченных днях
+      if (body.paymentStatus === 'PARTIAL' && body.paidDayIds && body.paidDayIds.length > 0) {
+        console.log('Создаем записи об оплаченных днях:', body.paidDayIds)
+        
+        // Получаем все дни абонемента
+        const allDays = await (tx as any).flexibleSubscriptionDay.findMany({
+          where: {
+            week: {
+              subscriptionId: newSubscription.id
+            }
+          }
+        })
+
+        // Создаем записи об оплаченных днях
+        const paidDaysData = body.paidDayIds.map((dayId: number) => {
+          const day = allDays.find((d: any) => d.id === dayId)
+          if (day) {
+            return {
+              subscriptionId: newSubscription.id,
+              dayId: day.id,
+              isPaid: true,
+              paymentAmount: day.cost
+            }
+          }
+          return null
+        }).filter(Boolean)
+
+        if (paidDaysData.length > 0) {
+          await (tx as any).flexibleSubscriptionPaidDay.createMany({
+            data: paidDaysData
+          })
+        }
       }
+
+      return newSubscription
     })
 
     console.log('Абонемент успешно создан:', subscription.id)

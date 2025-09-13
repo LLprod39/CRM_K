@@ -5,7 +5,7 @@ import { apiRequest } from '@/lib/api'
 import UnifiedSubscriptionModal from '@/components/forms/UnifiedSubscriptionModal'
 
 interface Subscription {
-  id: string
+  id: string | number
   type: 'regular' | 'flexible'
   name: string
   student: {
@@ -74,13 +74,13 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
     }
   }
 
-  const handleDelete = async (subscriptionId: string) => {
+  const handleDelete = async (subscriptionId: string | number) => {
     if (!confirm('Вы уверены, что хотите удалить этот абонемент?')) {
       return
     }
 
     try {
-      if (subscriptionId.startsWith('regular_')) {
+      if (typeof subscriptionId === 'string' && subscriptionId.startsWith('regular_')) {
         // Удаление обычного абонемента (предоплаты)
         const paymentId = subscriptionId.replace('regular_', '')
         const response = await apiRequest(`/api/payments/${paymentId}`, {
@@ -113,8 +113,9 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
     }
   }
 
-  const generateLessons = async (subscriptionId: string) => {
-    if (subscriptionId.startsWith('regular_')) {
+  const generateLessons = async (subscriptionId: string | number) => {
+    // Проверяем, является ли ID строкой и начинается ли с 'regular_'
+    if (typeof subscriptionId === 'string' && subscriptionId.startsWith('regular_')) {
       alert('Создание уроков для обычных абонементов пока не поддерживается')
       return
     }
@@ -214,7 +215,7 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
             </div>
             <div className="text-right">
               <div className="text-lg font-semibold text-gray-900">
-                {subscription.totalCost.toLocaleString('ru-RU')} ₽
+                {subscription.totalCost.toLocaleString('ru-RU')} ₸
               </div>
               <div className={`text-sm ${subscription.isPaid ? 'text-green-600' : 'text-red-600'}`}>
                 {subscription.isPaid ? 'Оплачено' : 'Не оплачено'}
@@ -241,7 +242,7 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
                         <div key={day.id} className="bg-white p-2 rounded border text-xs">
                           <div className="font-medium">{getDayName(day.dayOfWeek)}</div>
                           <div>{formatTime(day.startTime)} - {formatTime(day.endTime)}</div>
-                          <div className="text-green-600">{day.cost} ₽</div>
+                          <div className="text-green-600">{day.cost} ₸</div>
                           <div className="text-gray-500">{day.location}</div>
                         </div>
                       ))}
@@ -260,7 +261,7 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
                 {subscription.payments.map((payment: any) => (
                   <div key={payment.id} className="flex justify-between text-sm">
                     <span>{formatDate(payment.date)} - {payment.description}</span>
-                    <span className="text-green-600">{payment.amount.toLocaleString('ru-RU')} ₽</span>
+                    <span className="text-green-600">{payment.amount.toLocaleString('ru-RU')} ₸</span>
                   </div>
                 ))}
               </div>

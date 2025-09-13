@@ -6,7 +6,7 @@ import { CreateFlexibleSubscriptionData } from '@/types'
 // GET /api/flexible-subscriptions/[id] - получить конкретный абонемент
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authUser = getAuthUser(request)
@@ -17,7 +17,8 @@ export async function GET(
       )
     }
 
-    const subscriptionId = parseInt(params.id)
+    const resolvedParams = await params
+    const subscriptionId = parseInt(resolvedParams.id)
     if (isNaN(subscriptionId)) {
       return NextResponse.json(
         { error: 'Неверный ID абонемента' },
@@ -81,7 +82,7 @@ export async function GET(
 // PUT /api/flexible-subscriptions/[id] - обновить абонемент
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authUser = getAuthUser(request)
@@ -100,7 +101,8 @@ export async function PUT(
       )
     }
 
-    const subscriptionId = parseInt(params.id)
+    const resolvedParams = await params
+    const subscriptionId = parseInt(resolvedParams.id)
     if (isNaN(subscriptionId)) {
       return NextResponse.json(
         { error: 'Неверный ID абонемента' },
@@ -228,7 +230,7 @@ export async function PUT(
 // DELETE /api/flexible-subscriptions/[id] - удалить абонемент
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authUser = getAuthUser(request)
@@ -247,7 +249,8 @@ export async function DELETE(
       )
     }
 
-    const subscriptionId = parseInt(params.id)
+    const resolvedParams = await params
+    const subscriptionId = parseInt(resolvedParams.id)
     if (isNaN(subscriptionId)) {
       return NextResponse.json(
         { error: 'Неверный ID абонемента' },
