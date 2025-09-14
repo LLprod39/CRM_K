@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, Clock, User, CheckCircle, ChevronRight, Wallet, TrendingUp, TrendingDown } from 'lucide-react'
+import { Calendar, Clock, User, CheckCircle, ChevronRight, Wallet } from 'lucide-react'
 import type { LessonWithStudent, Lesson } from '@/types'
 import { getLessonStatus, getLessonStatusText } from '@/types'
 
@@ -192,31 +192,19 @@ export default function LessonHistory() {
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">
-                          {studentBalance.student.fullName}
-                        </h4>
-                        <div className="flex items-center space-x-2">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getBalanceBgColor(studentBalance.balance)} ${getBalanceColor(studentBalance.balance)}`}>
-                            <Wallet className="w-3 h-3 mr-1" />
-                            {formatCurrency(studentBalance.balance)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="mt-1 flex items-center text-xs text-gray-500 space-x-4">
-                        <div className="flex items-center">
-                          <TrendingUp className="w-3 h-3 mr-1 text-green-500" />
-                          <span>Предоплата: {formatCurrency(studentBalance.prepaidAmount)}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <TrendingDown className="w-3 h-3 mr-1 text-red-500" />
-                          <span>Долг: {formatCurrency(studentBalance.debtAmount)}</span>
-                        </div>
-                      </div>
+                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                        {studentBalance.student.fullName}
+                      </h4>
                       <div className="mt-1 text-xs text-gray-400">
-                        Предоплаченных занятий: {studentBalance.prepaidLessonsCount} | Долгов: {studentBalance.debtLessonsCount}
+                        Предоплаченных занятий: {studentBalance.prepaidLessonsCount}
                       </div>
                     </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-lg font-bold ${getBalanceColor(studentBalance.balance)}`}>
+                      {formatCurrency(studentBalance.balance)}
+                    </div>
+                    <div className="text-xs text-gray-500">баланс</div>
                   </div>
                 </div>
               </div>
@@ -292,18 +280,8 @@ export default function LessonHistory() {
                                 Баланс: {formatCurrency(studentBalance.balance)}
                               </span>
                             </div>
-                            <div className="flex items-center space-x-6 text-sm text-gray-600">
-                              <div className="flex items-center">
-                                <TrendingUp className="w-4 h-4 mr-2 text-green-500" />
-                                <span className="font-medium">Предоплата: {formatCurrency(studentBalance.prepaidAmount)}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <TrendingDown className="w-4 h-4 mr-2 text-red-500" />
-                                <span>Долг: {formatCurrency(studentBalance.debtAmount)}</span>
-                              </div>
-                            </div>
                             <div className="mt-2 text-xs text-gray-500">
-                              Предоплаченных занятий: {studentBalance.prepaidLessonsCount} | Долгов: {studentBalance.debtLessonsCount}
+                              Предоплаченных занятий: {studentBalance.prepaidLessonsCount}
                             </div>
                           </div>
                         </div>
