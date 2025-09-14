@@ -17,8 +17,6 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [ageFilter, setAgeFilter] = useState('');
-  const [diagnosisFilter, setDiagnosisFilter] = useState('');
   const [teacherFilter, setTeacherFilter] = useState('');
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
@@ -75,20 +73,11 @@ export default function StudentsPage() {
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.phone.includes(searchTerm);
-    
-    const matchesAge = !ageFilter || (
-      ageFilter === '3-6' && student.age >= 3 && student.age <= 6 ||
-      ageFilter === '7-12' && student.age >= 7 && student.age <= 12 ||
-      ageFilter === '13-18' && student.age >= 13 && student.age <= 18
-    );
-    
-    const matchesDiagnosis = !diagnosisFilter || 
-      (student.diagnosis && student.diagnosis.toLowerCase().includes(diagnosisFilter.toLowerCase()));
 
     const matchesTeacher = !teacherFilter || 
       getMainTeacher(student).toLowerCase().includes(teacherFilter.toLowerCase());
 
-    return matchesSearch && matchesAge && matchesDiagnosis && matchesTeacher;
+    return matchesSearch && matchesTeacher;
   });
 
   // Удаление ученика
@@ -196,28 +185,8 @@ export default function StudentsPage() {
               />
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <select 
-              className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 focus:bg-white text-gray-900"
-              value={ageFilter}
-              onChange={(e) => setAgeFilter(e.target.value)}
-            >
-              <option value="">Все возрасты</option>
-              <option value="3-6">3-6 лет</option>
-              <option value="7-12">7-12 лет</option>
-              <option value="13-18">13-18 лет</option>
-            </select>
-            <select 
-              className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 focus:bg-white text-gray-900"
-              value={diagnosisFilter}
-              onChange={(e) => setDiagnosisFilter(e.target.value)}
-            >
-              <option value="">Все диагнозы</option>
-              <option value="аутизм">Аутизм</option>
-              <option value="зпр">ЗПР</option>
-              <option value="дцп">ДЦП</option>
-            </select>
-            {user?.role === 'ADMIN' && (
+          {user?.role === 'ADMIN' && (
+            <div className="flex flex-col sm:flex-row gap-3">
               <select 
                 className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 focus:bg-white text-gray-900"
                 value={teacherFilter}
@@ -228,8 +197,8 @@ export default function StudentsPage() {
                   <option key={teacher} value={teacher}>{teacher}</option>
                 ))}
               </select>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -419,28 +388,20 @@ export default function StudentsPage() {
               />
             </div>
             
-            <div className="flex space-x-2">
-              <select 
-                className="mobile-app-input flex-1 text-sm"
-                value={ageFilter}
-                onChange={(e) => setAgeFilter(e.target.value)}
-              >
-                <option value="">Все возрасты</option>
-                <option value="3-6">3-6 лет</option>
-                <option value="7-12">7-12 лет</option>
-                <option value="13-18">13-18 лет</option>
-              </select>
-              <select 
-                className="mobile-app-input flex-1 text-sm"
-                value={diagnosisFilter}
-                onChange={(e) => setDiagnosisFilter(e.target.value)}
-              >
-                <option value="">Все диагнозы</option>
-                <option value="аутизм">Аутизм</option>
-                <option value="зпр">ЗПР</option>
-                <option value="дцп">ДЦП</option>
-              </select>
-            </div>
+            {user?.role === 'ADMIN' && (
+              <div className="flex space-x-2">
+                <select 
+                  className="mobile-app-input flex-1 text-sm"
+                  value={teacherFilter}
+                  onChange={(e) => setTeacherFilter(e.target.value)}
+                >
+                  <option value="">Все учителя</option>
+                  {getUniqueTeachers().map(teacher => (
+                    <option key={teacher} value={teacher}>{teacher}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             {user?.role === 'ADMIN' && (
               <div className="mt-2">
                 <select 
@@ -571,38 +532,12 @@ export default function StudentsPage() {
           </div>
 
           {/* Фильтры */}
-          <div className="grid grid-cols-2 gap-3">
-            <select
-              value={ageFilter}
-              onChange={(e) => setAgeFilter(e.target.value)}
-              className="mobile-input-modern text-sm py-3"
-            >
-              <option value="">Все возрасты</option>
-              <option value="3-5">3-5 лет</option>
-              <option value="6-10">6-10 лет</option>
-              <option value="11-15">11-15 лет</option>
-              <option value="16+">16+ лет</option>
-            </select>
-            <select
-              value={diagnosisFilter}
-              onChange={(e) => setDiagnosisFilter(e.target.value)}
-              className="mobile-input-modern text-sm py-3"
-            >
-              <option value="">Все диагнозы</option>
-              <option value="РАС">РАС</option>
-              <option value="СДВГ">СДВГ</option>
-              <option value="ДЦП">ДЦП</option>
-              <option value="Другое">Другое</option>
-            </select>
-          </div>
-          
-          {/* Фильтр по учителю */}
           {user?.role === 'ADMIN' && (
-            <div className="mt-3">
+            <div className="grid grid-cols-1 gap-3">
               <select
                 value={teacherFilter}
                 onChange={(e) => setTeacherFilter(e.target.value)}
-                className="mobile-input-modern text-sm py-3 w-full"
+                className="mobile-input-modern text-sm py-3"
               >
                 <option value="">Все учителя</option>
                 {getUniqueTeachers().map(teacher => (
@@ -636,7 +571,7 @@ export default function StudentsPage() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Нет учеников</h3>
               <p className="text-gray-600 mb-4">
-                {searchTerm || ageFilter || diagnosisFilter
+                {searchTerm || teacherFilter
                   ? 'По вашему запросу ничего не найдено'
                   : 'Добавьте первого ученика'}
               </p>
