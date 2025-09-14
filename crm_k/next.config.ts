@@ -2,9 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  experimental: {
-    serverComponentsExternalPackages: ['whatsapp-web.js'],
-  },
+  serverExternalPackages: ['whatsapp-web.js'],
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Игнорируем проблемы с fstream для WhatsApp
