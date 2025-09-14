@@ -78,16 +78,18 @@ export default function PaymentHistory() {
   const getStatusColor = (lesson: Lesson) => {
     const status = getLessonStatus(lesson);
     switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800'
-      case 'prepaid':
-        return 'bg-blue-100 text-blue-800'
-      case 'cancelled':
-        return 'bg-red-100 text-red-800'
       case 'scheduled':
+        return 'bg-sky-100 text-sky-800'
+      case 'prepaid':
         return 'bg-yellow-100 text-yellow-800'
-      case 'unpaid':
+      case 'cancelled':
         return 'bg-orange-100 text-orange-800'
+      case 'completed':
+        return 'bg-purple-100 text-purple-800'
+      case 'debt':
+        return 'bg-red-100 text-red-800'
+      case 'unpaid':
+        return 'bg-yellow-100 text-yellow-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
