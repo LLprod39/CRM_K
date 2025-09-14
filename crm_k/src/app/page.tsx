@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles, AlertCircle, Clock } from 'lucide-react';
 import { UserRole } from '@/domain/entities/User';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -195,12 +195,12 @@ export default function Home() {
       {/* Последние действия */}
       <div className="bg-white/95 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200/50 animate-fade-in">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-          <Calendar className="w-6 h-6 text-green-600 mr-2" />
+          <Clock className="w-6 h-6 text-blue-600 mr-2" />
           Последние действия
         </h2>
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-8 h-8 text-gray-400" />
+            <Clock className="w-8 h-8 text-gray-400" />
           </div>
           <p className="text-gray-500 text-lg mb-2">Пока нет данных для отображения</p>
           <p className="text-sm text-gray-400">

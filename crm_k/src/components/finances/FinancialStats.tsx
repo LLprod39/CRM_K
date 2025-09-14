@@ -139,8 +139,8 @@ export default function FinancialStats({ period }: FinancialStatsProps) {
       {user?.role === 'ADMIN' && (
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <User className="w-6 h-6 text-indigo-600" />
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <User className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Доход от пользователя</p>
