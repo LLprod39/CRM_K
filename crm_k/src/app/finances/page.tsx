@@ -8,7 +8,7 @@ import DebtsList from '@/components/finances/DebtsList'
 import LessonHistory from '@/components/finances/LessonHistory'
 import PeriodFilters from '@/components/finances/PeriodFilters'
 import AddPaymentForm from '@/components/forms/AddPaymentForm'
-import PaymentsList from '@/components/finances/PaymentsList'
+import PaymentHistory from '@/components/finances/PaymentHistory'
 import Button from '@/components/ui/Button'
 import { printElement } from '@/lib/print'
 import { Student } from '@/types'
@@ -159,7 +159,7 @@ export default function FinancesPage() {
           <LessonHistory />
 
           {/* История платежей */}
-          <PaymentsList />
+          <PaymentHistory />
         </div>
       </div>
 
