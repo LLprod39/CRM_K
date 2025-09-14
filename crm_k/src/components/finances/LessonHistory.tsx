@@ -118,7 +118,7 @@ export default function LessonHistory() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-900">История предоплаты</h3>
           <p className="text-sm text-gray-500">
-            Последние предоплаченные занятия
+            Ученики с предоплаченными занятиями
           </p>
         </div>
         <div className="p-6">
@@ -152,7 +152,7 @@ export default function LessonHistory() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-900">История предоплаты</h3>
           <p className="text-sm text-gray-500">
-            Последние предоплаченные занятия
+            Ученики с предоплаченными занятиями
           </p>
         </div>
         <div className="p-6 text-center">
@@ -177,7 +177,7 @@ export default function LessonHistory() {
         <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
           <h3 className="text-lg font-medium text-gray-900">История предоплаты</h3>
           <p className="text-sm text-gray-500">
-            Последние предоплаченные занятия
+            Ученики с предоплаченными занятиями
           </p>
         </div>
         <div className="flex-1 overflow-hidden">
@@ -192,19 +192,19 @@ export default function LessonHistory() {
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                      <h4 className="text-base font-medium text-gray-900 truncate">
                         {studentBalance.student.fullName}
                       </h4>
-                      <div className="mt-1 text-xs text-gray-400">
+                      <div className="mt-1 text-sm text-gray-500">
                         Предоплаченных занятий: {studentBalance.prepaidLessonsCount}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-yellow-600">
+                    <div className="text-xl font-bold text-yellow-600">
                       {formatCurrency(studentBalance.balance)}
                     </div>
-                    <div className="text-xs text-gray-500">баланс</div>
+                    <div className="text-sm text-gray-500">баланс</div>
                   </div>
                 </div>
               </div>
@@ -272,25 +272,25 @@ export default function LessonHistory() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
-                              <h4 className="text-lg font-semibold text-gray-900">
+                              <h4 className="text-xl font-semibold text-gray-900">
                                 {studentBalance.student.fullName}
                               </h4>
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getBalanceBgColor(studentBalance.balance)} ${getBalanceColor(studentBalance.balance)}`}>
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-base font-medium ${getBalanceBgColor(studentBalance.balance)} ${getBalanceColor(studentBalance.balance)}`}>
                                 <Wallet className="w-4 h-4 mr-1" />
                                 Баланс: {formatCurrency(studentBalance.balance)}
                               </span>
                             </div>
-                            <div className="mt-2 text-xs text-gray-500">
+                            <div className="mt-2 text-sm text-gray-500">
                               Предоплаченных занятий: {studentBalance.prepaidLessonsCount}
                             </div>
                           </div>
                         </div>
                         
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-yellow-600 mb-1">
+                          <div className="text-3xl font-bold text-yellow-600 mb-1">
                             {formatCurrency(studentBalance.balance)}
                           </div>
-                          <div className="text-sm text-gray-500 font-medium">баланс</div>
+                          <div className="text-base text-gray-500 font-medium">баланс</div>
                         </div>
                       </div>
                     </div>
@@ -302,9 +302,9 @@ export default function LessonHistory() {
             {/* Подвал модального окна */}
             <div className="border-t border-gray-200 p-6 bg-gray-50 rounded-b-2xl">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-base text-gray-600">
                   <span className="font-medium">Общий баланс всех учеников:</span>
-                  <span className={`ml-2 text-lg font-bold ${getBalanceColor(studentBalances.reduce((sum, sb) => sum + sb.balance, 0))}`}>
+                  <span className={`ml-2 text-xl font-bold ${getBalanceColor(studentBalances.reduce((sum, sb) => sum + sb.balance, 0))}`}>
                     {formatCurrency(studentBalances.reduce((sum, sb) => sum + sb.balance, 0))}
                   </span>
                 </div>

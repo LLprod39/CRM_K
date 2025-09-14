@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Plus, Clock, Bell, Printer } from 'lucide-react';
+import { Calendar, Plus, Clock, Bell, Printer, CalendarDays } from 'lucide-react';
 import { LessonWithOptionalStudent, getLessonStatus } from '@/types';
 import CalendarComponent from '@/components/ui/Calendar';
 import LessonsList from '@/components/tables/LessonsList';
@@ -298,7 +298,7 @@ export default function SchedulePage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <Calendar className="w-6 h-6 text-purple-600" />
+              <CalendarDays className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Занятий в месяц</p>

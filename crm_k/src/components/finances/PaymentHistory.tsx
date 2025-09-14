@@ -179,19 +179,19 @@ export default function PaymentHistory() {
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                      <h4 className="text-base font-medium text-gray-900 truncate">
                         {studentData.student.fullName}
                       </h4>
-                      <div className="mt-1 text-xs text-gray-400">
+                      <div className="mt-1 text-sm text-gray-500">
                         Оплаченных занятий: {studentData.paidLessonsCount}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-green-600">
+                    <div className="text-xl font-bold text-green-600">
                       {formatCurrency(studentData.totalPaidAmount)}
                     </div>
-                    <div className="text-xs text-gray-500">оплачено</div>
+                    <div className="text-sm text-gray-500">оплачено</div>
                   </div>
                 </div>
               </div>
@@ -259,25 +259,25 @@ export default function PaymentHistory() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
-                              <h4 className="text-lg font-semibold text-gray-900">
+                              <h4 className="text-xl font-semibold text-gray-900">
                                 {studentData.student.fullName}
                               </h4>
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-green-100 text-green-800">
                                 <DollarSign className="w-4 h-4 mr-1" />
                                 Оплачено: {formatCurrency(studentData.totalPaidAmount)}
                               </span>
                             </div>
-                            <div className="mt-2 text-xs text-gray-500">
+                            <div className="mt-2 text-sm text-gray-500">
                               Оплаченных занятий: {studentData.paidLessonsCount}
                             </div>
                           </div>
                         </div>
                         
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-green-600 mb-1">
+                          <div className="text-3xl font-bold text-green-600 mb-1">
                             {formatCurrency(studentData.totalPaidAmount)}
                           </div>
-                          <div className="text-sm text-gray-500 font-medium">оплачено</div>
+                          <div className="text-base text-gray-500 font-medium">оплачено</div>
                         </div>
                       </div>
                     </div>
@@ -289,9 +289,9 @@ export default function PaymentHistory() {
             {/* Подвал модального окна */}
             <div className="border-t border-gray-200 p-6 bg-gray-50 rounded-b-2xl">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-base text-gray-600">
                   <span className="font-medium">Общая сумма платежей:</span>
-                  <span className="ml-2 text-lg font-bold text-green-600">
+                  <span className="ml-2 text-xl font-bold text-green-600">
                     {formatCurrency(paymentHistory.reduce((sum, sd) => sum + sd.totalPaidAmount, 0))}
                   </span>
                 </div>

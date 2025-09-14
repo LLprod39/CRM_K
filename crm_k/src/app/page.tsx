@@ -161,7 +161,7 @@ export default function Home() {
       {/* Быстрые действия */}
       <div className="bg-white/95 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200/50 animate-fade-in">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-          <Sparkles className="w-6 h-6 text-blue-600 mr-2" />
+          <Sparkles className="w-6 h-6 text-blue-600 mr-2 stroke-1.5" />
           Быстрые действия
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">

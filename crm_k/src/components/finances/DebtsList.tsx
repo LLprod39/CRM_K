@@ -128,19 +128,19 @@ export default function DebtsList() {
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                      <h4 className="text-base font-medium text-gray-900 truncate">
                         {debt.student.fullName}
                       </h4>
-                      <div className="mt-1 text-xs text-gray-400">
+                      <div className="mt-1 text-sm text-gray-500">
                         Неоплаченных занятий: {debt.unpaidLessons}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-red-600">
+                    <div className="text-xl font-bold text-red-600">
                       {formatCurrency(debt.totalDebt)}
                     </div>
-                    <div className="text-xs text-gray-500">задолженность</div>
+                    <div className="text-sm text-gray-500">задолженность</div>
                   </div>
                 </div>
               </div>
@@ -208,25 +208,25 @@ export default function DebtsList() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
-                              <h4 className="text-lg font-semibold text-gray-900">
+                              <h4 className="text-xl font-semibold text-gray-900">
                                 {debt.student.fullName}
                               </h4>
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-red-100 text-red-800">
                                 <AlertCircle className="w-4 h-4 mr-1" />
                                 Задолженность: {formatCurrency(debt.totalDebt)}
                               </span>
                             </div>
-                            <div className="mt-2 text-xs text-gray-500">
+                            <div className="mt-2 text-sm text-gray-500">
                               Неоплаченных занятий: {debt.unpaidLessons}
                             </div>
                           </div>
                         </div>
                         
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-red-600 mb-1">
+                          <div className="text-3xl font-bold text-red-600 mb-1">
                             {formatCurrency(debt.totalDebt)}
                           </div>
-                          <div className="text-sm text-gray-500 font-medium">задолженность</div>
+                          <div className="text-base text-gray-500 font-medium">задолженность</div>
                         </div>
                       </div>
                     </div>
@@ -238,9 +238,9 @@ export default function DebtsList() {
             {/* Подвал модального окна */}
             <div className="border-t border-gray-200 p-6 bg-gray-50 rounded-b-2xl">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-base text-gray-600">
                   <span className="font-medium">Общая сумма задолженностей:</span>
-                  <span className="ml-2 text-lg font-bold text-red-600">
+                  <span className="ml-2 text-xl font-bold text-red-600">
                     {formatCurrency(debts.reduce((sum, debt) => sum + debt.totalDebt, 0))}
                   </span>
                 </div>
