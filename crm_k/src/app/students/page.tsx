@@ -158,7 +158,7 @@ export default function StudentsPage() {
               Ученики
             </h1>
             <p className="mt-2 text-gray-600 text-lg">
-              Управление базой данных учеников ({filteredStudents.length} из {students.length})
+              Управление базой данных учеников
             </p>
           </div>
           <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3 animate-scale-in">
