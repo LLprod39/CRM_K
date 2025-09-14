@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Plus, Search, Edit, Trash2, Printer, X } from 'lucide-react';
+import { Users, Plus, Search, Edit, Trash2, Printer, X, User } from 'lucide-react';
 import { Student } from '@/types';
 import AddStudentForm from '@/components/forms/AddStudentForm';
 import EditStudentForm from '@/components/forms/EditStudentForm';
@@ -315,8 +315,8 @@ export default function StudentsPage() {
                             <div className="absolute inset-0 rounded-full bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           </div>
                         ) : (
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm group-hover:scale-105 transition-transform duration-300 shadow-sm">
-                            {student.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shadow-sm">
+                            <User className="w-6 h-6 text-purple-600" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -504,8 +504,8 @@ export default function StudentsPage() {
                       className="w-14 h-14 rounded-2xl object-cover border-2 border-gray-100"
                     />
                   ) : (
-                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                      {student.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center shadow-lg">
+                      <User className="w-7 h-7 text-purple-600" />
                     </div>
                   )}
                   
@@ -664,7 +664,7 @@ export default function StudentsPage() {
               >
                 <div className="flex items-center space-x-4">
                   {/* Аватар */}
-                  <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
                     {student.photoUrl ? (
                       <img
                         src={student.photoUrl}
@@ -672,9 +672,7 @@ export default function StudentsPage() {
                         className="w-full h-full object-cover rounded-2xl"
                       />
                     ) : (
-                      <span className="text-white font-bold text-lg">
-                        {student.fullName.charAt(0).toUpperCase()}
-                      </span>
+                      <User className="w-7 h-7 text-purple-600" />
                     )}
                   </div>
 
