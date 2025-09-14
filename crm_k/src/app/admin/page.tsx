@@ -17,6 +17,7 @@ import SystemSettings from '@/components/admin/SystemSettings'
 import SecurityLogs from '@/components/admin/SecurityLogs'
 import StudentAssignment from '@/components/admin/StudentAssignment'
 import CommandPalette from '@/components/admin/CommandPalette'
+import WhatsAppPage from '@/components/admin/WhatsAppPage'
 import { 
   Users, 
   UserCheck, 
@@ -48,7 +49,8 @@ import {
   PieChart,
   LineChart,
   Target,
-  Zap
+  Zap,
+  MessageSquare
 } from 'lucide-react'
 
 export default function AdminPage() {
@@ -59,7 +61,7 @@ export default function AdminPage() {
   const [showAddUserModal, setShowAddUserModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'lessons' | 'settings' | 'more'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'settings' | 'more'>('overview')
   const [moreTab, setMoreTab] = useState<'toys' | 'analytics' | 'security' | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -170,7 +172,7 @@ export default function AdminPage() {
   }
 
   const handleCommandPaletteNavigate = (tab: string, moreTab?: string) => {
-    setActiveTab(tab as 'overview' | 'users' | 'students' | 'lessons' | 'settings' | 'more')
+    setActiveTab(tab as 'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'settings' | 'more')
     setMoreTab(moreTab || null)
     setShowCommandPalette(false)
   }
@@ -289,7 +291,7 @@ export default function AdminPage() {
           <Zap className="w-5 h-5 mr-2 text-blue-500" />
           Быстрые действия
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <button
             onClick={handleAddUser}
             className="p-4 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors text-left"
@@ -315,6 +317,18 @@ export default function AdminPage() {
             <Calendar className="w-6 h-6 text-purple-600 mb-3" />
             <div className="font-medium text-gray-900">Создать занятие</div>
             <div className="text-sm text-gray-600">Новое занятие или абонемент</div>
+          </button>
+          
+          <button
+            onClick={() => {
+              setActiveTab('whatsapp')
+              setMoreTab(null)
+            }}
+            className="p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors text-left"
+          >
+            <MessageSquare className="w-6 h-6 text-green-600 mb-3" />
+            <div className="font-medium text-gray-900">WhatsApp</div>
+            <div className="text-sm text-gray-600">Отправить сообщение</div>
           </button>
           
           <button
@@ -634,6 +648,7 @@ export default function AdminPage() {
                   { tab: 'users', name: 'Пользователи', icon: Users },
                   { tab: 'students', name: 'Ученики', icon: UserCheck },
                   { tab: 'lessons', name: 'Занятия', icon: Calendar },
+                  { tab: 'whatsapp', name: 'WhatsApp', icon: MessageSquare },
                   { tab: 'settings', name: 'Настройки', icon: Settings }
                 ].map((item) => {
                   const isActive = activeTab === item.tab
@@ -641,7 +656,7 @@ export default function AdminPage() {
                     <button
                       key={item.tab}
                       onClick={() => {
-                        setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'settings' | 'more')
+                        setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'settings' | 'more')
                         setMoreTab(null)
                       }}
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -724,6 +739,7 @@ export default function AdminPage() {
                     { tab: 'users', name: 'Пользователи', icon: Users },
                     { tab: 'students', name: 'Ученики', icon: UserCheck },
                     { tab: 'lessons', name: 'Занятия', icon: Calendar },
+                    { tab: 'whatsapp', name: 'WhatsApp', icon: MessageSquare },
                     { tab: 'settings', name: 'Настройки', icon: Settings }
                   ].map((item) => {
                     const isActive = activeTab === item.tab
@@ -731,7 +747,7 @@ export default function AdminPage() {
                       <button
                         key={item.tab}
                         onClick={() => {
-                          setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'settings' | 'more')
+                          setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'settings' | 'more')
                           setMoreTab(null)
                           setShowMobileMenu(false)
                         }}
@@ -863,6 +879,7 @@ export default function AdminPage() {
               {activeTab === 'users' && 'Пользователи'}
               {activeTab === 'students' && 'Ученики'}
               {activeTab === 'lessons' && 'Занятия'}
+              {activeTab === 'whatsapp' && 'WhatsApp'}
               {activeTab === 'settings' && 'Настройки'}
               {activeTab === 'more' && moreTab === 'toys' && 'Игрушки'}
               {activeTab === 'more' && moreTab === 'analytics' && 'Аналитика'}
@@ -899,6 +916,11 @@ export default function AdminPage() {
               {activeTab === 'lessons' && (
                 <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
                   <LessonsManagement />
+                </div>
+              )}
+              {activeTab === 'whatsapp' && (
+                <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                  <WhatsAppPage />
                 </div>
               )}
               {activeTab === 'more' && moreTab === 'toys' && (
@@ -941,6 +963,7 @@ export default function AdminPage() {
         onAddUser={handleAddUser}
         onRefresh={() => fetchAdminStats(true)}
       />
+
     </ProtectedRoute>
   )
 }
