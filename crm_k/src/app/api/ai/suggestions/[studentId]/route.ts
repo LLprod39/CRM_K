@@ -38,3 +38,26 @@ export async function GET(
     );
   }
 }
+
+// DELETE - удалить все предложения для ученика
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ studentId: string }> }
+) {
+  try {
+    const { studentId: studentIdParam } = await params;
+    const studentId = parseInt(studentIdParam);
+
+    await prisma.aISuggestion.deleteMany({
+      where: { studentId }
+    });
+
+    return NextResponse.json({ message: 'Все предложения удалены' });
+  } catch (error) {
+    console.error('Ошибка при удалении предложений:', error);
+    return NextResponse.json(
+      { error: 'Ошибка при удалении предложений' }, 
+      { status: 500 }
+    );
+  }
+}

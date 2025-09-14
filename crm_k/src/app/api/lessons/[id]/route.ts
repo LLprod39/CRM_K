@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
+import { isValidStatusTransition, getCancellationInfo, getLessonStatus } from '@/lib/lessonStatusUtils'
 import { UpdateLessonData } from '@/types'
 
 // GET /api/lessons/[id] - получить занятие по ID
@@ -50,12 +51,21 @@ export async function GET(
       )
     }
 
-    // Если не админ, проверяем, что занятие принадлежит пользователю
-    if (authUser.role !== 'ADMIN' && lesson.student.userId !== authUser.id) {
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      )
+    // Если не админ, проверяем права доступа к занятию
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, принадлежит ли ученик пользователю напрямую
+      const isStudentOwner = lesson.student.userId === authUser.id;
+      
+      // Проверяем, является ли пользователь учителем этого занятия
+      const isTeacher = lesson.teacherId === authUser.id;
+      
+      // Доступ разрешен, если пользователь владелец ученика или учитель занятия
+      if (!isStudentOwner && !isTeacher) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
     }
 
     return NextResponse.json(lesson)
@@ -94,6 +104,20 @@ export async function PUT(
 
     const body: UpdateLessonData = await request.json()
 
+    // Если изменяется дата, проверяем, что она не в прошлом (только для не-админов)
+    if (body.date) {
+      const lessonDate = new Date(body.date);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Сбрасываем время для сравнения только по дате
+      
+      if (lessonDate < now && authUser.role !== 'ADMIN') {
+        return NextResponse.json(
+          { error: 'Нельзя изменять дату занятия на прошедшую' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Проверяем, существует ли занятие
     const existingLesson = await prisma.lesson.findUnique({
       where: { id },
@@ -109,12 +133,71 @@ export async function PUT(
       )
     }
 
-    // Если не админ, проверяем, что занятие принадлежит пользователю
-    if (authUser.role !== 'ADMIN' && existingLesson.student.userId !== authUser.id) {
+    // Если не админ, проверяем права доступа к занятию
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, принадлежит ли ученик пользователю напрямую
+      const isStudentOwner = existingLesson.student.userId === authUser.id;
+      
+      // Проверяем, является ли пользователь учителем этого занятия
+      const isTeacher = existingLesson.teacherId === authUser.id;
+      
+      // Доступ разрешен, если пользователь владелец ученика или учитель занятия
+      if (!isStudentOwner && !isTeacher) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
+    }
+
+    // Валидация переходов статусов согласно новой логике
+    const currentStatus = getLessonStatus(
+      existingLesson.isCompleted,
+      existingLesson.isPaid,
+      existingLesson.isCancelled,
+      existingLesson.date
+    );
+    
+    const newStatus = getLessonStatus(
+      body.isCompleted ?? existingLesson.isCompleted,
+      body.isPaid ?? existingLesson.isPaid,
+      body.isCancelled ?? existingLesson.isCancelled,
+      existingLesson.date
+    );
+
+    if (!isValidStatusTransition(currentStatus, newStatus)) {
       return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
+        { error: `Недопустимый переход статуса с "${currentStatus}" на "${newStatus}"` },
+        { status: 400 }
       )
+    }
+
+    // Если не админ, ограничиваем изменение статуса - можно менять только на отменено
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, что пользователь пытается изменить только статус отмены
+      const isOnlyChangingCancelled = (
+        (body.isCompleted === undefined || body.isCompleted === existingLesson.isCompleted) &&
+        (body.isPaid === undefined || body.isPaid === existingLesson.isPaid) &&
+        (body.isCancelled !== undefined && body.isCancelled !== existingLesson.isCancelled)
+      )
+
+      // Если пользователь пытается изменить другие статусы, запрещаем
+      if (!isOnlyChangingCancelled && (body.isCompleted !== undefined || body.isPaid !== undefined)) {
+        return NextResponse.json(
+          { error: 'Вы можете изменить только статус отмены занятия' },
+          { status: 403 }
+        )
+      }
+    }
+
+    // Если отменяем занятие, проверяем правила отмены
+    if (body.isCancelled === true && !existingLesson.isCancelled) {
+      const cancellationResult = getCancellationInfo(existingLesson.date, existingLesson.cost)
+      
+      // Логируем результат отмены для админов
+      if (authUser.role === 'ADMIN') {
+        console.log(`Отмена занятия ${id}: ${cancellationResult.refundDescription}`)
+      }
     }
 
     // Если изменяется studentId, проверяем существование ученика
@@ -140,7 +223,8 @@ export async function PUT(
         isCompleted: body.isCompleted,
         isPaid: body.isPaid,
         isCancelled: body.isCancelled,
-        notes: body.notes
+        notes: body.notes,
+        comment: body.comment
       },
       include: {
         student: true
@@ -171,6 +255,14 @@ export async function DELETE(
       )
     }
 
+    // Только администраторы могут удалять занятия
+    if (authUser.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Доступ запрещен. Только администраторы могут удалять занятия.' },
+        { status: 403 }
+      )
+    }
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
     
@@ -196,12 +288,21 @@ export async function DELETE(
       )
     }
 
-    // Если не админ, проверяем, что занятие принадлежит пользователю
-    if (authUser.role !== 'ADMIN' && existingLesson.student.userId !== authUser.id) {
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      )
+    // Если не админ, проверяем права доступа к занятию
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, принадлежит ли ученик пользователю напрямую
+      const isStudentOwner = existingLesson.student.userId === authUser.id;
+      
+      // Проверяем, является ли пользователь учителем этого занятия
+      const isTeacher = existingLesson.teacherId === authUser.id;
+      
+      // Доступ разрешен, если пользователь владелец ученика или учитель занятия
+      if (!isStudentOwner && !isTeacher) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
     }
 
     await prisma.lesson.delete({

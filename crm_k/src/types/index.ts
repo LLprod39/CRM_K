@@ -3,10 +3,11 @@ import { Student as PrismaStudent, Lesson as PrismaLesson, User as PrismaUser, U
 
 // Экспортируем типы из Prisma
 export type Student = PrismaStudent
-export type Lesson = PrismaLesson
+export type Lesson = PrismaLesson & { paymentStatus?: PaymentStatus }
 export type User = PrismaUser
 export type UserRole = PrismaUserRole
 export type Toy = PrismaToy
+export type PaymentStatus = 'PAID' | 'UNPAID' | 'PARTIAL'
 
 // Типы для предложений ИИ
 export interface AISuggestion {
@@ -24,26 +25,26 @@ export interface AISuggestion {
   updatedAt: Date;
 }
 
-// Типы для статусов уроков (теперь используем булевые поля)
-export type LessonStatus = 'scheduled' | 'completed' | 'paid' | 'cancelled' | 'prepaid' | 'unpaid'
+// Типы для статусов уроков согласно новой логике
+export type LessonStatus = 'scheduled' | 'prepaid' | 'cancelled' | 'completed' | 'debt' | 'unpaid'
 
 // Утилиты для работы со статусами
 export function getLessonStatus(lesson: Lesson): LessonStatus {
   if (lesson.isCancelled) return 'cancelled'
-  if (lesson.isCompleted && lesson.isPaid) return 'paid'
-  if (lesson.isCompleted && !lesson.isPaid) return 'completed'
-  if (!lesson.isCompleted && lesson.isPaid) return 'prepaid'
-  if (!lesson.isCompleted && !lesson.isPaid) return 'scheduled'
-  return 'unpaid'
+  if (lesson.isCompleted && lesson.isPaid) return 'completed' // Проведено + Оплачено = Оплачено (доход)
+  if (lesson.isCompleted && !lesson.isPaid) return 'debt' // Проведено без оплаты = Задолженность
+  if (!lesson.isCompleted && lesson.isPaid) return 'prepaid' // Предоплачено
+  if (!lesson.isCompleted && !lesson.isPaid) return 'scheduled' // Запланировано
+  return 'unpaid' // Не оплачено (резервный статус)
 }
 
 export function getLessonStatusText(status: LessonStatus): string {
   const statusMap = {
     scheduled: 'Запланировано',
-    completed: 'Проведено',
-    paid: 'Оплачено',
-    cancelled: 'Отменено',
     prepaid: 'Предоплачено',
+    cancelled: 'Отменено',
+    completed: 'Проведено',
+    debt: 'Задолженность',
     unpaid: 'Не оплачено'
   }
   return statusMap[status] || 'Неизвестно'
@@ -59,19 +60,50 @@ export function getCombinedLessonStatus(lesson: Lesson): string {
   return statuses.join(' + ')
 }
 
+// Утилиты для работы со статусами платежей абонементов
+export function getPaymentStatusText(status: PaymentStatus): string {
+  const statusMap = {
+    PAID: 'Оплачено',
+    UNPAID: 'Не оплачено',
+    PARTIAL: 'Частично оплачено'
+  }
+  return statusMap[status] || 'Неизвестно'
+}
+
+export function getPaymentStatusDescription(status: PaymentStatus): string {
+  const descriptions = {
+    PAID: 'Оплачено - идет в предоплату ученика',
+    UNPAID: 'Не оплачено - запланировано не оплачено',
+    PARTIAL: 'Частично оплачено - оплачены только выбранные дни'
+  }
+  return descriptions[status] || 'Неизвестный статус'
+}
+
+// Тип для студента с пользователем
+export type StudentWithUser = Student & {
+  user?: User
+}
+
 // Тип для урока с включенным студентом
 export type LessonWithStudent = Lesson & {
-  student: Student
+  student: StudentWithUser
 }
 
 // Тип для урока с опциональным студентом
 export type LessonWithOptionalStudent = Lesson & {
-  student?: Student
+  student?: StudentWithUser
+  groupLessons?: LessonWithOptionalStudent[] // Для групповых занятий
 }
 
 // Тип для студента с включенными уроками
 export type StudentWithLessons = Student & {
-  lessons: Lesson[]
+  lessons: (Lesson & {
+    teacher?: {
+      id: number;
+      name: string;
+      email: string;
+    }
+  })[]
 }
 
 // Типы для создания и обновления данных
@@ -82,6 +114,8 @@ export interface CreateStudentData {
   parentName: string;
   diagnosis?: string;
   comment?: string;
+  photoUrl?: string;
+  userId?: number; // ID пользователя (учителя) - для админов
 }
 
 export interface UpdateStudentData extends Partial<CreateStudentData> {
@@ -92,13 +126,16 @@ export interface CreateLessonData {
   date: Date;
   endTime: Date;
   studentId: number;
+  studentIds?: number[]; // Для групповых занятий
   cost: number;
   isCompleted?: boolean;
-  isPaid?: boolean;
+  isPaid?: boolean; // deprecated, используйте paymentStatus
+  paymentStatus?: PaymentStatus;
   isCancelled?: boolean;
   notes?: string;
+  comment?: string;
   lessonType?: 'individual' | 'group';
-  location?: 'office' | 'online' | 'home';
+  userId?: number; // ID пользователя (учителя) - для админов
 }
 
 export interface UpdateLessonData extends Partial<CreateLessonData> {
@@ -234,4 +271,142 @@ export interface AdminStats {
   recentStudents: Student[];
   recentLessons: Lesson[];
   usersWithStats: UserWithStats[];
+}
+
+// Типы для гибких абонементов
+export interface FlexibleSubscription {
+  id: number;
+  name: string;
+  studentId: number;
+  userId: number;
+  startDate: Date;
+  endDate: Date;
+  totalCost: number;
+  isPaid: boolean; // deprecated, используйте paymentStatus
+  paymentStatus: PaymentStatus;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  student?: Student;
+  user?: User;
+  weekSchedules?: FlexibleSubscriptionWeek[];
+  payments?: FlexibleSubscriptionPayment[];
+  paidDays?: FlexibleSubscriptionPaidDay[];
+}
+
+export interface FlexibleSubscriptionWeek {
+  id: number;
+  subscriptionId: number;
+  weekNumber: number;
+  startDate: Date;
+  endDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  subscription?: FlexibleSubscription;
+  weekDays?: FlexibleSubscriptionDay[];
+}
+
+export interface FlexibleSubscriptionDay {
+  id: number;
+  weekId: number;
+  dayOfWeek: number; // 0=воскресенье, 1=понедельник, ..., 6=суббота
+  startTime: Date;
+  endTime: Date;
+  cost: number;
+  location: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  week?: FlexibleSubscriptionWeek;
+}
+
+export interface FlexibleSubscriptionPayment {
+  id: number;
+  subscriptionId: number;
+  amount: number;
+  date: Date;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  subscription?: FlexibleSubscription;
+}
+
+export interface FlexibleSubscriptionPaidDay {
+  id: number;
+  subscriptionId: number;
+  dayId: number;
+  isPaid: boolean;
+  paymentAmount?: number;
+  createdAt: Date;
+  updatedAt: Date;
+  subscription?: FlexibleSubscription;
+  day?: FlexibleSubscriptionDay;
+}
+
+// Типы для создания гибкого абонемента
+export interface CreateFlexibleSubscriptionData {
+  name: string;
+  studentId: number;
+  userId: number;
+  startDate: Date;
+  endDate: Date;
+  description?: string;
+  paymentStatus: PaymentStatus;
+  paidDayIds?: number[]; // ID дней, которые оплачены (для PARTIAL статуса)
+  weekSchedules: CreateFlexibleSubscriptionWeekData[];
+}
+
+export interface CreateFlexibleSubscriptionWeekData {
+  weekNumber: number;
+  startDate: Date;
+  endDate: Date;
+  weekDays: CreateFlexibleSubscriptionDayData[];
+}
+
+export interface CreateFlexibleSubscriptionDayData {
+  dayOfWeek: number;
+  startTime: Date;
+  endTime: Date;
+  cost: number;
+  location?: string;
+  notes?: string;
+}
+
+// Типы для формы создания гибкого абонемента
+export interface FlexibleSubscriptionFormData {
+  name: string;
+  studentId: number;
+  userId: number;
+  startDate: string;
+  endDate: string;
+  description: string;
+  paymentStatus: PaymentStatus;
+  paidDayIds: number[]; // ID дней, которые оплачены (для PARTIAL статуса)
+  weekSchedules: FlexibleSubscriptionWeekFormData[];
+}
+
+export interface FlexibleSubscriptionWeekFormData {
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+  weekDays: FlexibleSubscriptionDayFormData[];
+}
+
+export interface FlexibleSubscriptionDayFormData {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  cost: string;
+  location: string;
+  notes: string;
+}
+
+// Тип для гибкого абонемента с полными данными
+export type FlexibleSubscriptionWithDetails = FlexibleSubscription & {
+  student: StudentWithUser;
+  user: User;
+  weekSchedules: (FlexibleSubscriptionWeek & {
+    weekDays: FlexibleSubscriptionDay[];
+  })[];
+  payments: FlexibleSubscriptionPayment[];
 }

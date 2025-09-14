@@ -7,7 +7,8 @@ import {
   Mail, 
   Lock, 
   Shield,
-  UserPlus
+  UserPlus,
+  Phone
 } from 'lucide-react'
 import { User as UserType, UserRole } from '@/types'
 import { cn } from '@/lib/utils'
@@ -19,6 +20,7 @@ interface AddUserModalProps {
     name: string
     email: string
     password: string
+    phone?: string
     role: UserRole
   }) => void
   editingUser?: UserType | null
@@ -36,6 +38,7 @@ export default function AddUserModal({
     name: editingUser?.name || '',
     email: editingUser?.email || '',
     password: '',
+    phone: editingUser?.phone || '',
     role: (editingUser?.role || 'USER') as UserRole
   })
 
@@ -45,7 +48,7 @@ export default function AddUserModal({
   }
 
   const handleClose = () => {
-    setFormData({ name: '', email: '', password: '', role: 'USER' })
+    setFormData({ name: '', email: '', password: '', phone: '', role: 'USER' })
     onClose()
   }
 
@@ -122,6 +125,28 @@ export default function AddUserModal({
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base"
                 />
               </div>
+            </div>
+
+            {/* Телефон */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Номер телефона (для уведомлений)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                </div>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="+7 (999) 123-45-67"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-base"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Номер телефона для получения уведомлений через WhatsApp
+              </p>
             </div>
 
             {/* Пароль */}

@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, User, Phone, Calendar, FileText, MessageSquare, Clock, DollarSign, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { LessonStatus, StudentWithLessons } from '@/types';
+import { ArrowLeft, Clock, AlertCircle, User, Phone, MessageSquare, CheckCircle, DollarSign, CreditCard } from 'lucide-react';
+import { StudentWithLessons, Lesson, getLessonStatus, getLessonStatusText } from '@/types';
 import { apiRequest } from '@/lib/api';
 import LessonSuggestions from '@/components/LessonSuggestions';
+import Card from '@/components/ui/Card';
 
 export default function StudentProfilePage() {
   const params = useParams();
@@ -39,44 +40,30 @@ export default function StudentProfilePage() {
     }
   };
 
-  const getStatusIcon = (status: LessonStatus) => {
-    switch (status) {
-      case 'COMPLETED':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'CANCELLED':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'PAID':
-        return <DollarSign className="w-4 h-4 text-blue-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-    }
+  const getStatusIcon = (lesson: Lesson) => {
+    // Иконки убраны для минималистичного дизайна
+    return null;
   };
 
-  const getStatusText = (status: LessonStatus) => {
-    switch (status) {
-      case 'SCHEDULED':
-        return 'Запланировано';
-      case 'COMPLETED':
-        return 'Проведено';
-      case 'CANCELLED':
-        return 'Отменено';
-      case 'PAID':
-        return 'Оплачено';
-      default:
-        return status;
-    }
+  const getStatusText = (lesson: Lesson) => {
+    return getLessonStatusText(getLessonStatus(lesson));
   };
 
-  const getStatusColor = (status: LessonStatus) => {
+  const getStatusColor = (lesson: Lesson) => {
+    const status = getLessonStatus(lesson);
     switch (status) {
-      case 'SCHEDULED':
+      case 'scheduled':
+        return 'bg-sky-100 text-sky-800';
+      case 'prepaid':
         return 'bg-yellow-100 text-yellow-800';
-      case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
+      case 'cancelled':
+        return 'bg-orange-100 text-orange-800';
+      case 'completed':
+        return 'bg-purple-100 text-purple-800';
+      case 'debt':
         return 'bg-red-100 text-red-800';
-      case 'PAID':
-        return 'bg-blue-100 text-blue-800';
+      case 'unpaid':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -93,16 +80,16 @@ export default function StudentProfilePage() {
   };
 
   const calculateStats = () => {
-    if (!student?.lessons) return { total: 0, completed: 0, totalCost: 0, paidCost: 0 };
+    if (!student?.lessons) return { total: 0, completed: 0, prepaid: 0, debtAmount: 0 };
 
     const total = student.lessons.length;
-    const completed = student.lessons.filter(lesson => lesson.status === 'COMPLETED').length;
-    const totalCost = student.lessons.reduce((sum, lesson) => sum + lesson.cost, 0);
-    const paidCost = student.lessons
-      .filter(lesson => lesson.status === 'PAID')
+    const completed = student.lessons.filter(lesson => lesson.isCompleted).length;
+    const prepaid = Math.max(0, student.balance || 0); // Только положительная предоплата
+    const debtAmount = student.lessons
+      .filter(lesson => lesson.isCompleted && !lesson.isPaid && !lesson.isCancelled)
       .reduce((sum, lesson) => sum + lesson.cost, 0);
 
-    return { total, completed, totalCost, paidCost };
+    return { total, completed, prepaid, debtAmount };
   };
 
   if (loading) {
@@ -144,14 +131,27 @@ export default function StudentProfilePage() {
         >
           <ArrowLeft className="w-6 h-6" />
         </button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{student.fullName}</h1>
-          <p className="mt-1 text-gray-600">Профиль ученика</p>
+        <div className="flex items-center space-x-4">
+          {student.photoUrl ? (
+            <img
+              src={student.photoUrl}
+              alt={student.fullName}
+              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+            />
+          ) : (
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+              <User className="w-8 h-8 text-purple-600" />
+            </div>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{student.fullName}</h1>
+            <p className="mt-1 text-gray-600">Профиль ученика</p>
+          </div>
         </div>
       </div>
 
       {/* Основная информация */}
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Основная информация</h2>
         </div>
@@ -161,8 +161,8 @@ export default function StudentProfilePage() {
               <div className="flex items-center space-x-3">
                 <User className="w-5 h-5 text-gray-400" />
                 <div>
-                  <p className="text-sm font-medium text-gray-500">ФИО</p>
-                  <p className="text-sm text-gray-900">{student.fullName}</p>
+                  <p className="text-sm font-medium text-gray-500">ФИО Родителя</p>
+                  <p className="text-sm text-gray-900">{student.parentName}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
@@ -175,22 +175,15 @@ export default function StudentProfilePage() {
             </div>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
-                <Calendar className="w-5 h-5 text-gray-400" />
+                <User className="w-5 h-5 text-gray-400" />
                 <div>
                   <p className="text-sm font-medium text-gray-500">Возраст</p>
                   <p className="text-sm text-gray-900">{student.age} лет</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <User className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Родитель</p>
-                  <p className="text-sm text-gray-900">{student.parentName}</p>
-                </div>
-              </div>
               {student.diagnosis && (
                 <div className="flex items-center space-x-3">
-                  <FileText className="w-5 h-5 text-gray-400" />
+                  <User className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium text-gray-500">Диагноз</p>
                     <p className="text-sm text-gray-900">{student.diagnosis}</p>
@@ -199,23 +192,29 @@ export default function StudentProfilePage() {
               )}
             </div>
           </div>
-          {student.comment && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex items-start space-x-3">
-                <MessageSquare className="w-5 h-5 text-gray-400 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Комментарий</p>
-                  <p className="text-sm text-gray-900 mt-1">{student.comment}</p>
-                </div>
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="flex items-start space-x-3">
+              <MessageSquare className="w-5 h-5 text-gray-400 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-500">Комментарий</p>
+                {student.comment ? (
+                  <p className="text-sm text-gray-900 mt-1 bg-gray-50 p-3 rounded-lg border">
+                    {student.comment}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-400 italic mt-1">
+                    Комментарий не добавлен
+                  </p>
+                )}
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
       {/* Статистика занятий */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <Card className="p-6">
           <div className="flex items-center">
             <Clock className="w-8 h-8 text-blue-500" />
             <div className="ml-4">
@@ -223,8 +222,8 @@ export default function StudentProfilePage() {
               <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        </Card>
+        <Card className="p-6">
           <div className="flex items-center">
             <CheckCircle className="w-8 h-8 text-green-500" />
             <div className="ml-4">
@@ -232,32 +231,32 @@ export default function StudentProfilePage() {
               <p className="text-2xl font-semibold text-gray-900">{stats.completed}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        </Card>
+        <Card className="p-6">
           <div className="flex items-center">
             <DollarSign className="w-8 h-8 text-yellow-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Общая стоимость</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalCost.toLocaleString()} ₸</p>
+              <p className="text-sm font-medium text-gray-500">Предоплата</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.prepaid.toLocaleString()} ₸</p>
             </div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        </Card>
+        <Card className="p-6">
           <div className="flex items-center">
-            <DollarSign className="w-8 h-8 text-green-500" />
+            <AlertCircle className="w-8 h-8 text-red-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Оплачено</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.paidCost.toLocaleString()} ₸</p>
+              <p className="text-sm font-medium text-gray-500">Задолженность</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.debtAmount.toLocaleString()} ₸</p>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Предложения занятий от ИИ */}
       <LessonSuggestions studentId={student.id} />
 
       {/* История занятий */}
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">История занятий</h2>
         </div>
@@ -290,9 +289,9 @@ export default function StudentProfilePage() {
                       {lesson.cost.toLocaleString()} ₸
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson.status)}`}>
-                        {getStatusIcon(lesson.status)}
-                        <span className="ml-1">{getStatusText(lesson.status)}</span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(lesson)}`}>
+                        {getStatusIcon(lesson)}
+                        <span className="ml-1">{getStatusText(lesson)}</span>
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">

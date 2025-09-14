@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/presentation/contexts'
 import { LoginData } from '@/types'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'

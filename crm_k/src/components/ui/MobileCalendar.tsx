@@ -1,24 +1,33 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock, User, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, User, Calendar as CalendarIcon, History } from 'lucide-react';
 import { Lesson, LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
+import DayLessonsModal from './DayLessonsModal';
 
 interface MobileCalendarProps {
   lessons: LessonWithOptionalStudent[];
-  onLessonClick: (lesson: LessonWithOptionalStudent) => void;
   onDateClick: (date: Date) => void;
+  onLessonClick?: (lesson: LessonWithOptionalStudent) => void;
+  onAddLesson?: (date: Date) => void;
   currentDate?: Date;
+  userRole?: 'ADMIN' | 'USER';
 }
 
 export default function MobileCalendar({ 
   lessons, 
-  onLessonClick, 
   onDateClick, 
-  currentDate = new Date() 
+  onLessonClick, 
+  onAddLesson,
+  currentDate = new Date(),
+  userRole
 }: MobileCalendarProps) {
   const [selectedDate, setSelectedDate] = useState(currentDate);
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+  const [showDayModal, setShowDayModal] = useState(false);
+  const [selectedDayLessons, setSelectedDayLessons] = useState<LessonWithOptionalStudent[]>([]);
+  const [selectedDayDate, setSelectedDayDate] = useState<Date>(new Date());
+  const [activeDay, setActiveDay] = useState<number | null>(null);
 
   // Получаем занятия для выбранного месяца
   const monthLessons = lessons.filter(lesson => {
@@ -79,20 +88,63 @@ export default function MobileCalendar({
   };
 
   const handleDateClick = (day: number) => {
+    console.log('MobileCalendar: handleDateClick вызван для дня:', day);
+    console.log('MobileCalendar: currentMonth:', currentMonth);
+    console.log('MobileCalendar: lessonsByDay:', lessonsByDay);
+    
     const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     setSelectedDate(newDate);
-    onDateClick(newDate);
+    
+    const dayLessons = lessonsByDay[day] || [];
+    console.log('MobileCalendar: занятия на день:', dayLessons.length);
+    console.log('MobileCalendar: userRole:', userRole);
+    console.log('MobileCalendar: onAddLesson:', !!onAddLesson);
+    
+    // Если день пустой и есть функция onAddLesson, и пользователь - админ, открываем форму добавления занятия
+    if (dayLessons.length === 0 && onAddLesson && userRole === 'ADMIN') {
+      console.log('MobileCalendar: открываем форму добавления занятия');
+      onAddLesson(newDate);
+      return;
+    }
+    
+    // Если есть занятия, показываем модальное окно
+    console.log('MobileCalendar: открываем модальное окно с занятиями');
+    setSelectedDayLessons(dayLessons);
+    setSelectedDayDate(newDate);
+    setShowDayModal(true);
+    console.log('MobileCalendar: showDayModal установлен в true');
+  };
+
+  // Упрощенная обработка событий для мобильных устройств
+  const handleDayPress = (day: number) => {
+    console.log('MobileCalendar: handleDayPress для дня:', day);
+    handleDateClick(day);
   };
 
   const getStatusColor = (lesson: Lesson) => {
     const status = getLessonStatus(lesson);
+    const isBackdate = new Date(lesson.date) < new Date();
+    
+    // Для занятий задним числом добавляем специальную индикацию
+    if (isBackdate) {
+      switch (status) {
+        case 'scheduled': return 'bg-sky-100 text-sky-800 border-l-4 border-sky-400';
+        case 'prepaid': return 'bg-yellow-100 text-yellow-800 border-l-4 border-yellow-400';
+        case 'cancelled': return 'bg-orange-100 text-orange-800 border-l-4 border-orange-400';
+        case 'completed': return 'bg-purple-100 text-purple-800 border-l-4 border-purple-400';
+        case 'debt': return 'bg-red-100 text-red-800 border-l-4 border-red-400';
+        case 'unpaid': return 'bg-gray-100 text-gray-800 border-l-4 border-gray-400';
+        default: return 'bg-gray-100 text-gray-800 border-l-4 border-gray-400';
+      }
+    }
+    
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'paid': return 'bg-purple-100 text-purple-800';
+      case 'scheduled': return 'bg-sky-100 text-sky-800';
       case 'prepaid': return 'bg-yellow-100 text-yellow-800';
-      case 'unpaid': return 'bg-orange-100 text-orange-800';
+      case 'cancelled': return 'bg-orange-100 text-orange-800';
+      case 'completed': return 'bg-purple-100 text-purple-800';
+      case 'debt': return 'bg-red-100 text-red-800';
+      case 'unpaid': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -105,7 +157,7 @@ export default function MobileCalendar({
     // Пустые ячейки для начала месяца
     for (let i = 0; i < firstDay; i++) {
       days.push(
-        <div key={`empty-${i}`} className="h-16 border border-gray-200"></div>
+        <div key={`empty-${i}`} className="bg-white"></div>
       );
     }
 
@@ -118,27 +170,56 @@ export default function MobileCalendar({
       days.push(
         <div
           key={day}
-          className={`h-16 border border-gray-200 p-2 cursor-pointer hover:bg-gray-50 ${
+          className={`mobile-calendar-day p-3 cursor-pointer hover:bg-gray-50 touch-manipulation ${
             isCurrentDay ? 'bg-blue-50' : ''
           } ${isSelectedDay ? 'bg-blue-100' : ''}`}
-          onClick={() => handleDateClick(day)}
+          onClick={() => {
+            handleDayPress(day);
+          }}
+          style={{ 
+            WebkitTapHighlightColor: 'transparent',
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            userSelect: 'none'
+          }}
         >
-          <div className="flex justify-between items-center mb-1">
-            <span className={`text-sm font-medium ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
+          {/* Верхняя часть с номером дня и индикатором */}
+          <div className="flex justify-between items-start">
+            <span className={`text-lg font-semibold ${isCurrentDay ? 'text-blue-600' : 'text-gray-900'}`}>
               {day}
             </span>
             {dayLessons.length > 0 && (
-              <span className="text-xs bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+              <span className={`text-xs text-white rounded-full w-5 h-5 flex items-center justify-center font-bold ${
+                dayLessons.length === 1 ? 'bg-green-500' : 
+                dayLessons.length === 2 ? 'bg-yellow-500' : 
+                dayLessons.length >= 3 ? 'bg-red-500' : 'bg-blue-500'
+              }`}>
                 {dayLessons.length}
               </span>
             )}
           </div>
-          {/* На мобильной версии показываем только количество занятий */}
-          {dayLessons.length > 0 && (
-            <div className="text-xs text-gray-500 text-center">
-              {dayLessons.length} занят{dayLessons.length === 1 ? 'ие' : dayLessons.length < 5 ? 'ия' : 'ий'}
-            </div>
-          )}
+          
+          {/* Нижняя часть с информацией о занятиях */}
+          <div className="flex-1 flex flex-col justify-end">
+            {dayLessons.length > 0 ? (
+              <div className="space-y-1">
+                {/* Показываем первое занятие */}
+                {dayLessons.slice(0, 1).map((lesson, index) => (
+                  <div key={index} className="text-xs p-1 bg-blue-100 text-blue-800 rounded truncate">
+                    {lesson.startTime || new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                ))}
+                {/* Если занятий больше одного, показываем "+N" */}
+                {dayLessons.length > 1 && (
+                  <div className="text-xs text-gray-500 text-center font-medium">
+                    +{dayLessons.length - 1}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="h-4"></div>
+            )}
+          </div>
         </div>
       );
     }
@@ -147,22 +228,32 @@ export default function MobileCalendar({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border">
-      {/* Заголовок календаря */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900">
+    <div className="mobile-calendar-container">
+      {/* Компактный заголовок календаря */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900">
           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </h3>
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <button
             onClick={() => navigateMonth('prev')}
-            className="p-2 hover:bg-gray-100 rounded-md"
+            className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg touch-manipulation transition-colors duration-150"
+            style={{ 
+              WebkitTapHighlightColor: 'transparent',
+              minWidth: '40px',
+              minHeight: '40px'
+            }}
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={() => navigateMonth('next')}
-            className="p-2 hover:bg-gray-100 rounded-md"
+            className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg touch-manipulation transition-colors duration-150"
+            style={{ 
+              WebkitTapHighlightColor: 'transparent',
+              minWidth: '40px',
+              minHeight: '40px'
+            }}
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -170,48 +261,42 @@ export default function MobileCalendar({
       </div>
 
       {/* Дни недели */}
-      <div className="grid grid-cols-7 border-b border-gray-200">
+      <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
         {dayNames.map((day) => (
-          <div key={day} className="p-2 text-center text-sm font-medium text-gray-500 bg-gray-50">
+          <div key={day} className="py-2 text-center text-sm font-semibold text-gray-600">
             {day}
           </div>
         ))}
       </div>
 
-      {/* Календарная сетка */}
-      <div className="grid grid-cols-7">
+      {/* Календарная сетка - увеличенная */}
+      <div className="mobile-calendar-grid">
         {renderCalendarDays()}
       </div>
 
-      {/* Легенда статусов */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex flex-wrap gap-3 text-xs">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-blue-100 rounded"></div>
-            <span>Запланировано</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-100 rounded"></div>
-            <span>Проведено</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-yellow-100 rounded"></div>
-            <span>Предоплачено</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-purple-100 rounded"></div>
-            <span>Оплачено</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-orange-100 rounded"></div>
-            <span>Не оплачено</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-red-100 rounded"></div>
-            <span>Отменено</span>
-          </div>
+      {/* Модальное окно для мобильной версии */}
+      {onLessonClick && (
+        <DayLessonsModal
+          isOpen={showDayModal}
+          onClose={() => {
+            console.log('MobileCalendar: закрываем модальное окно');
+            setShowDayModal(false);
+          }}
+          lessons={selectedDayLessons}
+          date={selectedDayDate}
+          onLessonClick={onLessonClick}
+          userRole={userRole}
+        />
+      )}
+      
+      {/* Отладочная информация */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 left-4 bg-black text-white p-2 text-xs rounded">
+          showDayModal: {showDayModal.toString()}<br/>
+          selectedDayLessons: {selectedDayLessons.length}<br/>
+          activeDay: {activeDay}
         </div>
-      </div>
+      )}
     </div>
   );
 }

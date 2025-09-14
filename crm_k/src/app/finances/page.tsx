@@ -8,7 +8,8 @@ import DebtsList from '@/components/finances/DebtsList'
 import LessonHistory from '@/components/finances/LessonHistory'
 import PeriodFilters from '@/components/finances/PeriodFilters'
 import AddPaymentForm from '@/components/forms/AddPaymentForm'
-import PaymentsList from '@/components/finances/PaymentsList'
+import PaymentHistory from '@/components/finances/PaymentHistory'
+import Button from '@/components/ui/Button'
 import { printElement } from '@/lib/print'
 import { Student } from '@/types'
 import { apiRequest } from '@/lib/api'
@@ -101,8 +102,7 @@ export default function FinancesPage() {
       {/* Заголовок и действия */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="animate-fade-in">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 flex items-center">
-            <DollarSign className="w-8 h-8 text-green-600 mr-3" />
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
             Финансы
           </h1>
           <p className="mt-2 text-gray-600 text-lg">
@@ -110,21 +110,23 @@ export default function FinancesPage() {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3 animate-scale-in">
-          <button 
+          <Button 
             onClick={() => printElement('finances-content', 'Финансовый отчет')}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-xl shadow-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 hover:scale-105"
+            variant="outline"
+            size="md"
+            icon={<Printer className="w-4 h-4" />}
           >
-            <Printer className="w-4 h-4 mr-2" />
             Печать
-          </button>
-          <button 
+          </Button>
+          <Button 
             onClick={() => setIsPaymentFormOpen(true)}
             disabled={isLoadingStudents}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="success"
+            size="md"
+            icon={<DollarSign className="w-4 h-4" />}
           >
-            <DollarSign className="w-4 h-4 mr-2" />
             {isLoadingStudents ? 'Загрузка...' : 'Добавить платеж'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -152,11 +154,11 @@ export default function FinancesPage() {
           {/* Список задолженностей */}
           <DebtsList />
 
-          {/* История занятий */}
+          {/* История предоплаты */}
           <LessonHistory />
 
           {/* История платежей */}
-          <PaymentsList />
+          <PaymentHistory />
         </div>
       </div>
 

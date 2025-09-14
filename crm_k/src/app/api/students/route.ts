@@ -14,17 +14,38 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Если админ - показываем всех учеников, иначе только своих
+    // Если админ - показываем всех учеников
+    // Если учитель - показываем своих назначенных учеников ИЛИ учеников, с которыми проводит/проводил занятия
     const whereClause = authUser.role === 'ADMIN' 
       ? {} 
-      : { userId: authUser.id }
+      : {
+          OR: [
+            { userId: authUser.id }, // Свои назначенные ученики
+            { 
+              lessons: {
+                some: {
+                  teacherId: authUser.id // Ученики, с которыми проводит/проводил занятия
+                }
+              }
+            }
+          ]
+        }
 
     const students = await prisma.student.findMany({
-      where: whereClause,
+      where: whereClause as any,
       include: {
         lessons: {
           orderBy: {
             date: 'desc'
+          },
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
           }
         },
         user: {
@@ -60,7 +81,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body: CreateStudentData = await request.json()
+    const body: CreateStudentData & { userId?: number } = await request.json()
     
     // Валидация обязательных полей
     if (!body.fullName || !body.phone || !body.age || !body.parentName) {
@@ -68,6 +89,22 @@ export async function POST(request: NextRequest) {
         { error: 'Необходимо заполнить все обязательные поля' },
         { status: 400 }
       )
+    }
+
+    // Новая логика:
+    // - Если админ создает ученика: ученик остается "нечейный" (userId = null, isAssigned = false)
+    // - Если учитель создает ученика: ученик привязывается к учителю (userId = teacherId, isAssigned = true)
+    let userId: number | null = null
+    let isAssigned = false
+
+    if (authUser.role === 'ADMIN') {
+      // Админ создает "нечейного" ученика
+      userId = null
+      isAssigned = false
+    } else {
+      // Учитель создает ученика и привязывает к себе
+      userId = authUser.id
+      isAssigned = true
     }
 
     const student = await prisma.student.create({
@@ -78,8 +115,9 @@ export async function POST(request: NextRequest) {
         parentName: body.parentName,
         diagnosis: body.diagnosis || null,
         comment: body.comment || null,
-        userId: authUser.id
-      }
+        userId: userId || undefined,
+        isAssigned: isAssigned
+      } as any
     })
 
     return NextResponse.json(student, { status: 201 })

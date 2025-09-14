@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CRM для детского сада
 
-## Getting Started
+Система управления детским садом с функционалом планирования занятий, управления студентами и финансовой отчетности.
 
-First, run the development server:
+## Технологии
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Backend**: Next.js API Routes
+- **База данных**: SQLite с Prisma ORM
+- **Стилизация**: Tailwind CSS
+- **Аутентификация**: JWT токены
+
+## Архитектура
+
+Проект построен по принципам Clean Architecture:
+
+```
+src/
+├── app/                 # Next.js App Router
+├── application/         # Use Cases и DTO
+├── components/         # React компоненты
+├── contexts/           # React контексты
+├── domain/             # Бизнес-логика и сущности
+├── infrastructure/     # Репозитории и внешние сервисы
+├── lib/               # Утилиты и конфигурация
+├── presentation/       # Презентационный слой
+└── shared/            # Общие типы и константы
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Установка и запуск
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Установите зависимости:
+```bash
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Настройте базу данных:
+```bash
+npx prisma migrate dev
+npm run db:seed
+```
 
-## Learn More
+3. Запустите проект:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Основные функции
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Управление студентами**: добавление, редактирование, просмотр профилей
+- **Планирование занятий**: создание расписания, управление уроками
+- **Финансы**: отслеживание платежей, долгов, доходов
+- **Администрирование**: управление пользователями, настройки системы
+- **AI предложения**: автоматические рекомендации для занятий
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Скрипты
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` - запуск в режиме разработки
+- `npm run build` - сборка для продакшена
+- `npm run start` - запуск продакшен версии
+- `npm run db:seed` - заполнение базы тестовыми данными
+- `npm run db:reset` - сброс и пересоздание базы данных

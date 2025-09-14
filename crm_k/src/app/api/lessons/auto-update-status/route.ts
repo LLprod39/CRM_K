@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
+import { getLessonStatus, getStatusAfterCompletion } from '@/lib/lessonStatusUtils'
 
 // POST /api/lessons/auto-update-status - автоматическое обновление статусов прошедших занятий
 export async function POST(request: NextRequest) {
@@ -24,8 +25,8 @@ export async function POST(request: NextRequest) {
           }
         }
 
-    // Находим все занятия, которые должны быть обновлены:
-    // 1. Запланированные занятия, которые уже прошли -> становятся проведенными + оплаченными
+    // Находим все занятия, которые должны быть обновлены согласно новой логике:
+    // 1. Запланированные занятия, которые уже прошли -> становятся задолженностью (если не оплачены)
     // 2. Предоплаченные занятия, которые уже прошли -> становятся проведенными (остаются оплаченными)
     const lessonsToUpdate = await prisma.lesson.findMany({
       where: {
@@ -34,11 +35,12 @@ export async function POST(request: NextRequest) {
           lt: now // Занятие уже прошло
         },
         isCancelled: false, // Не отмененные
+        isCompleted: false, // Еще не проведенные
         OR: [
-          // Запланированные занятия (не проведены и не оплачены)
-          { isCompleted: false, isPaid: false },
-          // Предоплаченные занятия (не проведены, но оплачены)
-          { isCompleted: false, isPaid: true }
+          // Запланированные занятия (не проведены и не оплачены) -> Задолженность
+          { isPaid: false },
+          // Предоплаченные занятия (не проведены, но оплачены) -> Проведено (остается оплаченным)
+          { isPaid: true }
         ]
       },
       include: {
@@ -58,19 +60,13 @@ export async function POST(request: NextRequest) {
     const results = []
 
     for (const lesson of lessonsToUpdate) {
-      // Определяем новые значения статусов
-      const newIsCompleted = true // Все прошедшие занятия становятся проведенными
-      const newIsPaid = lesson.isPaid || !lesson.isPaid // Если было предоплачено - остается оплаченным, если было запланировано - становится оплаченным
+      // Определяем новые значения статусов согласно новой логике
+      const oldStatus = getLessonStatus(lesson)
+      const statusAfterCompletion = getStatusAfterCompletion(lesson)
       
-      const oldStatus = lesson.isCancelled ? 'cancelled' : 
-                       lesson.isCompleted && lesson.isPaid ? 'paid' :
-                       lesson.isCompleted && !lesson.isPaid ? 'completed' :
-                       !lesson.isCompleted && lesson.isPaid ? 'prepaid' :
-                       'scheduled'
-      
-      const newStatus = newIsCompleted && newIsPaid ? 'paid' : 
-                       newIsCompleted && !newIsPaid ? 'completed' :
-                       'scheduled'
+      const newIsCompleted = statusAfterCompletion.isCompleted
+      const newIsPaid = statusAfterCompletion.isPaid
+      const newStatus = statusAfterCompletion.newStatus
 
       try {
         console.log(`Обновляем занятие ${lesson.id}: ${oldStatus} -> ${newStatus}`)

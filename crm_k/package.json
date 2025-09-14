@@ -8,7 +8,16 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "npx prisma migrate reset --force && npm run db:seed"
+    "db:reset": "npx prisma migrate reset --force && npm run db:seed",
+    "db:clean": "node scripts/clean-database.js",
+    "db:reset-clean": "node scripts/reset-database.js",
+    "test": "cd tests && npm test",
+    "test:watch": "cd tests && npm run test:watch",
+    "test:coverage": "cd tests && npm run test:coverage",
+    "test:unit": "cd tests && npm run test:unit",
+    "test:integration": "cd tests && npm run test:integration",
+    "test:e2e": "cd tests && npm run test:e2e",
+    "test:ci": "cd tests && npm run test:ci"
   },
   "dependencies": {
     "@google/genai": "^1.19.0",
@@ -21,10 +30,13 @@
     "lucide-react": "^0.543.0",
     "next": "15.5.2",
     "node-fetch": "^3.3.2",
+    "qrcode": "^1.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "recharts": "^3.2.0",
+    "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
+    "whatsapp-web.js": "^1.34.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

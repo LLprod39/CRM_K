@@ -22,7 +22,11 @@ export async function GET(request: NextRequest) {
       ? {} 
       : {
           student: {
-            userId: authUser.id
+            lessons: {
+              some: {
+                teacherId: authUser.id
+              }
+            }
           }
         }
 
@@ -34,7 +38,7 @@ export async function GET(request: NextRequest) {
       : baseWhere
 
     const payments = await prisma.payment.findMany({
-      where: whereClause,
+      where: whereClause as any,
       include: {
         student: {
           include: {
@@ -111,12 +115,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Если не админ, проверяем, что ученик принадлежит пользователю
-    if (authUser.role !== 'ADMIN' && student.userId !== authUser.id) {
-      return NextResponse.json(
-        { error: 'Доступ запрещен' },
-        { status: 403 }
-      )
+    // Если не админ, проверяем права доступа к ученику
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, принадлежит ли ученик пользователю напрямую
+      const isDirectOwner = student.userId === authUser.id;
+      
+      // Проверяем, есть ли у пользователя занятия с этим учеником (как учитель)
+      const hasLessonsWithStudent = await prisma.lesson.findFirst({
+        where: {
+          studentId: student.id,
+          teacherId: authUser.id
+        }
+      });
+      
+      // Доступ разрешен, если пользователь владелец ученика или преподает ему
+      if (!isDirectOwner && !hasLessonsWithStudent) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
     }
 
     // Проверяем, что указанные уроки существуют и принадлежат ученику
@@ -157,16 +175,26 @@ export async function POST(request: NextRequest) {
           }))
         })
 
-        // Обновляем статус уроков на "оплачено"
+        // Обновляем статус уроков согласно новой логике
         await tx.lesson.updateMany({
           where: {
             id: { in: lessonIds }
           },
           data: {
-            status: 'PAID'
+            isPaid: true
           }
         })
       }
+
+      // Обновляем баланс ученика
+      await tx.student.update({
+        where: { id: studentId },
+        data: {
+          balance: {
+            increment: amount
+          }
+        }
+      })
 
       return payment
     })

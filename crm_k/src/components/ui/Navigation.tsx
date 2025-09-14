@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 import { 
   Users, 
   Calendar, 
@@ -12,10 +12,11 @@ import {
   X,
   LogOut,
   User,
-  Settings
+  Settings,
+  BookOpen
 } from 'lucide-react';
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/presentation/contexts';
 
 const navigation = [
   { name: 'Главная', href: '/', icon: Home },
@@ -25,6 +26,7 @@ const navigation = [
 ];
 
 const adminNavigation = [
+  { name: 'Абонементы', href: '/flexible-subscriptions', icon: BookOpen },
   { name: 'Админ панель', href: '/admin', icon: Settings, description: 'Управление системой' },
 ];
 
@@ -35,7 +37,7 @@ export default function Navigation() {
   const { user, logout, isLoading } = useAuth();
 
   return (
-    <nav className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-50 transition-all duration-300">
+    <nav className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-50 transition-all duration-300 lg:block hidden">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Логотип */}

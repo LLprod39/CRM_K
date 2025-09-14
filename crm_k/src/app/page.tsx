@@ -1,14 +1,17 @@
 'use client';
 
-import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles } from 'lucide-react';
+import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles, AlertCircle, Clock } from 'lucide-react';
+import { UserRole } from '@/domain/entities/User';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/presentation/contexts';
 import { apiRequest } from '@/lib/api';
 
 export default function Home() {
   const { user } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState({
     students: 0,
     todayLessons: 0,
@@ -25,7 +28,7 @@ export default function Home() {
         const [studentsRes, lessonsRes, financesRes] = await Promise.all([
           apiRequest('/api/students'),
           apiRequest('/api/lessons'),
-          apiRequest('/api/finances/stats')
+          apiRequest('/api/finances/stats?period=month')
         ]);
 
         if (studentsRes.ok) {
@@ -46,7 +49,7 @@ export default function Home() {
           const finances = await financesRes.json();
           setStats(prev => ({ 
             ...prev, 
-            monthlyRevenue: finances.monthlyRevenue || 0,
+            monthlyRevenue: finances.totalRevenue || 0,
             debts: finances.totalDebt || 0
           }));
         }
@@ -63,28 +66,28 @@ export default function Home() {
       title: 'Всего учеников',
       value: stats.students,
       icon: Users,
-      color: 'blue',
+      color: 'purple',
       href: '/students'
     },
     {
       title: 'Занятий сегодня',
       value: stats.todayLessons,
       icon: Calendar,
-      color: 'green',
+      color: 'sky',
       href: '/schedule'
     },
     {
       title: 'Доход за месяц',
       value: `₸${stats.monthlyRevenue.toLocaleString()}`,
-      icon: DollarSign,
-      color: 'yellow',
+      icon: TrendingUp,
+      color: 'green',
       href: '/finances'
     },
     {
       title: 'Задолженности',
       value: `₸${stats.debts.toLocaleString()}`,
-      icon: TrendingUp,
-      color: 'purple',
+      icon: AlertCircle,
+      color: 'red',
       href: '/finances'
     }
   ];
@@ -94,32 +97,32 @@ export default function Home() {
       title: 'Добавить ученика',
       description: 'Создать нового ученика в системе',
       icon: Users,
-      color: 'blue',
+      color: 'purple',
       href: '/students'
     },
     {
-      title: 'Запланировать занятие',
-      description: 'Добавить новое занятие в расписание',
+      title: user?.role === UserRole.ADMIN ? 'Заполнить расписание' : 'Просмотреть расписание',
+      description: user?.role === UserRole.ADMIN ? 'Добавить новое занятие в расписание' : 'Посмотреть все запланированные занятия',
       icon: Calendar,
-      color: 'green',
+      color: 'sky',
       href: '/schedule'
     },
     {
       title: 'Посмотреть финансы',
       description: 'Открыть финансовый отчет',
       icon: DollarSign,
-      color: 'yellow',
+      color: 'green',
       href: '/finances'
     }
   ];
 
   return (
     <ProtectedRoute>
-      <div className="space-y-8">
+      {/* Десктопная версия */}
+      <div className="space-y-8 hidden lg:block">
         {/* Заголовок */}
         <div className="text-center">
           <div className="flex items-center justify-center mb-4">
-            <Sparkles className="w-8 h-8 text-blue-600 mr-3 animate-pulse" />
             <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Добро пожаловать, {user?.name}!
             </h1>
@@ -158,7 +161,7 @@ export default function Home() {
       {/* Быстрые действия */}
       <div className="bg-white/95 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200/50 animate-fade-in">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-          <Sparkles className="w-6 h-6 text-blue-600 mr-2" />
+          <Sparkles className="w-6 h-6 text-blue-600 mr-2 stroke-1.5" />
           Быстрые действия
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -192,16 +195,19 @@ export default function Home() {
       {/* Последние действия */}
       <div className="bg-white/95 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200/50 animate-fade-in">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-          <Calendar className="w-6 h-6 text-green-600 mr-2" />
+          <Clock className="w-6 h-6 text-blue-600 mr-2" />
           Последние действия
         </h2>
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-8 h-8 text-gray-400" />
+            <Clock className="w-8 h-8 text-gray-400" />
           </div>
           <p className="text-gray-500 text-lg mb-2">Пока нет данных для отображения</p>
           <p className="text-sm text-gray-400">
-            Начните с добавления первого ученика или запланируйте занятие
+            {user?.role === UserRole.ADMIN 
+              ? 'Начните с добавления первого ученика или запланируйте занятие'
+              : 'Начните с добавления первого ученика или посмотрите расписание'
+            }
           </p>
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
@@ -216,11 +222,160 @@ export default function Home() {
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Calendar className="w-4 h-4 mr-2" />
-              Запланировать занятие
+              {user?.role === UserRole.ADMIN ? 'Запланировать занятие' : 'Просмотреть расписание'}
             </Link>
           </div>
         </div>
       </div>
+      </div>
+
+      {/* Мобильная версия */}
+      <div className="lg:hidden space-y-6 p-4">
+        {/* Приветственная карточка */}
+        <div className="mobile-card-modern animate-mobile-bounce-in">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-2xl animate-mobile-glow relative">
+              <span className="text-white text-2xl font-bold">
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
+              </span>
+              {/* Декоративные кольца */}
+              <div className="absolute inset-0 rounded-3xl border-2 border-white/20"></div>
+              <div className="absolute -inset-2 rounded-3xl border border-blue-200/30 animate-ping"></div>
+            </div>
+            <h1 className="mobile-title-gradient">
+              Добро пожаловать!
+            </h1>
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-green-400 to-green-500"></div>
+              <p className="text-gray-700 font-semibold">
+                {user?.name}
+              </p>
+              <div className="px-3 py-1 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full">
+                <span className="text-xs font-bold text-blue-700">
+                  {user?.role === UserRole.ADMIN ? '👑 Администратор' : '👤 Пользователь'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Статистические карточки */}
+        <div className="grid grid-cols-2 gap-3">
+          {statCards.map((card, index) => (
+            <Link
+              key={card.title}
+              href={card.href}
+              className="animate-mobile-pop-in mobile-interactive-modern"
+              style={{ animationDelay: `${index * 150}ms` }}
+            >
+              <div className="mobile-stat-modern text-center relative overflow-hidden">
+                <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-gradient-to-br ${
+                  card.color === 'purple' ? 'from-purple-400 via-purple-500 to-purple-600' :
+                  card.color === 'sky' ? 'from-sky-400 via-sky-500 to-sky-600' :
+                  card.color === 'blue' ? 'from-blue-400 via-blue-500 to-blue-600' :
+                  card.color === 'green' ? 'from-green-400 via-green-500 to-emerald-600' :
+                  card.color === 'yellow' ? 'from-yellow-400 via-yellow-500 to-orange-600' :
+                  'from-red-400 via-red-500 to-red-600'
+                } shadow-xl relative`}>
+                  <card.icon className="w-7 h-7 text-white drop-shadow-sm" />
+                  {/* Градиентный ободок */}
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent"></div>
+                </div>
+                <p className="text-xl font-bold text-gray-900 mb-2 leading-tight">
+                  {card.value}
+                </p>
+                <p className="text-xs font-bold text-gray-600 uppercase tracking-wide leading-tight">
+                  {card.title}
+                </p>
+                
+                {/* Декоративные элементы */}
+                <div className="absolute top-2 right-2 w-8 h-8 bg-gradient-to-br from-white/10 to-transparent rounded-full"></div>
+                <div className="absolute bottom-2 left-2 w-6 h-6 bg-gradient-to-br from-white/5 to-transparent rounded-full"></div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Быстрые действия */}
+        <div className="mobile-card-modern animate-mobile-slide-up" style={{ animationDelay: '800ms' }}>
+          <div className="flex items-center mb-6">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 via-purple-600 to-pink-600 rounded-2xl mr-3 flex items-center justify-center shadow-lg">
+              <span className="text-white text-lg">⚡</span>
+            </div>
+            <h2 className="mobile-subtitle-modern mb-0">Быстрые действия</h2>
+          </div>
+          <div className="space-y-4">
+            {quickActions.map((action, index) => (
+              <Link
+                key={action.title}
+                href={action.href}
+                className="flex items-center p-5 bg-gradient-to-r from-white/80 to-white/40 rounded-3xl border border-white/60 backdrop-blur-sm transition-all duration-300 mobile-interactive-modern shadow-sm"
+              >
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mr-4 bg-gradient-to-br ${
+                  action.color === 'purple' ? 'from-purple-400 via-purple-500 to-purple-600' :
+                  action.color === 'sky' ? 'from-sky-400 via-sky-500 to-sky-600' :
+                  action.color === 'blue' ? 'from-blue-400 via-blue-500 to-blue-600' :
+                  action.color === 'green' ? 'from-green-400 via-green-500 to-emerald-600' :
+                  'from-yellow-400 via-yellow-500 to-orange-600'
+                } shadow-lg relative`}>
+                  <action.icon className="w-6 h-6 text-white drop-shadow-sm" />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent"></div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">
+                    {action.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 leading-tight">
+                    {action.description}
+                  </p>
+                </div>
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ml-3">
+                  <span className="text-gray-600 text-lg">→</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Советы для начала работы */}
+        <div className="mobile-card-modern bg-gradient-to-br from-blue-50/80 via-purple-50/80 to-pink-50/80 border-blue-200/50 animate-mobile-slide-up relative overflow-hidden" style={{ animationDelay: '1000ms' }}>
+          {/* Декоративный фон */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 to-purple-100/30"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full -translate-y-16 translate-x-16"></div>
+          
+          <div className="text-center relative z-10">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-2xl animate-mobile-glow relative">
+              <span className="text-white text-2xl">💡</span>
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/20 to-transparent"></div>
+              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-blue-400/30 to-purple-400/30 animate-pulse"></div>
+            </div>
+            
+            <h3 className="text-xl font-bold text-gray-900 mb-3 leading-tight">
+              🚀 Начните с базовых настроек
+            </h3>
+            <p className="text-sm text-gray-700 mb-6 leading-relaxed font-medium">
+              {user?.role === UserRole.ADMIN 
+                ? 'Добавьте первого ученика и запланируйте занятие для начала работы с системой'
+                : 'Просмотрите расписание и добавьте первого ученика'
+              }
+            </p>
+            
+            <div className="flex gap-3">
+              <Link
+                href="/students"
+                className="flex-1 mobile-btn-gradient mobile-btn-primary text-sm py-4 font-bold"
+              >
+                👥 Добавить ученика
+              </Link>
+              <Link
+                href="/schedule"
+                className="flex-1 mobile-btn-gradient mobile-btn-secondary text-sm py-4 font-bold"
+              >
+                📅 Расписание
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </ProtectedRoute>
   );
