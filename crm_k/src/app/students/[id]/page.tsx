@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Clock, AlertCircle, User, Phone, MessageSquare, CheckCircle, DollarSign } from 'lucide-react';
+import { ArrowLeft, Clock, AlertCircle, User, Phone, MessageSquare, CheckCircle, DollarSign, CreditCard } from 'lucide-react';
 import { StudentWithLessons, Lesson, getLessonStatus, getLessonStatusText } from '@/types';
 import { apiRequest } from '@/lib/api';
 import LessonSuggestions from '@/components/LessonSuggestions';
@@ -80,16 +80,16 @@ export default function StudentProfilePage() {
   };
 
   const calculateStats = () => {
-    if (!student?.lessons) return { total: 0, completed: 0, totalCost: 0, paidCost: 0 };
+    if (!student?.lessons) return { total: 0, completed: 0, prepaid: 0, paidCost: 0 };
 
     const total = student.lessons.length;
     const completed = student.lessons.filter(lesson => lesson.isCompleted).length;
-    const totalCost = student.lessons.reduce((sum, lesson) => sum + lesson.cost, 0);
+    const prepaid = Math.max(0, student.balance || 0); // Только положительная предоплата
     const paidCost = student.lessons
       .filter(lesson => lesson.isPaid)
       .reduce((sum, lesson) => sum + lesson.cost, 0);
 
-    return { total, completed, totalCost, paidCost };
+    return { total, completed, prepaid, paidCost };
   };
 
   if (loading) {
@@ -139,8 +139,8 @@ export default function StudentProfilePage() {
               className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
             />
           ) : (
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
-              {student.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+              <User className="w-8 h-8 text-purple-600" />
             </div>
           )}
           <div>
@@ -236,14 +236,14 @@ export default function StudentProfilePage() {
           <div className="flex items-center">
             <DollarSign className="w-8 h-8 text-yellow-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Общая стоимость</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalCost.toLocaleString()} ₸</p>
+              <p className="text-sm font-medium text-gray-500">Предоплата</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.prepaid.toLocaleString()} ₸</p>
             </div>
           </div>
         </Card>
         <Card className="p-6">
           <div className="flex items-center">
-            <DollarSign className="w-8 h-8 text-green-500" />
+            <CreditCard className="w-8 h-8 text-green-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Оплачено</p>
               <p className="text-2xl font-semibold text-gray-900">{stats.paidCost.toLocaleString()} ₸</p>
