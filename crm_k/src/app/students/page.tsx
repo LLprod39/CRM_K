@@ -215,16 +215,18 @@ export default function StudentsPage() {
               <option value="зпр">ЗПР</option>
               <option value="дцп">ДЦП</option>
             </select>
-            <select 
-              className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 focus:bg-white text-gray-900"
-              value={teacherFilter}
-              onChange={(e) => setTeacherFilter(e.target.value)}
-            >
-              <option value="">Все учителя</option>
-              {getUniqueTeachers().map(teacher => (
-                <option key={teacher} value={teacher}>{teacher}</option>
-              ))}
-            </select>
+            {user?.role === 'ADMIN' && (
+              <select 
+                className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 focus:bg-white text-gray-900"
+                value={teacherFilter}
+                onChange={(e) => setTeacherFilter(e.target.value)}
+              >
+                <option value="">Все учителя</option>
+                {getUniqueTeachers().map(teacher => (
+                  <option key={teacher} value={teacher}>{teacher}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>
@@ -253,9 +255,11 @@ export default function StudentsPage() {
                 <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Диагноз
                 </th>
-                <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Учитель
-                </th>
+                {user?.role === 'ADMIN' && (
+                  <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Учитель
+                  </th>
+                )}
                 <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Действия
                 </th>
@@ -264,7 +268,7 @@ export default function StudentsPage() {
             <tbody className="bg-white divide-y divide-gray-200/50">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center">
+                  <td colSpan={user?.role === 'ADMIN' ? 6 : 5} className="px-6 py-20 text-center">
                     <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                       <Users className="h-12 w-12 text-gray-400" />
                     </div>
@@ -343,11 +347,13 @@ export default function StudentsPage() {
                         <span className="text-sm text-gray-400 italic">—</span>
                       )}
                     </td>
-                    <td className="px-6 py-6 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
-                        {getMainTeacher(student)}
-                      </div>
-                    </td>
+                    {user?.role === 'ADMIN' && (
+                      <td className="px-6 py-6 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+                          {getMainTeacher(student)}
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-6 whitespace-nowrap">
                       <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
                         <button
@@ -436,18 +442,20 @@ export default function StudentsPage() {
                 <option value="дцп">ДЦП</option>
               </select>
             </div>
-            <div className="mt-2">
-              <select 
-                className="mobile-app-input w-full text-sm"
-                value={teacherFilter}
-                onChange={(e) => setTeacherFilter(e.target.value)}
-              >
-                <option value="">Все учителя</option>
-                {getUniqueTeachers().map(teacher => (
-                  <option key={teacher} value={teacher}>{teacher}</option>
-                ))}
-              </select>
-            </div>
+            {user?.role === 'ADMIN' && (
+              <div className="mt-2">
+                <select 
+                  className="mobile-app-input w-full text-sm"
+                  value={teacherFilter}
+                  onChange={(e) => setTeacherFilter(e.target.value)}
+                >
+                  <option value="">Все учителя</option>
+                  {getUniqueTeachers().map(teacher => (
+                    <option key={teacher} value={teacher}>{teacher}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
@@ -505,9 +513,11 @@ export default function StudentsPage() {
                     <p className="text-sm text-gray-600 mt-1">
                       {student.age} лет • {student.phone}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      👨‍🏫 {getMainTeacher(student)}
-                    </p>
+                    {user?.role === 'ADMIN' && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        👨‍🏫 {getMainTeacher(student)}
+                      </p>
+                    )}
                     {student.diagnosis && (
                       <span className="inline-block mt-2 px-3 py-1 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 text-xs font-medium rounded-full">
                         {student.diagnosis}
@@ -591,18 +601,20 @@ export default function StudentsPage() {
           </div>
           
           {/* Фильтр по учителю */}
-          <div className="mt-3">
-            <select
-              value={teacherFilter}
-              onChange={(e) => setTeacherFilter(e.target.value)}
-              className="mobile-input-modern text-sm py-3 w-full"
-            >
-              <option value="">Все учителя</option>
-              {getUniqueTeachers().map(teacher => (
-                <option key={teacher} value={teacher}>{teacher}</option>
-              ))}
-            </select>
-          </div>
+          {user?.role === 'ADMIN' && (
+            <div className="mt-3">
+              <select
+                value={teacherFilter}
+                onChange={(e) => setTeacherFilter(e.target.value)}
+                className="mobile-input-modern text-sm py-3 w-full"
+              >
+                <option value="">Все учителя</option>
+                {getUniqueTeachers().map(teacher => (
+                  <option key={teacher} value={teacher}>{teacher}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Кнопка добавления */}
@@ -681,9 +693,11 @@ export default function StudentsPage() {
                     <p className="text-sm text-gray-600 font-medium">
                       📱 {student.phone}
                     </p>
-                    <p className="text-xs text-gray-500 font-medium mt-1">
-                      👨‍🏫 {getMainTeacher(student)}
-                    </p>
+                    {user?.role === 'ADMIN' && (
+                      <p className="text-xs text-gray-500 font-medium mt-1">
+                        👨‍🏫 {getMainTeacher(student)}
+                      </p>
+                    )}
                     {student.parentName && (
                       <p className="text-xs text-gray-500 mt-1">
                         👨‍👩‍👧‍👦 {student.parentName}
