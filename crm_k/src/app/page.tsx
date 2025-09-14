@@ -66,21 +66,21 @@ export default function Home() {
       title: 'Всего учеников',
       value: stats.students,
       icon: Users,
-      color: 'blue',
+      color: 'purple',
       href: '/students'
     },
     {
       title: 'Занятий сегодня',
       value: stats.todayLessons,
       icon: Calendar,
-      color: 'green',
+      color: 'sky',
       href: '/schedule'
     },
     {
       title: 'Доход за месяц',
       value: `₸${stats.monthlyRevenue.toLocaleString()}`,
       icon: TrendingUp,
-      color: 'yellow',
+      color: 'green',
       href: '/finances'
     },
     {
@@ -97,21 +97,21 @@ export default function Home() {
       title: 'Добавить ученика',
       description: 'Создать нового ученика в системе',
       icon: Users,
-      color: 'blue',
+      color: 'purple',
       href: '/students'
     },
     {
       title: user?.role === UserRole.ADMIN ? 'Заполнить расписание' : 'Просмотреть расписание',
       description: user?.role === UserRole.ADMIN ? 'Добавить новое занятие в расписание' : 'Посмотреть все запланированные занятия',
       icon: Calendar,
-      color: 'green',
+      color: 'sky',
       href: '/schedule'
     },
     {
       title: 'Посмотреть финансы',
       description: 'Открыть финансовый отчет',
       icon: DollarSign,
-      color: 'yellow',
+      color: 'green',
       href: '/finances'
     }
   ];
@@ -270,6 +270,8 @@ export default function Home() {
             >
               <div className="mobile-stat-modern text-center relative overflow-hidden">
                 <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-gradient-to-br ${
+                  card.color === 'purple' ? 'from-purple-400 via-purple-500 to-purple-600' :
+                  card.color === 'sky' ? 'from-sky-400 via-sky-500 to-sky-600' :
                   card.color === 'blue' ? 'from-blue-400 via-blue-500 to-blue-600' :
                   card.color === 'green' ? 'from-green-400 via-green-500 to-emerald-600' :
                   card.color === 'yellow' ? 'from-yellow-400 via-yellow-500 to-orange-600' :
@@ -310,6 +312,8 @@ export default function Home() {
                 className="flex items-center p-5 bg-gradient-to-r from-white/80 to-white/40 rounded-3xl border border-white/60 backdrop-blur-sm transition-all duration-300 mobile-interactive-modern shadow-sm"
               >
                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mr-4 bg-gradient-to-br ${
+                  action.color === 'purple' ? 'from-purple-400 via-purple-500 to-purple-600' :
+                  action.color === 'sky' ? 'from-sky-400 via-sky-500 to-sky-600' :
                   action.color === 'blue' ? 'from-blue-400 via-blue-500 to-blue-600' :
                   action.color === 'green' ? 'from-green-400 via-green-500 to-emerald-600' :
                   'from-yellow-400 via-yellow-500 to-orange-600'

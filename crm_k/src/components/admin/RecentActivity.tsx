@@ -29,8 +29,8 @@ export default function RecentActivity({ lessons, className }: RecentActivityPro
         return {
           icon: Calendar,
           text: 'Запланировано',
-          color: 'bg-blue-100 text-blue-800',
-          iconColor: 'text-blue-600'
+          color: 'bg-sky-100 text-sky-800',
+          iconColor: 'text-sky-600'
         }
       case 'prepaid':
         return {
@@ -43,22 +43,22 @@ export default function RecentActivity({ lessons, className }: RecentActivityPro
         return {
           icon: AlertCircle,
           text: 'Отменено',
-          color: 'bg-red-100 text-red-800',
-          iconColor: 'text-red-600'
+          color: 'bg-orange-100 text-orange-800',
+          iconColor: 'text-orange-600'
         }
       case 'completed':
         return {
           icon: CheckCircle,
           text: 'Проведено',
-          color: 'bg-green-100 text-green-800',
-          iconColor: 'text-green-600'
+          color: 'bg-purple-100 text-purple-800',
+          iconColor: 'text-purple-600'
         }
       case 'debt':
         return {
           icon: AlertTriangle,
           text: 'Задолженность',
-          color: 'bg-orange-100 text-orange-800',
-          iconColor: 'text-orange-600'
+          color: 'bg-red-100 text-red-800',
+          iconColor: 'text-red-600'
         }
       case 'unpaid':
         return {

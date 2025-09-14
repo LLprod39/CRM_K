@@ -44,7 +44,7 @@ export default function LessonStatusBadge({
 
   if (isCancelled) {
     return (
-      <div className={`inline-flex items-center space-x-2 bg-gray-100 text-gray-700 border border-gray-300 rounded ${sizeClasses.container}`}>
+      <div className={`inline-flex items-center space-x-2 bg-orange-100 text-orange-700 border border-orange-300 rounded ${sizeClasses.container}`}>
         <XCircle className={sizeClasses.icon} />
         {showLabels && <span className="font-medium">Отменено</span>}
       </div>
@@ -53,7 +53,7 @@ export default function LessonStatusBadge({
 
   if (!isCompleted && !isPaid) {
     return (
-      <div className={`inline-flex items-center space-x-2 bg-gray-50 text-gray-600 border border-gray-200 rounded ${sizeClasses.container}`}>
+      <div className={`inline-flex items-center space-x-2 bg-sky-50 text-sky-600 border border-sky-200 rounded ${sizeClasses.container}`}>
         <Clock className={sizeClasses.icon} />
         {showLabels && <span className="font-medium">Запланировано</span>}
       </div>
@@ -62,7 +62,7 @@ export default function LessonStatusBadge({
 
   if (isCompleted && isPaid) {
     return (
-      <div className={`inline-flex items-center space-x-2 bg-gray-100 text-gray-800 border border-gray-300 rounded ${sizeClasses.container}`}>
+      <div className={`inline-flex items-center space-x-2 bg-green-100 text-green-800 border border-green-300 rounded ${sizeClasses.container}`}>
         <CheckCircle className={sizeClasses.icon} />
         {showLabels && <span className="font-medium">Завершено</span>}
       </div>
@@ -71,7 +71,7 @@ export default function LessonStatusBadge({
 
   if (isCompleted && !isPaid) {
     return (
-      <div className={`inline-flex items-center space-x-2 bg-gray-100 text-gray-700 border border-gray-300 rounded ${sizeClasses.container}`}>
+      <div className={`inline-flex items-center space-x-2 bg-red-100 text-red-700 border border-red-300 rounded ${sizeClasses.container}`}>
         <DollarSign className={sizeClasses.icon} />
         {showLabels && <span className="font-medium">Ожидает оплаты</span>}
       </div>
@@ -80,7 +80,7 @@ export default function LessonStatusBadge({
 
   if (!isCompleted && isPaid) {
     return (
-      <div className={`inline-flex items-center space-x-2 bg-gray-100 text-gray-700 border border-gray-300 rounded ${sizeClasses.container}`}>
+      <div className={`inline-flex items-center space-x-2 bg-yellow-100 text-yellow-700 border border-yellow-300 rounded ${sizeClasses.container}`}>
         <AlertTriangle className={sizeClasses.icon} />
         {showLabels && <span className="font-medium">Оплачено</span>}
       </div>
