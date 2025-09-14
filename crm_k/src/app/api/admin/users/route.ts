@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         email: true,
+        phone: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, email, password, role } = await request.json()
+    const { name, email, password, phone, role } = await request.json()
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -88,12 +89,14 @@ export async function POST(request: NextRequest) {
         name,
         email,
         password: hashedPassword,
+        phone: phone || null,
         role: role || 'USER'
       },
       select: {
         id: true,
         name: true,
         email: true,
+        phone: true,
         role: true,
         createdAt: true,
         updatedAt: true

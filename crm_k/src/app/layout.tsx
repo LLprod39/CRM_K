@@ -6,6 +6,7 @@ import MobileNavigation from "@/components/ui/MobileNavigation";
 import MobileHeader from "@/components/ui/MobileHeader";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthProvider, ToastProvider } from "@/presentation/contexts";
+import NotificationWorkerServerInit from "@/components/NotificationWorkerServerInit";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,6 +64,7 @@ export default function RootLayout({
         <ErrorBoundary>
           <AuthProvider>
             <ToastProvider>
+              <NotificationWorkerServerInit />
               <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 lg:block hidden transition-all duration-300">
                 <Navigation />
                 <main className="max-w-7xl mx-auto py-4 sm:py-6 px-3 sm:px-4 lg:px-8">

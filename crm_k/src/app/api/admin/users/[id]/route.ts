@@ -21,7 +21,7 @@ export async function PUT(
 
     const { id } = await params
     const userId = parseInt(id)
-    const { name, email, password, role } = await request.json()
+    const { name, email, password, phone, role } = await request.json()
 
     if (!name || !email) {
       return NextResponse.json(
@@ -59,10 +59,12 @@ export async function PUT(
       name: string;
       email: string;
       role: 'ADMIN' | 'USER';
+      phone?: string | null;
       password?: string;
     } = {
       name,
       email,
+      phone: phone || null,
       role: (role as 'ADMIN' | 'USER') || existingUser.role
     }
 
@@ -79,6 +81,7 @@ export async function PUT(
         id: true,
         name: true,
         email: true,
+        phone: true,
         role: true,
         createdAt: true,
         updatedAt: true

@@ -16,6 +16,7 @@ model User {
   email     String   @unique
   password  String
   name      String
+  phone     String?   // Номер телефона для уведомлений
   role      UserRole @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

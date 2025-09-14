@@ -19,6 +19,9 @@ import StudentAssignment from '@/components/admin/StudentAssignment'
 import CommandPalette from '@/components/admin/CommandPalette'
 import WhatsAppPage from '@/components/admin/WhatsAppPage'
 import NotificationSettings from '@/components/admin/NotificationSettings'
+import NotificationWorkerManager from '@/components/admin/NotificationWorkerManager'
+import WhatsAppInitializer from '@/components/WhatsAppInitializer'
+import WhatsAppStatus from '@/components/admin/WhatsAppStatus'
 import { 
   Users, 
   UserCheck, 
@@ -120,6 +123,7 @@ export default function AdminPage() {
     name: string
     email: string
     password: string
+    phone?: string
     role: UserRole
   }) => {
     try {
@@ -591,6 +595,7 @@ export default function AdminPage() {
 
   return (
     <ProtectedRoute requiredRole="ADMIN">
+      <WhatsAppInitializer />
       <div className="min-h-screen bg-gray-50">
         {/* Заголовок с навигацией */}
         <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
@@ -928,7 +933,9 @@ export default function AdminPage() {
                 </div>
               )}
               {activeTab === 'notifications' && (
-                <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 space-y-6">
+                  <WhatsAppStatus />
+                  <NotificationWorkerManager />
                   <NotificationSettings />
                 </div>
               )}

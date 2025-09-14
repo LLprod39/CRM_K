@@ -218,11 +218,17 @@ async function scheduleDailySummaries() {
       .replace(/{upcomingLessons}/g, upcomingLessons.toString())
       .replace(/{dailyRevenue}/g, (dailyRevenue._sum.cost || 0).toLocaleString());
 
-    // Создаем запланированное уведомление (отправляем себе)
+    // Проверяем, есть ли номер телефона у пользователя
+    if (!user.phone) {
+      console.log(`Пользователь ${user.name} не имеет номера телефона для ежедневной сводки`);
+      continue;
+    }
+
+    // Создаем запланированное уведомление
     await prisma.scheduledNotification.create({
       data: {
         userId: user.id,
-        phoneNumber: user.email, // Можно добавить поле phone в модель User
+        phoneNumber: user.phone,
         message: message,
         scheduledTime: summaryTime,
         notificationType: 'daily_summary'
@@ -303,11 +309,17 @@ async function scheduleWeeklySummaries() {
       .replace(/{weeklyLessons}/g, (weeklyStats._count.id || 0).toString())
       .replace(/{weeklyRevenue}/g, (weeklyStats._sum.cost || 0).toLocaleString());
 
+    // Проверяем, есть ли номер телефона у пользователя
+    if (!user.phone) {
+      console.log(`Пользователь ${user.name} не имеет номера телефона для еженедельной сводки`);
+      continue;
+    }
+
     // Создаем запланированное уведомление
     await prisma.scheduledNotification.create({
       data: {
         userId: user.id,
-        phoneNumber: user.email, // Можно добавить поле phone в модель User
+        phoneNumber: user.phone,
         message: message,
         scheduledTime: summaryDate,
         notificationType: 'weekly_summary'
