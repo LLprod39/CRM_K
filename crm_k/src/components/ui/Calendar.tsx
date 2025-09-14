@@ -113,7 +113,7 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
         case 'cancelled': return 'bg-orange-100 text-orange-800 border-l-4 border-orange-400';
         case 'completed': return 'bg-purple-100 text-purple-800 border-l-4 border-purple-400';
         case 'debt': return 'bg-red-100 text-red-800 border-l-4 border-red-400';
-        case 'unpaid': return 'bg-yellow-100 text-yellow-800 border-l-4 border-yellow-400';
+        case 'unpaid': return 'bg-gray-100 text-gray-800 border-l-4 border-gray-400';
         default: return 'bg-gray-100 text-gray-800 border-l-4 border-gray-400';
       }
     }
@@ -124,7 +124,7 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
       case 'cancelled': return 'bg-orange-100 text-orange-800';
       case 'completed': return 'bg-purple-100 text-purple-800';
       case 'debt': return 'bg-red-100 text-red-800';
-      case 'unpaid': return 'bg-yellow-100 text-yellow-800';
+      case 'unpaid': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -290,10 +290,6 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-red-100 rounded"></div>
                 <span>Задолженность</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-yellow-100 rounded"></div>
-                <span>Не оплачено</span>
               </div>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">

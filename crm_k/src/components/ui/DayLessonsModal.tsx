@@ -48,11 +48,11 @@ export default function DayLessonsModal({
     
     switch (status) {
       case 'scheduled': return 'bg-sky-100 text-sky-800 border-sky-200';
-      case 'prepaid': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'prepaid': return 'bg-gray-100 text-gray-800 border-gray-200';
       case 'cancelled': return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'completed': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'debt': return 'bg-red-100 text-red-800 border-red-200';
-      case 'unpaid': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'unpaid': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -183,11 +183,11 @@ export default function DayLessonsModal({
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'scheduled': return 'bg-sky-100 text-sky-800 border-sky-200';
-      case 'prepaid': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'prepaid': return 'bg-gray-100 text-gray-800 border-gray-200';
       case 'cancelled': return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'completed': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'debt': return 'bg-red-100 text-red-800 border-red-200';
-      case 'unpaid': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'unpaid': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };

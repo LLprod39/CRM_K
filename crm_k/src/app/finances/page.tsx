@@ -102,8 +102,7 @@ export default function FinancesPage() {
       {/* Заголовок и действия */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="animate-fade-in">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 flex items-center">
-            <DollarSign className="w-8 h-8 text-green-600 mr-3" />
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
             Финансы
           </h1>
           <p className="mt-2 text-gray-600 text-lg">

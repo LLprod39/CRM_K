@@ -154,8 +154,7 @@ export default function StudentsPage() {
         {/* Заголовок и действия */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="animate-fade-in">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 flex items-center">
-              <Users className="w-8 h-8 text-purple-600 mr-3" />
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
               Ученики
             </h1>
             <p className="mt-2 text-gray-600 text-lg">
@@ -390,9 +389,6 @@ export default function StudentsPage() {
         <div className="mobile-app-card animate-mobile-bounce-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
-              </div>
               <div>
                 <h2 className="mobile-app-subtitle text-lg">Ученики</h2>
                 <p className="text-sm text-gray-600">
@@ -554,9 +550,6 @@ export default function StudentsPage() {
         {/* Заголовок и поиск */}
         <div className="mobile-card-modern animate-mobile-bounce-in">
           <div className="flex items-center mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-purple-600 to-purple-600 rounded-3xl mr-4 flex items-center justify-center shadow-lg">
-              <Users className="w-6 h-6 text-white" />
-            </div>
             <div className="flex-1">
               <h1 className="mobile-title-gradient text-left mb-0">Ученики</h1>
               <p className="text-sm text-gray-600 font-medium">

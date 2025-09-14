@@ -133,7 +133,7 @@ export default function MobileCalendar({
         case 'cancelled': return 'bg-orange-100 text-orange-800 border-l-4 border-orange-400';
         case 'completed': return 'bg-purple-100 text-purple-800 border-l-4 border-purple-400';
         case 'debt': return 'bg-red-100 text-red-800 border-l-4 border-red-400';
-        case 'unpaid': return 'bg-yellow-100 text-yellow-800 border-l-4 border-yellow-400';
+        case 'unpaid': return 'bg-gray-100 text-gray-800 border-l-4 border-gray-400';
         default: return 'bg-gray-100 text-gray-800 border-l-4 border-gray-400';
       }
     }
@@ -144,7 +144,7 @@ export default function MobileCalendar({
       case 'cancelled': return 'bg-orange-100 text-orange-800';
       case 'completed': return 'bg-purple-100 text-purple-800';
       case 'debt': return 'bg-red-100 text-red-800';
-      case 'unpaid': return 'bg-yellow-100 text-yellow-800';
+      case 'unpaid': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
