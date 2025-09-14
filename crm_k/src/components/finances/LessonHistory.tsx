@@ -187,8 +187,8 @@ export default function LessonHistory() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-blue-600" />
+                      <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <User className="w-5 h-5 text-yellow-600" />
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -201,7 +201,7 @@ export default function LessonHistory() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className={`text-lg font-bold ${getBalanceColor(studentBalance.balance)}`}>
+                    <div className="text-lg font-bold text-yellow-600">
                       {formatCurrency(studentBalance.balance)}
                     </div>
                     <div className="text-xs text-gray-500">баланс</div>
@@ -231,8 +231,8 @@ export default function LessonHistory() {
             {/* Заголовок модального окна */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-2xl">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Calendar className="w-6 h-6 text-blue-600" />
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <Calendar className="w-6 h-6 text-yellow-600" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">История предоплаты</h3>
@@ -267,8 +267,8 @@ export default function LessonHistory() {
                     <div key={studentBalance.student.id} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-200 hover:border-blue-200">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-bold text-blue-600">#{index + 1}</span>
+                          <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-bold text-yellow-600">#{index + 1}</span>
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
@@ -287,7 +287,7 @@ export default function LessonHistory() {
                         </div>
                         
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-gray-900 mb-1">
+                          <div className="text-2xl font-bold text-yellow-600 mb-1">
                             {formatCurrency(studentBalance.balance)}
                           </div>
                           <div className="text-sm text-gray-500 font-medium">баланс</div>
