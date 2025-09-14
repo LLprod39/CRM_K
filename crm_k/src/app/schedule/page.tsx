@@ -9,6 +9,7 @@ import LessonsList from '@/components/tables/LessonsList';
 import LessonFilters from '@/components/ui/LessonFilters';
 import AddLessonForm from '@/components/forms/AddLessonForm';
 import EditLessonForm from '@/components/forms/EditLessonForm';
+import Button from '@/components/ui/Button';
 import { printSchedule } from '@/lib/print';
 import { autoUpdateLessonStatuses } from '@/lib/lessonUtils';
 import { apiRequest } from '@/lib/api';
@@ -172,7 +173,7 @@ export default function SchedulePage() {
             </p>
           </div>
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3">
-          <button 
+          <Button 
             onClick={() => {
               const lessonsForPrint = lessons.map(lesson => ({
                 date: lesson.date,
@@ -182,26 +183,29 @@ export default function SchedulePage() {
               }));
               printSchedule(lessonsForPrint, selectedDate);
             }}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-xl shadow-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 hover:scale-105"
+            variant="outline"
+            size="md"
+            icon={<Printer className="w-4 h-4" />}
           >
-            <Printer className="w-4 h-4 mr-2" />
             Печать
-          </button>
-          <button 
+          </Button>
+          <Button 
             onClick={() => setViewMode(viewMode === 'calendar' ? 'list' : 'calendar')}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-xl shadow-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 hover:scale-105"
+            variant="outline"
+            size="md"
+            icon={<Calendar className="w-4 h-4" />}
           >
-            <Calendar className="w-4 h-4 mr-2" />
             {viewMode === 'calendar' ? 'Список' : 'Календарь'}
-          </button>
+          </Button>
           {user?.role === 'ADMIN' && (
-            <button 
+            <Button 
               onClick={() => setShowAddForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 hover:scale-105"
+              variant="primary"
+              size="md"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4 mr-2" />
               Добавить занятие
-            </button>
+            </Button>
           )}
         </div>
         </div>

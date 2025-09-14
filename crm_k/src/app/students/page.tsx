@@ -6,6 +6,7 @@ import { Users, Plus, Search, Edit, Trash2, Printer, X } from 'lucide-react';
 import { Student } from '@/types';
 import AddStudentForm from '@/components/forms/AddStudentForm';
 import EditStudentForm from '@/components/forms/EditStudentForm';
+import Button from '@/components/ui/Button';
 import { printStudentsList } from '@/lib/print';
 import { apiRequest } from '@/lib/api';
 import { useAuth } from '@/presentation/contexts';
@@ -162,20 +163,22 @@ export default function StudentsPage() {
             </p>
           </div>
           <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3 animate-scale-in">
-            <button 
+            <Button 
               onClick={() => printStudentsList(filteredStudents)}
-              className="inline-flex items-center px-4 py-3 border border-gray-300 rounded-xl shadow-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:scale-105 hover:shadow-xl"
+              variant="outline"
+              size="md"
+              icon={<Printer className="w-4 h-4" />}
             >
-              <Printer className="w-5 h-5 mr-2" />
               Печать
-            </button>
-            <button 
+            </Button>
+            <Button 
               onClick={() => setIsAddFormOpen(true)}
-              className="inline-flex items-center px-6 py-3 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:scale-105 hover:shadow-xl"
+              variant="primary"
+              size="md"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-5 h-5 mr-2" />
               Добавить ученика
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -282,13 +285,14 @@ export default function StudentsPage() {
                       }
                     </p>
                     {students.length === 0 && (
-                      <button 
+                      <Button 
                         onClick={() => setIsAddFormOpen(true)}
-                        className="inline-flex items-center px-8 py-4 border border-transparent shadow-lg text-base font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 hover:scale-105 hover:shadow-xl"
+                        variant="primary"
+                        size="lg"
+                        icon={<Plus className="w-5 h-5" />}
                       >
-                        <Plus className="w-6 h-6 mr-3" />
                         Добавить первого ученика
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>
