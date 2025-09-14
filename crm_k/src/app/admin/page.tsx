@@ -18,6 +18,7 @@ import SecurityLogs from '@/components/admin/SecurityLogs'
 import StudentAssignment from '@/components/admin/StudentAssignment'
 import CommandPalette from '@/components/admin/CommandPalette'
 import WhatsAppPage from '@/components/admin/WhatsAppPage'
+import NotificationSettings from '@/components/admin/NotificationSettings'
 import { 
   Users, 
   UserCheck, 
@@ -61,7 +62,7 @@ export default function AdminPage() {
   const [showAddUserModal, setShowAddUserModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'settings' | 'more'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'notifications' | 'settings' | 'more'>('overview')
   const [moreTab, setMoreTab] = useState<'toys' | 'analytics' | 'security' | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -172,7 +173,7 @@ export default function AdminPage() {
   }
 
   const handleCommandPaletteNavigate = (tab: string, moreTab?: string) => {
-    setActiveTab(tab as 'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'settings' | 'more')
+    setActiveTab(tab as 'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'notifications' | 'settings' | 'more')
     setMoreTab(moreTab || null)
     setShowCommandPalette(false)
   }
@@ -649,6 +650,7 @@ export default function AdminPage() {
                   { tab: 'students', name: 'Ученики', icon: UserCheck },
                   { tab: 'lessons', name: 'Занятия', icon: Calendar },
                   { tab: 'whatsapp', name: 'WhatsApp', icon: MessageSquare },
+                  { tab: 'notifications', name: 'Уведомления', icon: Bell },
                   { tab: 'settings', name: 'Настройки', icon: Settings }
                 ].map((item) => {
                   const isActive = activeTab === item.tab
@@ -656,7 +658,7 @@ export default function AdminPage() {
                     <button
                       key={item.tab}
                       onClick={() => {
-                        setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'settings' | 'more')
+                        setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'notifications' | 'settings' | 'more')
                         setMoreTab(null)
                       }}
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -740,6 +742,7 @@ export default function AdminPage() {
                     { tab: 'students', name: 'Ученики', icon: UserCheck },
                     { tab: 'lessons', name: 'Занятия', icon: Calendar },
                     { tab: 'whatsapp', name: 'WhatsApp', icon: MessageSquare },
+                    { tab: 'notifications', name: 'Уведомления', icon: Bell },
                     { tab: 'settings', name: 'Настройки', icon: Settings }
                   ].map((item) => {
                     const isActive = activeTab === item.tab
@@ -747,7 +750,7 @@ export default function AdminPage() {
                       <button
                         key={item.tab}
                         onClick={() => {
-                          setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'settings' | 'more')
+                          setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'whatsapp' | 'notifications' | 'settings' | 'more')
                           setMoreTab(null)
                           setShowMobileMenu(false)
                         }}
@@ -880,6 +883,7 @@ export default function AdminPage() {
               {activeTab === 'students' && 'Ученики'}
               {activeTab === 'lessons' && 'Занятия'}
               {activeTab === 'whatsapp' && 'WhatsApp'}
+              {activeTab === 'notifications' && 'Уведомления'}
               {activeTab === 'settings' && 'Настройки'}
               {activeTab === 'more' && moreTab === 'toys' && 'Игрушки'}
               {activeTab === 'more' && moreTab === 'analytics' && 'Аналитика'}
@@ -921,6 +925,11 @@ export default function AdminPage() {
               {activeTab === 'whatsapp' && (
                 <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
                   <WhatsAppPage />
+                </div>
+              )}
+              {activeTab === 'notifications' && (
+                <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                  <NotificationSettings />
                 </div>
               )}
               {activeTab === 'more' && moreTab === 'toys' && (

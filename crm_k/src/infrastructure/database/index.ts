@@ -1,1 +1,3 @@
-export * from './db';
+export { prisma } from '@/lib/db';
+
+

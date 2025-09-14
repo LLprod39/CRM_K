@@ -312,6 +312,22 @@ export async function POST(request: NextRequest) {
         )
       );
 
+      // Создаем уведомления для каждого занятия
+      for (const lesson of lessons) {
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/notifications/schedule`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': request.headers.get('Authorization') || ''
+            },
+            body: JSON.stringify({ lessonId: lesson.id })
+          });
+        } catch (error) {
+          console.error('Ошибка создания уведомления для занятия:', lesson.id, error);
+        }
+      }
+
       return NextResponse.json(lessons, { status: 201 })
     } else {
       // Для индивидуальных занятий создаем одно занятие
@@ -342,6 +358,20 @@ export async function POST(request: NextRequest) {
           }
         }
       });
+
+      // Создаем уведомление для занятия
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/notifications/schedule`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': request.headers.get('Authorization') || ''
+          },
+          body: JSON.stringify({ lessonId: lesson.id })
+        });
+      } catch (error) {
+        console.error('Ошибка создания уведомления для занятия:', lesson.id, error);
+      }
 
       return NextResponse.json(lesson, { status: 201 })
     }

@@ -32,6 +32,12 @@ model User {
   // Связь с гибкими абонементами
   flexibleSubscriptions FlexibleSubscription[]
   
+  // Связь с настройками уведомлений
+  notificationSettings NotificationSettings?
+  
+  // Связь с запланированными уведомлениями
+  scheduledNotifications ScheduledNotification[]
+  
   @@map("users")
 }
 
@@ -109,6 +115,9 @@ model Lesson {
   
   // Связь с платежами
   payments    PaymentLesson[]
+  
+  // Связь с запланированными уведомлениями
+  scheduledNotifications ScheduledNotification[]
   
   @@map("lessons")
 }
@@ -303,4 +312,49 @@ model FlexibleSubscriptionPaidDay {
   
   @@unique([subscriptionId, dayId])
   @@map("flexible_subscription_paid_days")
+}
+
+// Модель настроек уведомлений
+model NotificationSettings {
+  id                    Int      @id @default(autoincrement())
+  userId                Int      // ID пользователя-владельца настроек
+  isEnabled             Boolean  @default(true) // Включены ли уведомления
+  reminderBeforeLessons Int      @default(60) // За сколько минут до занятия отправлять напоминание
+  dailySummaryTime      String?  // Время отправки ежедневной сводки (HH:mm)
+  isDailySummaryEnabled Boolean  @default(false) // Включена ли ежедневная сводка
+  isWeeklySummaryEnabled Boolean @default(false) // Включена ли еженедельная сводка
+  weeklySummaryDay      Int      @default(0) // День недели для еженедельной сводки (0=воскресенье)
+  weeklySummaryTime     String?  // Время отправки еженедельной сводки (HH:mm)
+  reminderTemplate      String?  // Шаблон сообщения для напоминания
+  summaryTemplate       String?  // Шаблон сообщения для сводки
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Связь с пользователем
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId]) // Одна настройка на пользователя
+  @@map("notification_settings")
+}
+
+// Модель запланированных уведомлений
+model ScheduledNotification {
+  id                Int      @id @default(autoincrement())
+  userId            Int      // ID пользователя
+  lessonId          Int?     // ID занятия (если уведомление связано с занятием)
+  phoneNumber       String   // Номер телефона получателя
+  message           String   // Текст сообщения
+  scheduledTime     DateTime // Время отправки
+  isSent            Boolean  @default(false) // Отправлено ли уведомление
+  sentAt            DateTime? // Время фактической отправки
+  errorMessage      String?  // Сообщение об ошибке (если отправка не удалась)
+  notificationType  String   // Тип уведомления: lesson_reminder, daily_summary, weekly_summary
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Связи
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson            Lesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  @@map("scheduled_notifications")
 }
