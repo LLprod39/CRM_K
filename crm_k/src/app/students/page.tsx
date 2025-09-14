@@ -155,7 +155,7 @@ export default function StudentsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="animate-fade-in">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 flex items-center">
-              <Users className="w-8 h-8 text-blue-600 mr-3" />
+              <Users className="w-8 h-8 text-purple-600 mr-3" />
               Ученики
             </h1>
             <p className="mt-2 text-gray-600 text-lg">
@@ -238,7 +238,6 @@ export default function StudentsPage() {
       <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 animate-fade-in">
         <div className="px-6 py-5 border-b border-gray-200/50">
           <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-            <Users className="w-6 h-6 text-blue-600 mr-2" />
             Список учеников
           </h3>
         </div>
@@ -316,7 +315,7 @@ export default function StudentsPage() {
                             <div className="absolute inset-0 rounded-full bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           </div>
                         ) : (
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm group-hover:scale-105 transition-transform duration-300 shadow-sm">
+                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm group-hover:scale-105 transition-transform duration-300 shadow-sm">
                             {student.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </div>
                         )}
@@ -391,7 +390,7 @@ export default function StudentsPage() {
         <div className="mobile-app-card animate-mobile-bounce-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center">
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -505,7 +504,7 @@ export default function StudentsPage() {
                       className="w-14 h-14 rounded-2xl object-cover border-2 border-gray-100"
                     />
                   ) : (
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                       {student.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
                     </div>
                   )}
@@ -555,7 +554,7 @@ export default function StudentsPage() {
         {/* Заголовок и поиск */}
         <div className="mobile-card-modern animate-mobile-bounce-in">
           <div className="flex items-center mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 rounded-3xl mr-4 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-purple-600 to-purple-600 rounded-3xl mr-4 flex items-center justify-center shadow-lg">
               <Users className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">
@@ -665,7 +664,7 @@ export default function StudentsPage() {
               >
                 <div className="flex items-center space-x-4">
                   {/* Аватар */}
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
                     {student.photoUrl ? (
                       <img
                         src={student.photoUrl}
