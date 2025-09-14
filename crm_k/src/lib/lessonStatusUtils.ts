@@ -35,8 +35,8 @@ export function getLessonStatusInfo(
       status: 'cancelled',
       label: 'Отменено',
       description: 'Занятие отменено',
-      color: 'text-red-700',
-      bgColor: 'bg-red-100',
+      color: 'text-orange-700',
+      bgColor: 'bg-orange-100',
       icon: '❌'
     };
   }
@@ -57,8 +57,8 @@ export function getLessonStatusInfo(
         status: 'debt',
         label: 'Задолженность',
         description: 'Занятие проведено, но не оплачено',
-        color: 'text-orange-700',
-        bgColor: 'bg-orange-100',
+        color: 'text-red-700',
+        bgColor: 'bg-red-100',
         icon: '⚠️'
       };
     }
@@ -70,8 +70,8 @@ export function getLessonStatusInfo(
       status: 'prepaid',
       label: 'Предоплачено',
       description: 'Занятие предоплачено',
-      color: 'text-blue-700',
-      bgColor: 'bg-blue-100',
+      color: 'text-yellow-700',
+      bgColor: 'bg-yellow-100',
       icon: '💳'
     };
   }
@@ -93,8 +93,8 @@ export function getLessonStatusInfo(
     status: 'scheduled',
     label: 'Запланировано',
     description: 'Занятие запланировано',
-    color: 'text-gray-700',
-    bgColor: 'bg-gray-100',
+    color: 'text-sky-700',
+    bgColor: 'bg-sky-100',
     icon: '📅'
   };
 }
@@ -108,24 +108,24 @@ export function getAllLessonStatuses(): LessonStatusInfo[] {
       status: 'scheduled',
       label: 'Запланировано',
       description: 'Занятие запланировано',
-      color: 'text-gray-700',
-      bgColor: 'bg-gray-100',
+      color: 'text-sky-700',
+      bgColor: 'bg-sky-100',
       icon: '📅'
     },
     {
       status: 'prepaid',
       label: 'Предоплачено',
       description: 'Занятие предоплачено',
-      color: 'text-blue-700',
-      bgColor: 'bg-blue-100',
+      color: 'text-yellow-700',
+      bgColor: 'bg-yellow-100',
       icon: '💳'
     },
     {
       status: 'completed',
       label: 'Проведено',
       description: 'Занятие проведено',
-      color: 'text-indigo-700',
-      bgColor: 'bg-indigo-100',
+      color: 'text-purple-700',
+      bgColor: 'bg-purple-100',
       icon: '🎯'
     },
     {
@@ -140,8 +140,8 @@ export function getAllLessonStatuses(): LessonStatusInfo[] {
       status: 'debt',
       label: 'Задолженность',
       description: 'Занятие проведено, но не оплачено',
-      color: 'text-orange-700',
-      bgColor: 'bg-orange-100',
+      color: 'text-red-700',
+      bgColor: 'bg-red-100',
       icon: '⚠️'
     },
     {
@@ -156,8 +156,8 @@ export function getAllLessonStatuses(): LessonStatusInfo[] {
       status: 'cancelled',
       label: 'Отменено',
       description: 'Занятие отменено',
-      color: 'text-red-700',
-      bgColor: 'bg-red-100',
+      color: 'text-orange-700',
+      bgColor: 'bg-orange-100',
       icon: '❌'
     }
   ];

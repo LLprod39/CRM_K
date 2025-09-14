@@ -128,23 +128,23 @@ export default function MobileCalendar({
     // Для занятий задним числом добавляем специальную индикацию
     if (isBackdate) {
       switch (status) {
-        case 'scheduled': return 'bg-orange-100 text-orange-800 border-l-4 border-orange-400';
+        case 'scheduled': return 'bg-sky-100 text-sky-800 border-l-4 border-sky-400';
         case 'prepaid': return 'bg-yellow-100 text-yellow-800 border-l-4 border-yellow-400';
-        case 'cancelled': return 'bg-red-100 text-red-800 border-l-4 border-red-400';
-        case 'completed': return 'bg-green-100 text-green-800 border-l-4 border-green-400';
-        case 'debt': return 'bg-orange-100 text-orange-800 border-l-4 border-orange-400';
-        case 'unpaid': return 'bg-gray-100 text-gray-800 border-l-4 border-gray-400';
+        case 'cancelled': return 'bg-orange-100 text-orange-800 border-l-4 border-orange-400';
+        case 'completed': return 'bg-purple-100 text-purple-800 border-l-4 border-purple-400';
+        case 'debt': return 'bg-red-100 text-red-800 border-l-4 border-red-400';
+        case 'unpaid': return 'bg-yellow-100 text-yellow-800 border-l-4 border-yellow-400';
         default: return 'bg-gray-100 text-gray-800 border-l-4 border-gray-400';
       }
     }
     
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'scheduled': return 'bg-sky-100 text-sky-800';
       case 'prepaid': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'debt': return 'bg-orange-100 text-orange-800';
-      case 'unpaid': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-orange-100 text-orange-800';
+      case 'completed': return 'bg-purple-100 text-purple-800';
+      case 'debt': return 'bg-red-100 text-red-800';
+      case 'unpaid': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
