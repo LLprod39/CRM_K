@@ -18,6 +18,7 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [ageFilter, setAgeFilter] = useState('');
   const [diagnosisFilter, setDiagnosisFilter] = useState('');
+  const [teacherFilter, setTeacherFilter] = useState('');
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -42,6 +43,33 @@ export default function StudentsPage() {
     }
   };
 
+  // Функция для получения основного учителя ученика
+  const getMainTeacher = (student: any) => {
+    if (student.user) {
+      return student.user.name;
+    }
+    
+    // Если нет назначенного учителя, берем последнего учителя из занятий
+    if (student.lessons && student.lessons.length > 0) {
+      const latestLesson = student.lessons[0];
+      return latestLesson.teacher?.name || 'Не назначен';
+    }
+    
+    return 'Не назначен';
+  };
+
+  // Получаем уникальных учителей для фильтра
+  const getUniqueTeachers = () => {
+    const teachers = new Set<string>();
+    students.forEach(student => {
+      const teacher = getMainTeacher(student);
+      if (teacher !== 'Не назначен') {
+        teachers.add(teacher);
+      }
+    });
+    return Array.from(teachers).sort();
+  };
+
   // Фильтрация учеников
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -56,7 +84,10 @@ export default function StudentsPage() {
     const matchesDiagnosis = !diagnosisFilter || 
       (student.diagnosis && student.diagnosis.toLowerCase().includes(diagnosisFilter.toLowerCase()));
 
-    return matchesSearch && matchesAge && matchesDiagnosis;
+    const matchesTeacher = !teacherFilter || 
+      getMainTeacher(student).toLowerCase().includes(teacherFilter.toLowerCase());
+
+    return matchesSearch && matchesAge && matchesDiagnosis && matchesTeacher;
   });
 
   // Удаление ученика
@@ -184,6 +215,16 @@ export default function StudentsPage() {
               <option value="зпр">ЗПР</option>
               <option value="дцп">ДЦП</option>
             </select>
+            <select 
+              className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 focus:bg-white text-gray-900"
+              value={teacherFilter}
+              onChange={(e) => setTeacherFilter(e.target.value)}
+            >
+              <option value="">Все учителя</option>
+              {getUniqueTeachers().map(teacher => (
+                <option key={teacher} value={teacher}>{teacher}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -213,6 +254,9 @@ export default function StudentsPage() {
                   Диагноз
                 </th>
                 <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Учитель
+                </th>
+                <th className="px-6 py-5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Действия
                 </th>
               </tr>
@@ -220,7 +264,7 @@ export default function StudentsPage() {
             <tbody className="bg-white divide-y divide-gray-200/50">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center">
+                  <td colSpan={6} className="px-6 py-20 text-center">
                     <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                       <Users className="h-12 w-12 text-gray-400" />
                     </div>
@@ -298,6 +342,11 @@ export default function StudentsPage() {
                       ) : (
                         <span className="text-sm text-gray-400 italic">—</span>
                       )}
+                    </td>
+                    <td className="px-6 py-6 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+                        {getMainTeacher(student)}
+                      </div>
                     </td>
                     <td className="px-6 py-6 whitespace-nowrap">
                       <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
@@ -387,6 +436,18 @@ export default function StudentsPage() {
                 <option value="дцп">ДЦП</option>
               </select>
             </div>
+            <div className="mt-2">
+              <select 
+                className="mobile-app-input w-full text-sm"
+                value={teacherFilter}
+                onChange={(e) => setTeacherFilter(e.target.value)}
+              >
+                <option value="">Все учителя</option>
+                {getUniqueTeachers().map(teacher => (
+                  <option key={teacher} value={teacher}>{teacher}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -443,6 +504,9 @@ export default function StudentsPage() {
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
                       {student.age} лет • {student.phone}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      👨‍🏫 {getMainTeacher(student)}
                     </p>
                     {student.diagnosis && (
                       <span className="inline-block mt-2 px-3 py-1 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 text-xs font-medium rounded-full">
@@ -525,6 +589,20 @@ export default function StudentsPage() {
               <option value="Другое">Другое</option>
             </select>
           </div>
+          
+          {/* Фильтр по учителю */}
+          <div className="mt-3">
+            <select
+              value={teacherFilter}
+              onChange={(e) => setTeacherFilter(e.target.value)}
+              className="mobile-input-modern text-sm py-3 w-full"
+            >
+              <option value="">Все учителя</option>
+              {getUniqueTeachers().map(teacher => (
+                <option key={teacher} value={teacher}>{teacher}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Кнопка добавления */}
@@ -594,12 +672,17 @@ export default function StudentsPage() {
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">
                         {student.age} лет
                       </span>
-                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">
-                        {student.diagnosis}
-                      </span>
+                      {student.diagnosis && (
+                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">
+                          {student.diagnosis}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-600 font-medium">
                       📱 {student.phone}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium mt-1">
+                      👨‍🏫 {getMainTeacher(student)}
                     </p>
                     {student.parentName && (
                       <p className="text-xs text-gray-500 mt-1">

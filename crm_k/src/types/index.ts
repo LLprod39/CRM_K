@@ -97,7 +97,13 @@ export type LessonWithOptionalStudent = Lesson & {
 
 // Тип для студента с включенными уроками
 export type StudentWithLessons = Student & {
-  lessons: Lesson[]
+  lessons: (Lesson & {
+    teacher?: {
+      id: number;
+      name: string;
+      email: string;
+    }
+  })[]
 }
 
 // Типы для создания и обновления данных

@@ -37,6 +37,15 @@ export async function GET(request: NextRequest) {
         lessons: {
           orderBy: {
             date: 'desc'
+          },
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
           }
         },
         user: {
