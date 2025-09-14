@@ -152,7 +152,7 @@ export default function FinancesPage() {
           {/* Список задолженностей */}
           <DebtsList />
 
-          {/* История занятий */}
+          {/* История предоплаты */}
           <LessonHistory />
 
           {/* История платежей */}
