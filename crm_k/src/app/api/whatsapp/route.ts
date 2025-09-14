@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
         if (!chatId) {
           return NextResponse.json({ error: 'chatId is required' }, { status: 400 });
         }
-        return await getChatMessages(chatId);
+        const limit = parseInt(searchParams.get('limit') || '50');
+        return await getChatMessages(chatId, limit);
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -329,20 +330,21 @@ async function getContacts() {
   }
 }
 
-async function getChatMessages(chatId: string) {
+async function getChatMessages(chatId: string, limit: number = 50) {
   if (!whatsappClient || !isClientReady) {
     return NextResponse.json({ error: 'WhatsApp client not ready' }, { status: 400 });
   }
 
   try {
-    console.log(`Loading messages for chat: ${chatId}`);
+    console.log(`Loading messages for chat: ${chatId} (limit: ${limit})`);
     const chat = await whatsappClient.getChatById(chatId);
     
     if (!chat) {
       return NextResponse.json({ error: 'Chat not found' }, { status: 404 });
     }
 
-    const messages = await chat.fetchMessages({ limit: 100 }); // Увеличиваем до 100 сообщений
+    // Загружаем сообщения с ограничением для производительности
+    const messages = await chat.fetchMessages({ limit: Math.min(limit, 200) });
     console.log(`Found ${messages.length} messages in chat ${chatId}`);
 
     const messageList = messages
@@ -390,7 +392,8 @@ async function getChatMessages(chatId: string) {
       success: true, 
       messages: messageList,
       chatId: chatId,
-      totalMessages: messages.length
+      totalMessages: messages.length,
+      hasMore: messages.length >= limit
     });
   } catch (error) {
     console.error('Error getting chat messages:', error);

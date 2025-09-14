@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/textarea';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { useWhatsAppUpdates } from '@/hooks/useWhatsAppUpdates';
 import { 
   Loader2, 
   MessageSquare, 
@@ -69,11 +70,15 @@ interface Chat {
   messages: Message[];
 }
 
+// Кэш для сообщений
+const messageCache = new Map<string, { messages: Message[], timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 минут
+
 export default function WhatsAppPage() {
   const [status, setStatus] = useState<WhatsAppStatus>({ ready: false, qrCode: null });
   const [isLoading, setIsLoading] = useState(false);
   const [chats, setChats] = useState<Chat[]>([]);
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [currentMessage, setCurrentMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,38 +87,16 @@ export default function WhatsAppPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [chatStats, setChatStats] = useState<{totalChats: number, activeChats: number} | null>(null);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  // Текущий выбранный чат вычисляем из списка чатов, чтобы получать обновления
+  const selectedChat = useMemo(() => {
+    return selectedChatId ? chats.find(c => c.id === selectedChatId) || null : null;
+  }, [chats, selectedChatId]);
 
-  useEffect(() => {
-    initializeWhatsApp();
-    // Проверяем статус каждые 5 секунд
-    const interval = setInterval(checkStatus, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
-  useEffect(() => {
-    if (status.ready) {
-      loadChats();
-      // Автоматически обновляем чаты каждые 30 секунд
-      const interval = setInterval(loadChats, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [status.ready]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [selectedChat?.messages]);
-
-  useEffect(() => {
-    if (selectedChat && status.ready) {
-      // Автоматически обновляем сообщения выбранного чата каждые 10 секунд
-      const interval = setInterval(() => {
-        loadChatMessages(selectedChat.id);
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [selectedChat?.id, status.ready]);
-
+  // Вспомогательные функции
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -144,7 +127,14 @@ export default function WhatsAppPage() {
     }
   };
 
-  const loadChats = async () => {
+  // Основные функции с useCallback
+  const loadChats = useCallback(async () => {
+    // Проверяем готовность клиента
+    if (!status.ready) {
+      console.log('WhatsApp client not ready, skipping chat loading');
+      return;
+    }
+
     setIsRefreshing(true);
     setLoadingMessage('Загружаем чаты из WhatsApp...');
     
@@ -186,14 +176,36 @@ export default function WhatsAppPage() {
       setIsRefreshing(false);
       setTimeout(() => setLoadingMessage(''), 3000); // Убираем сообщение через 3 секунды
     }
-  };
+  }, [status.ready]);
 
-  const loadChatMessages = async (chatId: string) => {
+  const loadChatMessages = useCallback(async (chatId: string, forceRefresh = false) => {
+    // Проверяем готовность клиента
+    if (!status.ready) {
+      console.log('WhatsApp client not ready, skipping message loading');
+      return;
+    }
+
+    // Проверяем кэш
+    const cached = messageCache.get(chatId);
+    const now = Date.now();
+    
+    if (!forceRefresh && cached && (now - cached.timestamp) < CACHE_DURATION) {
+      console.log('Loading messages from cache for chat:', chatId);
+      setChats(prevChats => 
+        prevChats.map(chat => 
+          chat.id === chatId 
+            ? { ...chat, messages: cached.messages }
+            : chat
+        )
+      );
+      return;
+    }
+
+    setIsLoadingMessages(true);
     try {
-      console.log('Loading messages for chat:', chatId);
+      console.log('Loading messages from server for chat:', chatId);
       const response = await fetch(`/api/whatsapp?action=messages&chatId=${encodeURIComponent(chatId)}`);
       const data = await response.json();
-      console.log('Messages response:', data);
       
       if (data.success && data.messages) {
         // Преобразуем даты в объекты Date при загрузке сообщений
@@ -202,7 +214,13 @@ export default function WhatsAppPage() {
           timestamp: message.timestamp ? new Date(message.timestamp) : new Date()
         }));
         
-        console.log('Processed messages:', processedMessages);
+        // Сохраняем в кэш
+        messageCache.set(chatId, {
+          messages: processedMessages,
+          timestamp: now
+        });
+        
+        console.log('Processed and cached messages:', processedMessages.length);
         
         setChats(prevChats => 
           prevChats.map(chat => 
@@ -216,8 +234,62 @@ export default function WhatsAppPage() {
       }
     } catch (error) {
       console.error('Error loading messages:', error);
+    } finally {
+      setIsLoadingMessages(false);
     }
-  };
+  }, [status.ready]);
+
+  // Подключение к обновлениям в реальном времени
+  const { isConnected } = useWhatsAppUpdates(useCallback((update) => {
+    console.log('WhatsApp update received:', update);
+    
+    if (update.type === 'new_message' && update.chatId) {
+      // Обновляем сообщения для конкретного чата
+      if (selectedChat?.id === update.chatId) {
+        loadChatMessages(update.chatId, true);
+      }
+    } else if (update.type === 'chat_update') {
+      // Обновляем список чатов
+      loadChats();
+    }
+  }, [selectedChat?.id, loadChatMessages, loadChats]));
+
+  // Effects
+  useEffect(() => {
+    initializeWhatsApp();
+    // Проверяем статус каждые 5 секунд
+    const interval = setInterval(checkStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (status.ready) {
+      loadChats();
+      // Автоматически обновляем чаты каждые 30 секунд
+      const interval = setInterval(() => {
+        if (status.ready) {
+          loadChats();
+        }
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [status.ready, loadChats]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [selectedChat?.messages]);
+
+  useEffect(() => {
+    if (selectedChat && status.ready) {
+      // Автоматически обновляем сообщения выбранного чата каждые 10 секунд
+      const interval = setInterval(() => {
+        if (status.ready) {
+          loadChatMessages(selectedChat.id);
+        }
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedChat?.id, status.ready, loadChatMessages]);
 
   const sendMessage = async () => {
     if (!selectedChat || !currentMessage.trim()) {
@@ -320,7 +392,7 @@ export default function WhatsAppPage() {
     const existingChat = chats.find(chat => chat.number === formattedNumber);
     
     if (existingChat) {
-      setSelectedChat(existingChat);
+      setSelectedChatId(existingChat.id);
       setShowNewChat(false);
       setNewChatNumber('');
       return;
@@ -338,7 +410,7 @@ export default function WhatsAppPage() {
     };
 
     setChats(prev => [newChat, ...prev]);
-    setSelectedChat(newChat);
+    setSelectedChatId(newChat.id);
     setShowNewChat(false);
     setNewChatNumber('');
   };
@@ -357,7 +429,7 @@ export default function WhatsAppPage() {
       
       setStatus({ ready: false, qrCode: null });
       setChats([]);
-      setSelectedChat(null);
+      setSelectedChatId(null);
     } catch (error) {
       console.error('Error disconnecting:', error);
     }
@@ -444,9 +516,22 @@ export default function WhatsAppPage() {
     }
   };
 
-  const filteredChats = chats.filter(chat => 
-    chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    chat.number.includes(searchQuery)
+  // Мемоизированный список отфильтрованных чатов
+  const filteredChats = useMemo(() => 
+    chats.filter(chat => 
+      chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      chat.number.includes(searchQuery)
+    ), [chats, searchQuery]
+  );
+
+  // Мемоизированные сообщения выбранного чата
+  const selectedChatMessages = useMemo(() => 
+    selectedChat?.messages || [], [selectedChat?.messages]
+  );
+
+  // Виртуализация сообщений - показываем только последние 50 сообщений для производительности
+  const visibleMessages = useMemo(() => 
+    selectedChatMessages.slice(-50), [selectedChatMessages]
   );
 
   if (!status.ready && !isLoading && !status.qrCode) {
@@ -555,6 +640,11 @@ export default function WhatsAppPage() {
                     Всего: {chatStats.totalChats}
                   </Badge>
                 )}
+                <Badge 
+                  className={`text-xs ${isConnected ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}
+                >
+                  {isConnected ? '🟢 Live' : '⚪ Offline'}
+                </Badge>
               </div>
             </div>
           </div>
@@ -680,7 +770,7 @@ export default function WhatsAppPage() {
                     <div
                       key={chat.id}
                       onClick={() => {
-                        setSelectedChat(chat);
+                        setSelectedChatId(chat.id);
                         loadChatMessages(chat.id);
                       }}
                       className={`p-4 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors ${
@@ -770,37 +860,59 @@ export default function WhatsAppPage() {
                 </div>
 
                 {/* Сообщения */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                  {selectedChat.messages.length === 0 ? (
+                <div 
+                  ref={messagesContainerRef}
+                  className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"
+                >
+                  {isLoadingMessages ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                    </div>
+                  ) : selectedChat.messages.length === 0 ? (
                     <div className="text-center text-gray-500 py-8">
                       <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                       <p>Начните разговор с {selectedChat.name}</p>
                     </div>
                   ) : (
-                    selectedChat.messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.fromMe ? 'justify-end' : 'justify-start'}`}
-                      >
+                    <>
+                      {selectedChat.messages.length > 50 && (
+                        <div className="text-center py-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => loadChatMessages(selectedChat.id, true)}
+                            className="text-xs"
+                          >
+                            <RefreshCw className="w-3 h-3 mr-1" />
+                            Загрузить все сообщения ({selectedChat.messages.length})
+                          </Button>
+                        </div>
+                      )}
+                      {visibleMessages.map((message) => (
                         <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                            message.fromMe
-                              ? 'bg-green-500 text-white'
-                              : 'bg-white text-gray-900 border border-gray-200'
-                          }`}
+                          key={message.id}
+                          className={`flex ${message.fromMe ? 'justify-end' : 'justify-start'}`}
                         >
-                          <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                          <div className={`flex items-center justify-end mt-1 space-x-1 ${
-                            message.fromMe ? 'text-green-100' : 'text-gray-500'
-                          }`}>
-                            <span className="text-xs">
-                              {formatTime(message.timestamp)}
-                            </span>
-                            {message.fromMe && getMessageStatusIcon(message.status)}
+                          <div
+                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                              message.fromMe
+                                ? 'bg-green-500 text-white'
+                                : 'bg-white text-gray-900 border border-gray-200'
+                            }`}
+                          >
+                            <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                            <div className={`flex items-center justify-end mt-1 space-x-1 ${
+                              message.fromMe ? 'text-green-100' : 'text-gray-500'
+                            }`}>
+                              <span className="text-xs">
+                                {formatTime(message.timestamp)}
+                              </span>
+                              {message.fromMe && getMessageStatusIcon(message.status)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      ))}
+                    </>
                   )}
                   <div ref={messagesEndRef} />
                 </div>
