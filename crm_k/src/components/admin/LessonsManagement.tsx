@@ -55,6 +55,7 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
   const [showBulkForm, setShowBulkForm] = useState(false)
   const [showPrepaymentForm, setShowPrepaymentForm] = useState(false)
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+  const [activeTab, setActiveTab] = useState<'list' | 'create'>('list')
 
   // Проверяем, что пользователь является админом
   if (user?.role !== 'ADMIN') {
@@ -257,170 +258,161 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
 
   return (
     <div className={cn("space-y-6 max-w-7xl mx-auto", className)}>
-      {/* Статистика */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Всего занятий</p>
-              <p className="text-2xl font-bold text-gray-900">{lessons.length}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-blue-600" />
-            </div>
+      {/* Заголовок и вкладки */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Занятия</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Всего: {lessons.length} • Проведено: {lessons.filter(l => l.isCompleted && l.isPaid).length} • Доход: {lessons.filter(l => l.isPaid).reduce((sum, l) => sum + l.cost, 0).toLocaleString()} ₸
+            </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Проведено</p>
-              <p className="text-2xl font-bold text-green-600">
-                {lessons.filter(l => l.isCompleted && l.isPaid).length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Оплачено</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {lessons.filter(l => l.isPaid).length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Общий доход</p>
-              <p className="text-2xl font-bold text-green-600">
-                {lessons
-                  .filter(l => l.isPaid)
-                  .reduce((sum, l) => sum + l.cost, 0)
-                  .toLocaleString()} ₸
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
+        {/* Вкладки */}
+        <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
+          <button
+            onClick={() => setActiveTab('list')}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === 'list'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Список</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('create')}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === 'create'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+            }`}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Создать</span>
+          </button>
         </div>
       </div>
 
-      {/* Фильтры */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Поиск по ученику или преподавателю..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+      {/* Контент вкладок */}
+      {activeTab === 'list' && (
+        <>
+          {/* Фильтры */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Поиск по ученику или преподавателю..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">Все статусы</option>
+                  <option value="scheduled">Запланировано</option>
+                  <option value="paid">Оплачено</option>
+                  <option value="completed">Проведено</option>
+                  <option value="cancelled">Отменено</option>
+                </select>
+                
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value as any)}
+                  className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">Все даты</option>
+                  <option value="today">Сегодня</option>
+                  <option value="week">Неделя</option>
+                  <option value="month">Месяц</option>
+                </select>
+                
+                <button
+                  onClick={handleExportLessons}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors flex items-center"
+                  title="Экспорт в CSV"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Экспорт
+                </button>
+              </div>
             </div>
+            
+            {(searchQuery || statusFilter !== 'all' || dateFilter !== 'all') && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-blue-700">
+                    Найдено: {filteredLessons.length} из {lessons.length} занятий
+                  </span>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('')
+                      setStatusFilter('all')
+                      setDateFilter('all')
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Сбросить фильтры
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          
-          <div className="flex gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Все статусы</option>
-              <option value="scheduled">Запланировано</option>
-              <option value="paid">Оплачено</option>
-              <option value="completed">Проведено</option>
-              <option value="cancelled">Отменено</option>
-            </select>
-            
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Все даты</option>
-              <option value="today">Сегодня</option>
-              <option value="week">Неделя</option>
-              <option value="month">Месяц</option>
-            </select>
-            
+        </>
+      )}
+
+      {activeTab === 'create' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Создание занятий и абонементов</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
               onClick={() => setShowSubscriptionModal(true)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors flex items-center"
-              title="Создать абонемент"
+              className="p-6 bg-purple-50 hover:bg-purple-100 rounded-xl border border-purple-200 transition-all duration-200 text-left hover:shadow-md"
             >
-              <CreditCard className="w-4 h-4 mr-2" />
-              Абонемент
+              <CreditCard className="w-8 h-8 text-purple-600 mb-3" />
+              <div className="font-medium text-gray-900">Абонемент</div>
+              <div className="text-sm text-gray-600">Создать гибкий абонемент</div>
             </button>
             
             <button
               onClick={() => setShowBulkForm(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center"
-              title="Массовое создание занятий"
+              className="p-6 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 transition-all duration-200 text-left hover:shadow-md"
             >
-              <CalendarDays className="w-4 h-4 mr-2" />
-              Массовое создание
+              <CalendarDays className="w-8 h-8 text-green-600 mb-3" />
+              <div className="font-medium text-gray-900">Массовое создание</div>
+              <div className="text-sm text-gray-600">Создать несколько занятий</div>
             </button>
             
             <button
               onClick={() => setShowPrepaymentForm(true)}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors flex items-center"
-              title="Создать предоплату"
+              className="p-6 bg-yellow-50 hover:bg-yellow-100 rounded-xl border border-yellow-200 transition-all duration-200 text-left hover:shadow-md"
             >
-              <CreditCard className="w-4 h-4 mr-2" />
-              Предоплата
-            </button>
-            
-            <button
-              onClick={handleExportLessons}
-              className="px-4 py-2 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors flex items-center"
-              title="Экспорт в CSV"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Экспорт
+              <CreditCard className="w-8 h-8 text-yellow-600 mb-3" />
+              <div className="font-medium text-gray-900">Предоплата</div>
+              <div className="text-sm text-gray-600">Закрыть долги</div>
             </button>
           </div>
         </div>
-        
-        {(searchQuery || statusFilter !== 'all' || dateFilter !== 'all') && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-blue-700">
-                Найдено: {filteredLessons.length} из {lessons.length} занятий
-              </span>
-              <button
-                onClick={() => {
-                  setSearchQuery('')
-                  setStatusFilter('all')
-                  setDateFilter('all')
-                }}
-                className="text-xs text-blue-600 hover:text-blue-800 underline"
-              >
-                Сбросить фильтры
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Список занятий */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
-        <div className="p-4 sm:p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Занятия</h3>
-        </div>
+      {activeTab === 'list' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Список занятий</h3>
+          </div>
         
         <div className="p-4 sm:p-6">
           {filteredLessons.length > 0 ? (
@@ -540,7 +532,8 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
             </div>
           )}
         </div>
-      </div>
+        </div>
+      )}
       
       {/* Модальные окна */}
       <SubscriptionModal

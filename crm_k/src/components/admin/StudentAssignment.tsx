@@ -136,97 +136,53 @@ export default function StudentAssignment() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Заголовок и статистика */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Заголовок и действия */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                Назначение учеников
-              </h2>
-              <p className="text-sm text-gray-600">
-                Управление назначением учеников учителям
-              </p>
-            </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Ученики</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Всего: {students.length} • Назначены: {assignedCount} • Не назначены: {unassignedCount}
+            </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <button
               onClick={() => setShowAddStudentForm(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors flex items-center text-sm font-medium"
             >
-              <Plus className="w-4 h-4" />
-              <span>Добавить ученика</span>
+              <Plus className="w-4 h-4 mr-2" />
+              Добавить ученика
             </button>
             <button
               onClick={fetchData}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               title="Обновить данные"
             >
-              <RefreshCw className="w-5 h-5" />
+              <RefreshCw className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Статистика */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Всего учеников</span>
-            </div>
-            <div className="text-2xl font-bold text-gray-900 mt-1">
-              {students.length}
-            </div>
-          </div>
-          
-          <div className="bg-green-50 rounded-lg p-4">
-            <div className="flex items-center space-x-2">
-              <UserCheck className="w-5 h-5 text-green-600" />
-              <span className="text-sm font-medium text-green-700">Назначены</span>
-            </div>
-            <div className="text-2xl font-bold text-green-900 mt-1">
-              {assignedCount}
-            </div>
-          </div>
-          
-          <div className="bg-orange-50 rounded-lg p-4">
-            <div className="flex items-center space-x-2">
-              <UserX className="w-5 h-5 text-orange-600" />
-              <span className="text-sm font-medium text-orange-700">Не назначены</span>
-            </div>
-            <div className="text-2xl font-bold text-orange-900 mt-1">
-              {unassignedCount}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Фильтры */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* Фильтры */}
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Поиск по имени ученика или родителя..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-400" />
+          <div className="flex gap-2">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">Все ученики</option>
               <option value="assigned">Назначенные</option>
@@ -236,112 +192,132 @@ export default function StudentAssignment() {
         </div>
       </div>
 
-      {/* Список учеников */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">
-            Список учеников ({filteredStudents.length})
-          </h3>
-        </div>
-        
-        <div className="divide-y divide-gray-200">
+      {/* Таблица учеников */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+        <div className="overflow-x-auto">
           {filteredStudents.length > 0 ? (
-            filteredStudents.map((student) => (
-              <div key={student.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3">
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-900">
-                          {student.fullName}
-                        </h4>
-                        <p className="text-sm text-gray-600">
-                          Родитель: {student.parentName} • Возраст: {student.age} лет
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Телефон: {student.phone}
-                        </p>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        {student.isAssigned ? (
-                          <div className="flex items-center space-x-1 text-green-600">
-                            <CheckCircle className="w-4 h-4" />
-                            <span className="text-sm font-medium">Назначен</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center space-x-1 text-orange-600">
-                            <AlertCircle className="w-4 h-4" />
-                            <span className="text-sm font-medium">Не назначен</span>
-                          </div>
-                        )}
-                        
-                        {/* Баланс ученика */}
-                        <div className="flex items-center space-x-1">
-                          <CreditCard className="w-4 h-4 text-blue-600" />
-                          <span className={`text-sm font-medium ${
-                            (student.balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {student.balance ? student.balance.toLocaleString() : '0'} ₸
-                          </span>
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Назначен(ы) учителю(ям)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Баланс</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Последнее занятие</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredStudents.map((student) => (
+                  <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                          <UserCheck className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{student.fullName}</div>
+                          <div className="text-xs text-gray-500">{student.parentName} • {student.age} лет</div>
                         </div>
                       </div>
-                    </div>
-                    
-                    {student.user && (
-                      <div className="mt-2 text-sm text-blue-600">
-                        Учитель: {student.user.name} ({student.user.email})
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {student.isAssigned && student.user ? (
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{student.user.name}</div>
+                            <div className="text-xs text-gray-500">{student.user.email}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <AlertCircle className="w-4 h-4 text-orange-600" />
+                          <span className="text-sm text-gray-500">Не назначен</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-1">
+                        <CreditCard className="w-4 h-4 text-blue-600" />
+                        <span className={`text-sm font-medium ${
+                          (student.balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {student.balance ? student.balance.toLocaleString() : '0'} ₸
+                        </span>
                       </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setSelectedStudentForBalance(student.id)}
-                      className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors flex items-center space-x-1"
-                    >
-                      <CreditCard className="w-4 h-4" />
-                      <span>Баланс</span>
-                    </button>
-                    
-                    {!student.isAssigned ? (
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {student.lastLessonDate ? new Date(student.lastLessonDate).toLocaleDateString('ru-RU') : 'Нет занятий'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
-                        <UserSelector
-                          selectedUserId={undefined}
-                          onUserChange={(teacherId) => {
-                            if (teacherId) {
-                              handleAssignStudent(student.id, teacherId)
-                            }
-                          }}
-                          placeholder="Выберите учителя..."
-                          className="min-w-[200px]"
-                        />
+                        <button
+                          onClick={() => setSelectedStudentForBalance(student.id)}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                          title="Баланс"
+                        >
+                          <CreditCard className="w-4 h-4" />
+                        </button>
+                        
+                        {!student.isAssigned ? (
+                          <UserSelector
+                            selectedUserId={undefined}
+                            onUserChange={(teacherId) => {
+                              if (teacherId) {
+                                handleAssignStudent(student.id, teacherId)
+                              }
+                            }}
+                            placeholder="Назначить..."
+                            className="min-w-[150px]"
+                          />
+                        ) : (
+                          <button
+                            onClick={() => handleUnassignStudent(student.id)}
+                            disabled={assigning}
+                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
+                            title="Отменить назначение"
+                          >
+                            <UserX className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => handleUnassignStudent(student.id)}
-                        disabled={assigning}
-                        className="px-3 py-1 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        Отменить назначение
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : (
-            <div className="p-8 text-center">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-gray-400" />
+              </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Ученики не найдены
+                {searchQuery || filterStatus !== 'all' ? 'Ученики не найдены' : 'Нет учеников'}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-500 mb-4">
                 {searchQuery || filterStatus !== 'all' 
-                  ? 'Попробуйте изменить параметры поиска'
-                  : 'Нет учеников для отображения'
+                  ? 'Попробуйте изменить параметры поиска' 
+                  : 'Добавьте первого ученика, чтобы начать работу'
                 }
               </p>
+              {searchQuery || filterStatus !== 'all' ? (
+                <button
+                  onClick={() => {
+                    setSearchQuery('')
+                    setFilterStatus('all')
+                  }}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
+                >
+                  Сбросить фильтры
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowAddStudentForm(true)}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
+                >
+                  Добавить ученика
+                </button>
+              )}
             </div>
           )}
         </div>

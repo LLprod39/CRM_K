@@ -16,6 +16,7 @@ import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard'
 import SystemSettings from '@/components/admin/SystemSettings'
 import SecurityLogs from '@/components/admin/SecurityLogs'
 import StudentAssignment from '@/components/admin/StudentAssignment'
+import CommandPalette from '@/components/admin/CommandPalette'
 import { 
   Users, 
   UserCheck, 
@@ -58,11 +59,13 @@ export default function AdminPage() {
   const [showAddUserModal, setShowAddUserModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'lessons' | 'settings' | 'more'>('overview')
+  const [moreTab, setMoreTab] = useState<'toys' | 'analytics' | 'security' | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterRole, setFilterRole] = useState<UserRole | 'all'>('all')
+  const [showCommandPalette, setShowCommandPalette] = useState(false)
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== 'ADMIN')) {
@@ -74,6 +77,19 @@ export default function AdminPage() {
       fetchAdminStats()
     }
   }, [user, isLoading, router])
+
+  // Обработчик клавиш для командной палитры
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setShowCommandPalette(true)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const fetchAdminStats = async (showRefresh = false) => {
     if (!user) return;
@@ -153,6 +169,12 @@ export default function AdminPage() {
     setEditingUser(null)
   }
 
+  const handleCommandPaletteNavigate = (tab: string, moreTab?: string) => {
+    setActiveTab(tab as 'overview' | 'users' | 'students' | 'lessons' | 'settings' | 'more')
+    setMoreTab(moreTab || null)
+    setShowCommandPalette(false)
+  }
+
   // Функции для экспорта данных
   const generateUsersCSV = (users: UserWithStats[]) => {
     const headers = ['ID', 'Имя', 'Email', 'Роль', 'Учеников', 'Занятий', 'Доход', 'Долг', 'Дата создания']
@@ -187,10 +209,10 @@ export default function AdminPage() {
 
   if (isLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 animate-pulse shadow-lg">
-            <Shield className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <Shield className="w-10 h-10 text-red-600" />
           </div>
           <div className="text-2xl font-bold text-gray-900 mb-2">Загрузка админ панели</div>
           <div className="text-gray-600">Инициализация системы управления...</div>
@@ -208,155 +230,134 @@ export default function AdminPage() {
     <div className="space-y-3 max-w-7xl mx-auto">
       {/* Ключевые метрики */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Пользователи</p>
-              <p className="text-3xl font-bold">{stats?.totalUsers || 0}</p>
-              <p className="text-blue-100 text-xs mt-1">в системе</p>
+              <p className="text-gray-600 text-sm font-medium">Пользователи</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.totalUsers || 0}</p>
+              <p className="text-gray-500 text-xs mt-1">в системе</p>
             </div>
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6" />
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Users className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-4 text-white shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Ученики</p>
-              <p className="text-3xl font-bold">{stats?.totalStudents || 0}</p>
-              <p className="text-green-100 text-xs mt-1">зарегистрировано</p>
+              <p className="text-gray-600 text-sm font-medium">Ученики</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.totalStudents || 0}</p>
+              <p className="text-gray-500 text-xs mt-1">зарегистрировано</p>
             </div>
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <UserCheck className="w-6 h-6" />
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <UserCheck className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-4 text-white shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Занятия</p>
-              <p className="text-3xl font-bold">{stats?.totalLessons || 0}</p>
-              <p className="text-purple-100 text-xs mt-1">проведено</p>
+              <p className="text-gray-600 text-sm font-medium">Занятия</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.totalLessons || 0}</p>
+              <p className="text-gray-500 text-xs mt-1">проведено</p>
             </div>
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <Calendar className="w-6 h-6" />
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-purple-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-4 text-white shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-yellow-100 text-sm font-medium">Доход</p>
-              <p className="text-3xl font-bold">{stats?.totalRevenue?.toLocaleString() || 0} ₸</p>
-              <p className="text-yellow-100 text-xs mt-1">общий доход</p>
+              <p className="text-gray-600 text-sm font-medium">Доход</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.totalRevenue?.toLocaleString() || 0} ₸</p>
+              <p className="text-gray-500 text-xs mt-1">общий доход</p>
             </div>
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <DollarSign className="w-6 h-6" />
+            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-yellow-600" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Быстрые действия */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-3">
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
         <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-          <Zap className="w-5 h-5 mr-2 text-yellow-500" />
+          <Zap className="w-5 h-5 mr-2 text-blue-500" />
           Быстрые действия
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             onClick={handleAddUser}
-            className="p-4 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 transition-all duration-200 text-left hover:shadow-md"
+            className="p-4 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors text-left"
           >
             <Plus className="w-6 h-6 text-blue-600 mb-3" />
             <div className="font-medium text-gray-900">Добавить пользователя</div>
-            <div className="text-sm text-gray-600">Создать нового пользователя системы</div>
+            <div className="text-sm text-gray-600">Создать нового пользователя</div>
           </button>
           
           <button
             onClick={() => setActiveTab('students')}
-            className="p-4 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 transition-all duration-200 text-left hover:shadow-md"
+            className="p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors text-left"
           >
             <UserCheck className="w-6 h-6 text-green-600 mb-3" />
-            <div className="font-medium text-gray-900">Управление учениками</div>
+            <div className="font-medium text-gray-900">Назначить ученика</div>
             <div className="text-sm text-gray-600">Назначение учеников учителям</div>
           </button>
           
           <button
-            onClick={() => fetchAdminStats(true)}
-            className="p-4 bg-purple-50 hover:bg-purple-100 rounded-xl border border-purple-200 transition-all duration-200 text-left hover:shadow-md"
+            onClick={() => setActiveTab('lessons')}
+            className="p-4 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 transition-colors text-left"
           >
-            <RefreshCw className={`w-6 h-6 text-purple-600 mb-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <Calendar className="w-6 h-6 text-purple-600 mb-3" />
+            <div className="font-medium text-gray-900">Создать занятие</div>
+            <div className="text-sm text-gray-600">Новое занятие или абонемент</div>
+          </button>
+          
+          <button
+            onClick={() => fetchAdminStats(true)}
+            className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors text-left"
+          >
+            <RefreshCw className={`w-6 h-6 text-gray-600 mb-3 ${isRefreshing ? 'animate-spin' : ''}`} />
             <div className="font-medium text-gray-900">Обновить данные</div>
-            <div className="text-sm text-gray-600">Синхронизировать с базой данных</div>
+            <div className="text-sm text-gray-600">Синхронизировать с БД</div>
           </button>
         </div>
       </div>
 
-      {/* Последние активности */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <RecentActivity lessons={stats?.recentLessons || []} />
-        
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-3">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-            <Bell className="w-5 h-5 mr-2 text-orange-500" />
-            Уведомления
-          </h3>
-          <div className="space-y-4">
-            {stats?.recentUsers && stats.recentUsers.length > 0 && (
-              <div className="flex items-center p-4 bg-yellow-50 rounded-xl border border-yellow-200 hover:bg-yellow-100 transition-colors">
-                <AlertTriangle className="w-5 h-5 text-yellow-600 mr-3 flex-shrink-0" />
-                <div>
-                  <div className="font-medium text-gray-900">
-                    Новые пользователи: {stats.recentUsers.length}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Последний: {stats.recentUsers[0].name}
+      {/* Последние активности - компактный список */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+          <Activity className="w-5 h-5 mr-2 text-blue-500" />
+          Последние активности
+        </h3>
+        <div className="space-y-2">
+          {stats?.recentLessons && stats.recentLessons.length > 0 ? (
+            stats.recentLessons.slice(0, 5).map((lesson, index) => (
+              <div key={lesson.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex items-center space-x-3">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{lesson.student?.fullName}</div>
+                    <div className="text-xs text-gray-500">{new Date(lesson.date).toLocaleDateString('ru-RU')}</div>
                   </div>
                 </div>
-              </div>
-            )}
-            
-            {stats?.recentStudents && stats.recentStudents.length > 0 && (
-              <div className="flex items-center p-4 bg-blue-50 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors">
-                <Users className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" />
-                <div>
-                  <div className="font-medium text-gray-900">
-                    Новые ученики: {stats.recentStudents.length}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Последний: {stats.recentStudents[0].fullName}
-                  </div>
+                <div className="text-xs text-gray-500">
+                  {lesson.status === 'COMPLETED' ? 'Завершено' : 
+                   lesson.status === 'SCHEDULED' ? 'Запланировано' : 
+                   lesson.status === 'CANCELLED' ? 'Отменено' : 'Неизвестно'}
                 </div>
               </div>
-            )}
-            
-            {stats?.recentLessons && stats.recentLessons.length > 0 && (
-              <div className="flex items-center p-4 bg-purple-50 rounded-xl border border-purple-200 hover:bg-purple-100 transition-colors">
-                <Calendar className="w-5 h-5 text-purple-600 mr-3 flex-shrink-0" />
-                <div>
-                  <div className="font-medium text-gray-900">
-                    Новые занятия: {stats.recentLessons.length}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Последнее: {new Date(stats.recentLessons[0].date).toLocaleDateString('ru-RU')}
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div className="flex items-center p-4 bg-green-50 rounded-xl border border-green-200 hover:bg-green-100 transition-colors">
-              <CheckCircle className="w-5 h-5 text-green-600 mr-3 flex-shrink-0" />
-              <div>
-                <div className="font-medium text-gray-900">Система работает стабильно</div>
-                <div className="text-sm text-gray-600">Все сервисы доступны</div>
-              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+              <div className="text-sm">Нет недавних активностей</div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -468,18 +469,72 @@ export default function AdminPage() {
           </div>
         </div>
         
-        <div className="p-4 sm:p-6">
+        <div className="overflow-x-auto">
           {filteredUsers.length > 0 ? (
-            <div className="space-y-4">
-              {filteredUsers.map((userWithStats) => (
-                <UserCard
-                  key={userWithStats.id}
-                  user={userWithStats}
-                  onEdit={handleEditUser}
-                  onDelete={handleDeleteUser}
-                />
-              ))}
-            </div>
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Имя</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ученики</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Занятия</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Доход</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Долг</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredUsers.map((userWithStats) => (
+                  <tr key={userWithStats.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <Users className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="text-sm font-medium text-gray-900">{userWithStats.name}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{userWithStats.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        userWithStats.role === 'ADMIN' 
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {userWithStats.role === 'ADMIN' ? 'Администратор' : 'Пользователь'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{userWithStats.stats.totalStudents}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{userWithStats.stats.totalLessons}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{userWithStats.stats.totalRevenue.toLocaleString()} ₸</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{userWithStats.stats.totalDebt.toLocaleString()} ₸</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(userWithStats.createdAt).toLocaleDateString('ru-RU')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEditUser(userWithStats)}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                          title="Редактировать"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(userWithStats.id)}
+                          className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                          title="Удалить"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -521,14 +576,14 @@ export default function AdminPage() {
 
   return (
     <ProtectedRoute requiredRole="ADMIN">
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="min-h-screen bg-gray-50">
         {/* Заголовок с навигацией */}
         <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Shield className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Админ панель</h1>
@@ -539,6 +594,16 @@ export default function AdminPage() {
               </div>
               
               <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setShowCommandPalette(true)}
+                  className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                  title="Командная палитра (Ctrl+K)"
+                >
+                  <Search className="w-4 h-4" />
+                  <span className="hidden sm:inline">Поиск</span>
+                  <kbd className="hidden lg:inline px-1 py-0.5 bg-gray-200 rounded text-xs">⌘K</kbd>
+                </button>
+                
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
                   className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
@@ -569,16 +634,16 @@ export default function AdminPage() {
                   { tab: 'users', name: 'Пользователи', icon: Users },
                   { tab: 'students', name: 'Ученики', icon: UserCheck },
                   { tab: 'lessons', name: 'Занятия', icon: Calendar },
-                  { tab: 'toys', name: 'Игрушки', icon: Target },
-                  { tab: 'analytics', name: 'Аналитика', icon: BarChart3 },
-                  { tab: 'security', name: 'Безопасность', icon: Shield },
                   { tab: 'settings', name: 'Настройки', icon: Settings }
                 ].map((item) => {
                   const isActive = activeTab === item.tab
                   return (
                     <button
                       key={item.tab}
-                      onClick={() => setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security')}
+                      onClick={() => {
+                        setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'settings' | 'more')
+                        setMoreTab(null)
+                      }}
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                         isActive
                           ? 'bg-white text-red-600 shadow-sm'
@@ -590,6 +655,52 @@ export default function AdminPage() {
                     </button>
                   )
                 })}
+                
+                {/* Выпадающее меню "Ещё" */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setActiveTab('more')
+                      setMoreTab(moreTab === null ? 'toys' : null)
+                    }}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      activeTab === 'more'
+                        ? 'bg-white text-red-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                    }`}
+                  >
+                    <Menu className="w-4 h-4" />
+                    <span>Ещё</span>
+                  </button>
+                  
+                  {activeTab === 'more' && (
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
+                      <div className="p-1">
+                        {[
+                          { tab: 'toys', name: 'Игрушки', icon: Target },
+                          { tab: 'analytics', name: 'Аналитика', icon: BarChart3 },
+                          { tab: 'security', name: 'Безопасность', icon: Shield }
+                        ].map((item) => {
+                          const isActive = moreTab === item.tab
+                          return (
+                            <button
+                              key={item.tab}
+                              onClick={() => setMoreTab(item.tab as 'toys' | 'analytics' | 'security')}
+                              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                isActive
+                                  ? 'bg-red-50 text-red-600 border border-red-200'
+                                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                              }`}
+                            >
+                              <item.icon className="w-4 h-4" />
+                              <span>{item.name}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </nav>
 
               {/* Мобильное меню */}
@@ -613,9 +724,6 @@ export default function AdminPage() {
                     { tab: 'users', name: 'Пользователи', icon: Users },
                     { tab: 'students', name: 'Ученики', icon: UserCheck },
                     { tab: 'lessons', name: 'Занятия', icon: Calendar },
-                    { tab: 'toys', name: 'Игрушки', icon: Target },
-                    { tab: 'analytics', name: 'Аналитика', icon: BarChart3 },
-                    { tab: 'security', name: 'Безопасность', icon: Shield },
                     { tab: 'settings', name: 'Настройки', icon: Settings }
                   ].map((item) => {
                     const isActive = activeTab === item.tab
@@ -623,7 +731,38 @@ export default function AdminPage() {
                       <button
                         key={item.tab}
                         onClick={() => {
-                          setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'analytics' | 'settings' | 'toys' | 'security')
+                          setActiveTab(item.tab as 'overview' | 'users' | 'students' | 'lessons' | 'settings' | 'more')
+                          setMoreTab(null)
+                          setShowMobileMenu(false)
+                        }}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          isActive
+                            ? 'bg-red-50 text-red-600 border border-red-200'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        }`}
+                      >
+                        <item.icon className="w-5 h-5" />
+                        <span>{item.name}</span>
+                      </button>
+                    )
+                  })}
+                  
+                  {/* Разделитель */}
+                  <div className="border-t border-gray-200 my-2"></div>
+                  
+                  {/* Дополнительные разделы */}
+                  {[
+                    { tab: 'toys', name: 'Игрушки', icon: Target },
+                    { tab: 'analytics', name: 'Аналитика', icon: BarChart3 },
+                    { tab: 'security', name: 'Безопасность', icon: Shield }
+                  ].map((item) => {
+                    const isActive = activeTab === 'more' && moreTab === item.tab
+                    return (
+                      <button
+                        key={item.tab}
+                        onClick={() => {
+                          setActiveTab('more')
+                          setMoreTab(item.tab as 'toys' | 'analytics' | 'security')
                           setShowMobileMenu(false)
                         }}
                         className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -724,10 +863,10 @@ export default function AdminPage() {
               {activeTab === 'users' && 'Пользователи'}
               {activeTab === 'students' && 'Ученики'}
               {activeTab === 'lessons' && 'Занятия'}
-              {activeTab === 'toys' && 'Игрушки'}
-              {activeTab === 'analytics' && 'Аналитика'}
-              {activeTab === 'security' && 'Безопасность'}
               {activeTab === 'settings' && 'Настройки'}
+              {activeTab === 'more' && moreTab === 'toys' && 'Игрушки'}
+              {activeTab === 'more' && moreTab === 'analytics' && 'Аналитика'}
+              {activeTab === 'more' && moreTab === 'security' && 'Безопасность'}
             </span>
           </nav>
         </div>
@@ -762,17 +901,17 @@ export default function AdminPage() {
                   <LessonsManagement />
                 </div>
               )}
-              {activeTab === 'toys' && (
+              {activeTab === 'more' && moreTab === 'toys' && (
                 <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
                   <ToysManagement />
                 </div>
               )}
-              {activeTab === 'analytics' && (
+              {activeTab === 'more' && moreTab === 'analytics' && (
                 <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
                   <AnalyticsDashboard />
                 </div>
               )}
-              {activeTab === 'security' && (
+              {activeTab === 'more' && moreTab === 'security' && (
                 <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
                   <SecurityLogs />
                 </div>
@@ -792,6 +931,15 @@ export default function AdminPage() {
         onClose={handleCloseModal}
         onSubmit={handleUserSubmit}
         editingUser={editingUser}
+      />
+
+      {/* Командная палитра */}
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        onNavigate={handleCommandPaletteNavigate}
+        onAddUser={handleAddUser}
+        onRefresh={() => fetchAdminStats(true)}
       />
     </ProtectedRoute>
   )
