@@ -9,7 +9,9 @@ import {
   DollarSign,
   AlertCircle,
   Eye,
-  Search
+  Search,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts';
 import SubscriptionCalendarForm from '@/components/forms/SubscriptionCalendarForm';
@@ -25,6 +27,8 @@ export default function SubscriptionsPage() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [groupByStudent, setGroupByStudent] = useState(true);
+  const [expandedStudents, setExpandedStudents] = useState<Set<number>>(new Set());
 
   // Загружаем данные при открытии страницы
   useEffect(() => {
@@ -68,6 +72,39 @@ export default function SubscriptionsPage() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Группировка занятий по ученикам
+  const groupedLessons = filteredLessons.reduce((acc, lesson) => {
+    const studentId = lesson.studentId
+    if (!acc[studentId]) {
+      acc[studentId] = {
+        student: lesson.student,
+        lessons: []
+      }
+    }
+    acc[studentId].lessons.push(lesson)
+    return acc
+  }, {} as Record<number, { student: any, lessons: LessonWithOptionalStudent[] }>)
+
+  // Управление разворачиванием/сворачиванием групп
+  const toggleStudentExpansion = (studentId: number) => {
+    const numericStudentId = Number(studentId)
+    const newExpanded = new Set(expandedStudents)
+    if (newExpanded.has(numericStudentId)) {
+      newExpanded.delete(numericStudentId)
+    } else {
+      newExpanded.add(numericStudentId)
+    }
+    setExpandedStudents(newExpanded)
+  }
+
+  // Разворачиваем все группы по умолчанию
+  useEffect(() => {
+    if (lessons.length > 0) {
+      const allStudentIds = new Set(lessons.map(l => l.studentId))
+      setExpandedStudents(allStudentIds)
+    }
+  }, [lessons])
 
   const getStatusColor = (lesson: LessonWithOptionalStudent) => {
     if (lesson.isCancelled) return 'bg-orange-100 text-orange-800';
@@ -188,75 +225,137 @@ export default function SubscriptionsPage() {
             )}
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {filteredLessons.map((lesson) => (
-              <div key={lesson.id} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">
-                      {lesson.student?.photoUrl ? (
-                        <img
-                          src={lesson.student.photoUrl}
-                          alt={lesson.student.fullName}
-                          className="h-12 w-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
-                          <Users className="h-6 w-6 text-gray-500" />
+          <div className="space-y-4">
+            {Object.entries(groupedLessons).map(([studentIdStr, group]) => {
+              const studentId = Number(studentIdStr)
+              const isExpanded = expandedStudents.has(studentId)
+              const totalLessons = group.lessons.length
+              
+              return (
+                <div key={studentId} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  {/* Заголовок группы ученика */}
+                  <div 
+                    className="p-6 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                    onClick={() => toggleStudentExpansion(studentId)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        {/* Аватар ученика */}
+                        <div className="flex-shrink-0">
+                          {group.student?.photoUrl ? (
+                            <img
+                              src={group.student.photoUrl}
+                              alt={group.student.fullName}
+                              className="h-12 w-12 rounded-full object-cover ring-2 ring-white shadow-lg"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center shadow-lg">
+                              <Users className="h-6 w-6 text-blue-600" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2">
-                        <h3 className="text-lg font-medium text-gray-900 truncate">
-                          {lesson.student?.fullName || `Ученик #${lesson.studentId}`}
-                        </h3>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(lesson)}`}>
-                          {getStatusText(lesson)}
-                        </span>
+                        
+                        {/* Информация об ученике */}
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {group.student?.fullName || `Ученик #${studentId}`}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {totalLessons} заняти{totalLessons === 1 ? 'е' : totalLessons < 5 ? 'я' : 'й'}
+                          </p>
+                        </div>
                       </div>
-                      <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
-                        <span className="flex items-center">
-                          <CalendarDays className="w-4 h-4 mr-1" />
-                          {new Date(lesson.date).toLocaleDateString('ru-RU')}
+                      
+                      {/* Кнопка разворачивания */}
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm text-gray-500">
+                          {isExpanded ? 'Свернуть' : 'Развернуть'}
                         </span>
-                        <span className="flex items-center">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - 
-                          {new Date(lesson.endTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        <span className="flex items-center">
-                          <DollarSign className="w-4 h-4 mr-1" />
-                          {lesson.cost.toLocaleString()} ₸
-                        </span>
+                        {isExpanded ? (
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5 text-gray-400" />
+                        )}
                       </div>
-                      {lesson.student?.parentName && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          Родитель: {lesson.student.parentName}
-                        </p>
-                      )}
-                      {lesson.notes && (
-                        <p className="text-sm text-gray-600 mt-2 bg-gray-50 p-2 rounded">
-                          {lesson.notes}
-                        </p>
-                      )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {lesson.teacher && (
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-gray-900">
-                          {lesson.teacher.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {lesson.teacher.email}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  
+                  {/* Содержимое группы */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-100">
+                      {group.lessons.map((lesson) => (
+                        <div 
+                          key={lesson.id} 
+                          className="p-6 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              {/* Информация о занятии */}
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-3 mb-2">
+                                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lesson)}`}>
+                                    {getStatusText(lesson)}
+                                  </span>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                                  <div className="flex items-center space-x-2">
+                                    <CalendarDays className="w-4 h-4 text-blue-600" />
+                                    <span className="text-gray-600">
+                                      {new Date(lesson.date).toLocaleDateString('ru-RU', { 
+                                        weekday: 'short', 
+                                        day: '2-digit', 
+                                        month: 'short' 
+                                      })}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="flex items-center space-x-2">
+                                    <Clock className="w-4 h-4 text-purple-600" />
+                                    <span className="text-gray-600">
+                                      {new Date(lesson.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - 
+                                      {new Date(lesson.endTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="flex items-center space-x-2">
+                                    <DollarSign className="w-4 h-4 text-green-600" />
+                                    <span className="font-semibold text-green-800">
+                                      {lesson.cost.toLocaleString()} ₸
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                {lesson.notes && (
+                                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <div className="flex items-start space-x-2">
+                                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                                      <div>
+                                        <p className="text-sm font-medium text-amber-800 mb-1">Заметки:</p>
+                                        <p className="text-sm text-amber-700">{lesson.notes}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Кнопка просмотра */}
+                            <button
+                              onClick={() => {/* Добавить действие просмотра */}}
+                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                              title="Просмотр деталей"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
