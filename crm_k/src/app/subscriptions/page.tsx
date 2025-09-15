@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts';
 import SubscriptionCalendarForm from '@/components/forms/SubscriptionCalendarForm';
+import EditLessonForm from '@/components/forms/EditLessonForm';
 import { apiRequest } from '@/lib/api';
 import { LessonWithOptionalStudent } from '@/types';
 
@@ -29,6 +30,8 @@ export default function SubscriptionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [groupByStudent, setGroupByStudent] = useState(true);
   const [expandedStudents, setExpandedStudents] = useState<Set<number>>(new Set());
+  const [selectedLesson, setSelectedLesson] = useState<LessonWithOptionalStudent | null>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
 
   // Загружаем данные при открытии страницы
   useEffect(() => {
@@ -56,6 +59,15 @@ export default function SubscriptionsPage() {
 
   const handleSubscriptionSuccess = () => {
     fetchLessons(); // Обновляем данные после создания абонимента
+  };
+
+  const handleLessonClick = (lesson: LessonWithOptionalStudent) => {
+    // Только администраторы могут редактировать занятия
+    if (user?.role !== 'ADMIN') {
+      return;
+    }
+    setSelectedLesson(lesson);
+    setShowEditForm(true);
   };
 
   // Фильтрация занятий
@@ -286,7 +298,8 @@ export default function SubscriptionsPage() {
                       {group.lessons.map((lesson) => (
                         <div 
                           key={lesson.id} 
-                          className="p-6 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-200"
+                          className="p-6 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                          onClick={() => handleLessonClick(lesson)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-4">
@@ -365,6 +378,27 @@ export default function SubscriptionsPage() {
         isOpen={isSubscriptionFormOpen}
         onClose={() => setIsSubscriptionFormOpen(false)}
         onSuccess={handleSubscriptionSuccess}
+      />
+
+      {/* Форма редактирования занятия */}
+      <EditLessonForm
+        isOpen={showEditForm}
+        onClose={() => {
+          setShowEditForm(false);
+          setSelectedLesson(null);
+        }}
+        onSuccess={() => {
+          setShowEditForm(false);
+          setSelectedLesson(null);
+          fetchLessons(); // Обновляем данные после редактирования
+        }}
+        onDelete={() => {
+          setShowEditForm(false);
+          setSelectedLesson(null);
+          fetchLessons(); // Обновляем данные после удаления
+        }}
+        lesson={selectedLesson}
+        userRole={user?.role}
       />
     </div>
   );
