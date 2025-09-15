@@ -7,7 +7,7 @@ import UnifiedSubscriptionModal from '@/components/forms/UnifiedSubscriptionModa
 
 interface Subscription {
   id: string | number
-  type: 'regular' | 'flexible'
+  type: 'flexible'
   name: string
   student: {
     id: number
@@ -68,12 +68,8 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
   }
 
   const handleEdit = (subscription: Subscription) => {
-    if (subscription.type === 'flexible') {
-      setEditingSubscription(subscription)
-      setShowEditModal(true)
-    } else {
-      alert('Редактирование обычных абонементов пока не поддерживается')
-    }
+    setEditingSubscription(subscription)
+    setShowEditModal(true)
   }
 
   const handleDelete = async (subscriptionId: string | number) => {
@@ -82,33 +78,17 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
     }
 
     try {
-      if (typeof subscriptionId === 'string' && subscriptionId.startsWith('regular_')) {
-        // Удаление обычного абонемента (предоплаты)
-        const paymentId = subscriptionId.replace('regular_', '')
-        const response = await apiRequest(`/api/payments/${paymentId}`, {
-          method: 'DELETE'
-        })
+      // Удаление гибкого абонемента
+      const response = await apiRequest(`/api/flexible-subscriptions/${subscriptionId}`, {
+        method: 'DELETE'
+      })
 
-        if (response.ok) {
-          alert('Абонемент успешно удален')
-          loadSubscriptions()
-        } else {
-          const errorData = await response.json()
-          alert(`Ошибка: ${errorData.error}`)
-        }
+      if (response.ok) {
+        alert('Абонемент успешно удален')
+        loadSubscriptions()
       } else {
-        // Удаление гибкого абонемента
-        const response = await apiRequest(`/api/flexible-subscriptions/${subscriptionId}`, {
-          method: 'DELETE'
-        })
-
-        if (response.ok) {
-          alert('Абонемент успешно удален')
-          loadSubscriptions()
-        } else {
-          const errorData = await response.json()
-          alert(`Ошибка: ${errorData.error}`)
-        }
+        const errorData = await response.json()
+        alert(`Ошибка: ${errorData.error}`)
       }
     } catch (error) {
       alert('Ошибка при удалении абонемента')
@@ -136,11 +116,11 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
   }
 
   const getSubscriptionTypeLabel = (type: string) => {
-    return type === 'flexible' ? 'Гибкий' : 'Обычный'
+    return 'Гибкий абонемент'
   }
 
   const getSubscriptionTypeColor = (type: string) => {
-    return type === 'flexible' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+    return 'bg-green-100 text-green-800'
   }
 
   if (loading) {
@@ -234,15 +214,16 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
                     </div>
                   </div>
                   
+                  {subscription.teacher && (
+                    <div className="flex items-center text-gray-600 mb-4">
+                      <span className="w-2 h-2 bg-purple-500 rounded-full mr-3 flex-shrink-0"></span>
+                      <span className="font-medium flex-shrink-0">Преподаватель:</span>
+                      <span className="ml-2 font-semibold text-gray-900 flex-1">{subscription.teacher.name}</span>
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-              {subscription.teacher && (
-                        <div className="flex items-center text-gray-600">
-                          <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
-                          <span className="font-medium">Преподаватель:</span>
-                          <span className="ml-2 font-semibold text-gray-900">{subscription.teacher.name}</span>
-                        </div>
-                      )}
                       <div className="flex items-center text-gray-600">
                         <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
                         <span className="font-medium">Период:</span>
@@ -278,8 +259,8 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
                 </div>
           )}
 
-          {/* Расписание недель (только для гибких абонементов) */}
-          {subscription.type === 'flexible' && subscription.weekSchedules && subscription.weekSchedules.length > 0 && (
+          {/* Расписание недель */}
+          {subscription.weekSchedules && subscription.weekSchedules.length > 0 && (
                 <div className="mb-6">
                   <h4 className="text-lg font-bold text-gray-900 mb-4">
                     Расписание занятий
@@ -380,10 +361,10 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
             {/* Информация */}
             <div className="space-y-3 mb-4">
               {subscription.teacher && (
-                <div className="flex items-center text-gray-700">
-                  <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
-                  <span className="font-medium">Преподаватель:</span>
-                  <span className="ml-2 font-semibold">{subscription.teacher.name}</span>
+                <div className="flex items-center text-gray-700 w-full">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full mr-3 flex-shrink-0"></span>
+                  <span className="font-medium flex-shrink-0">Преподаватель:</span>
+                  <span className="ml-2 font-semibold flex-1 min-w-0">{subscription.teacher.name}</span>
                 </div>
               )}
               <div className="flex items-center text-gray-700">
