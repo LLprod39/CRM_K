@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
+import { updateStudentBalance } from '@/lib/balanceUtils'
 
 interface PrepaymentData {
   studentId: number;
@@ -157,6 +158,9 @@ export async function POST(request: NextRequest) {
         lessonsCount: unpaidLessons.length
       }
     })
+
+    // Обновляем баланс ученика после создания предоплаты
+    await updateStudentBalance(body.studentId)
 
     return NextResponse.json({
       message: `Предоплата успешно создана. Обновлено ${result.lessonsCount} занятий.`,

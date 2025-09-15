@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
+import { updateStudentBalance } from '@/lib/balanceUtils'
 import { CreatePaymentData } from '@/types'
 
 // GET /api/payments - получить список платежей
@@ -186,18 +187,11 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // Обновляем баланс ученика
-      await tx.student.update({
-        where: { id: studentId },
-        data: {
-          balance: {
-            increment: amount
-          }
-        }
-      })
-
       return payment
     })
+
+    // Обновляем баланс ученика на основе занятий
+    await updateStudentBalance(studentId)
 
     // Получаем созданный платеж с полной информацией
     const createdPayment = await prisma.payment.findUnique({

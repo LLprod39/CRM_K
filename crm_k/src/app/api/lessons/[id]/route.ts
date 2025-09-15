@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
 import { isValidStatusTransition, getCancellationInfo, getLessonStatus } from '@/lib/lessonStatusUtils'
 import { UpdateLessonData } from '@/types'
+import { updateStudentBalance } from '@/lib/balanceUtils'
 
 // GET /api/lessons/[id] - получить занятие по ID
 export async function GET(
@@ -230,6 +231,9 @@ export async function PUT(
         student: true
       }
     })
+
+    // Обновляем баланс ученика после изменения статуса занятия
+    await updateStudentBalance(body.studentId)
 
     return NextResponse.json(updatedLesson)
   } catch (error) {

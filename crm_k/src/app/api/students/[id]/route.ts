@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
 import { UpdateStudentData } from '@/types'
+import { updateStudentBalance } from '@/lib/balanceUtils'
 
 // GET /api/students/[id] - получить ученика по ID
 export async function GET(
@@ -73,7 +74,28 @@ export async function GET(
       }
     }
 
-    return NextResponse.json(student)
+    // Обновляем баланс ученика
+    await updateStudentBalance(id)
+
+    // Получаем обновленные данные ученика
+    const updatedStudent = await prisma.student.findUnique({
+      where: { id },
+      include: {
+        lessons: {
+          orderBy: {
+            date: 'desc'
+          }
+        },
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    })
+
+    return NextResponse.json(updatedStudent)
   } catch (error) {
     console.error('Ошибка при получении ученика:', error)
     return NextResponse.json(

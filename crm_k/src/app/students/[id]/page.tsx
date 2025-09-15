@@ -84,7 +84,14 @@ export default function StudentProfilePage() {
 
     const total = student.lessons.length;
     const completed = student.lessons.filter(lesson => lesson.isCompleted).length;
-    const prepaid = Math.max(0, student.balance || 0); // Только положительная предоплата
+    
+    // Рассчитываем предоплату на основе занятий (оплаченные, но не проведенные)
+    const prepaidLessons = student.lessons.filter(lesson => 
+      lesson.isPaid && !lesson.isCompleted && !lesson.isCancelled
+    );
+    const prepaid = prepaidLessons.reduce((sum, lesson) => sum + lesson.cost, 0);
+    
+    // Рассчитываем задолженность (проведенные, но не оплаченные)
     const debtAmount = student.lessons
       .filter(lesson => lesson.isCompleted && !lesson.isPaid && !lesson.isCancelled)
       .reduce((sum, lesson) => sum + lesson.cost, 0);

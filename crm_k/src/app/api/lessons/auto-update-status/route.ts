@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
 import { getLessonStatus, getStatusAfterCompletion } from '@/lib/lessonStatusUtils'
+import { updateStudentBalance } from '@/lib/balanceUtils'
 
 // POST /api/lessons/auto-update-status - автоматическое обновление статусов прошедших занятий
 export async function POST(request: NextRequest) {
@@ -79,6 +80,9 @@ export async function POST(request: NextRequest) {
           }
         })
 
+        // Обновляем баланс ученика после изменения статуса занятия
+        await updateStudentBalance(lesson.studentId)
+
         updatedCount++
         results.push({
           lessonId: lesson.id,
@@ -87,7 +91,7 @@ export async function POST(request: NextRequest) {
           newStatus: newStatus,
           lessonDate: lesson.date
         })
-        console.log(`✅ Занятие ${lesson.id} успешно обновлено`)
+        console.log(`✅ Занятие ${lesson.id} успешно обновлено, баланс ученика обновлен`)
       } catch (error) {
         console.error(`❌ Ошибка при обновлении занятия ${lesson.id}:`, error)
       }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { CreateStudentData } from '@/types'
 import { getAuthUser } from '@/lib/auth'
+import { updateStudentBalance } from '@/lib/balanceUtils'
 
 // GET /api/students - получить всех учеников
 export async function GET(request: NextRequest) {
@@ -60,7 +61,42 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(students)
+    // Обновляем баланс для каждого студента
+    for (const student of students) {
+      await updateStudentBalance(student.id)
+    }
+
+    // Получаем обновленные данные студентов
+    const updatedStudents = await prisma.student.findMany({
+      where: whereClause as any,
+      include: {
+        lessons: {
+          orderBy: {
+            date: 'desc'
+          },
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    return NextResponse.json(updatedStudents)
   } catch (error) {
     console.error('Ошибка при получении учеников:', error)
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
+import { updateStudentBalance } from '@/lib/balanceUtils'
 
 export async function GET(
   request: NextRequest,
@@ -72,6 +73,9 @@ export async function GET(
       description: payment.description,
       type: payment.type
     })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+    // Обновляем баланс в базе данных
+    await updateStudentBalance(studentId)
 
     const balanceInfo = {
       student: {
