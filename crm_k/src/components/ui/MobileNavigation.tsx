@@ -9,7 +9,7 @@ import {
   DollarSign, 
   Home,
   Settings,
-  Plus
+  CalendarDays
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts';
 import { UserRole } from '@/domain/entities/User';
@@ -19,6 +19,7 @@ const mobileNavigation = [
   { name: 'Главная', href: '/', icon: Home, gradient: 'from-blue-500 to-blue-600' },
   { name: 'Ученики', href: '/students', icon: Users, gradient: 'from-green-500 to-emerald-600' },
   { name: 'Расписание', href: '/schedule', icon: Calendar, gradient: 'from-purple-500 to-purple-600' },
+  { name: 'Абонименты', href: '/subscriptions', icon: CalendarDays, gradient: 'from-indigo-500 to-indigo-600' },
   { name: 'Финансы', href: '/finances', icon: DollarSign, gradient: 'from-yellow-500 to-orange-600' },
   { name: 'Админ', href: '/admin', icon: Settings, gradient: 'from-gray-600 to-gray-700' },
 ];
@@ -116,30 +117,6 @@ export default function MobileNavigation() {
         </div>
       </nav>
 
-      {/* Плавающая кнопка быстрого добавления для админов */}
-      {user?.role === UserRole.ADMIN && (
-        <div className="fixed bottom-20 right-4 lg:hidden z-40">
-          <Link
-            href="/flexible-subscriptions"
-            className="group w-14 h-14 bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 animate-mobile-bounce-in border-2 border-white/20"
-            style={{ animationDelay: '800ms' }}
-            onClick={() => trigger('medium')}
-          >
-            <Plus className="w-6 h-6 text-white group-active:scale-90 transition-transform duration-200" />
-            
-            {/* Пульсирующий эффект */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 opacity-30 animate-ping" />
-            
-            {/* Градиентный ободок */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent" />
-          </Link>
-          
-          {/* Подсказка */}
-          <div className="absolute -top-12 right-0 bg-gray-900/90 text-white text-xs font-medium px-3 py-1 rounded-lg backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-            Абонементы
-          </div>
-        </div>
-      )}
     </>
   );
 }

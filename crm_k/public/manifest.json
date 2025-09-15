@@ -56,6 +56,18 @@
       ]
     },
     {
+      "name": "Абонименты",
+      "short_name": "Абонименты",
+      "description": "Управление абониментами",
+      "url": "/subscriptions",
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "Финансы",
       "short_name": "Финансы",
       "description": "Финансовые отчеты",

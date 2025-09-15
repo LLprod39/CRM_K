@@ -13,7 +13,7 @@ import {
   LogOut,
   User,
   Settings,
-  BookOpen
+  CalendarDays
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/presentation/contexts';
@@ -22,11 +22,11 @@ const navigation = [
   { name: 'Главная', href: '/', icon: Home },
   { name: 'Ученики', href: '/students', icon: Users },
   { name: 'Расписание', href: '/schedule', icon: Calendar },
+  { name: 'Абонименты', href: '/subscriptions', icon: CalendarDays },
   { name: 'Финансы', href: '/finances', icon: DollarSign },
 ];
 
 const adminNavigation = [
-  { name: 'Абонементы', href: '/flexible-subscriptions', icon: BookOpen },
   { name: 'Админ панель', href: '/admin', icon: Settings, description: 'Управление системой' },
 ];
 
