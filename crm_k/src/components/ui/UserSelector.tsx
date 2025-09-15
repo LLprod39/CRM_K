@@ -124,6 +124,11 @@ export default function UserSelector({
             )}
           </div>
           <div className="flex items-center space-x-1">
+            <ChevronDown 
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 mt-0.5 ${
+                isOpen ? 'rotate-180' : ''
+              }`} 
+            />
             {selectedUser && !disabled && (
               <button
                 type="button"
@@ -136,11 +141,6 @@ export default function UserSelector({
                 ×
               </button>
             )}
-            <ChevronDown 
-              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                isOpen ? 'rotate-180' : ''
-              }`} 
-            />
           </div>
         </div>
       </div>

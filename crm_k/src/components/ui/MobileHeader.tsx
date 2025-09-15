@@ -53,8 +53,6 @@ export default function MobileHeader() {
         return { title: 'Расписание', emoji: '📅', color: 'from-purple-500 to-purple-600' };
       case '/finances':
         return { title: 'Финансы', emoji: '💰', color: 'from-yellow-500 to-orange-600' };
-      case '/flexible-subscriptions':
-        return { title: 'Абонементы', emoji: '📚', color: 'from-indigo-500 to-indigo-600' };
       case '/admin':
         return { title: 'Админ панель', emoji: '⚙️', color: 'from-gray-600 to-gray-700' };
       default:

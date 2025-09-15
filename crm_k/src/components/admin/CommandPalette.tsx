@@ -131,14 +131,6 @@ export default function CommandPalette({
       category: 'Действия'
     },
     {
-      id: 'subscription',
-      title: 'Создать абонемент',
-      description: 'Создать гибкий абонемент',
-      icon: CreditCard,
-      action: () => onNavigate('lessons'),
-      category: 'Действия'
-    },
-    {
       id: 'bulk-lessons',
       title: 'Массовое создание занятий',
       description: 'Создать несколько занятий',

@@ -14,7 +14,8 @@ import {
   FileText,
   Eye,
   Plus,
-  Minus
+  Minus,
+  CreditCard
 } from 'lucide-react';
 import { Student } from '@/types';
 import { apiRequest } from '@/lib/api';
@@ -56,7 +57,7 @@ export default function SubscriptionCalendarForm({
     lessonType: 'individual' as 'individual' | 'group',
     notes: '',
     time: '10:00',
-    duration: 60,
+    duration: '60',
     isPrepaid: false
   });
   
@@ -85,6 +86,29 @@ export default function SubscriptionCalendarForm({
     'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
     'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
   ];
+
+  // Функция для вычисления времени окончания
+  const calculateEndTime = () => {
+    if (!formData.time || !formData.duration) return '';
+    
+    try {
+      const [hours, minutes] = formData.time.split(':').map(Number);
+      const durationMinutes = parseInt(formData.duration);
+      
+      const startTime = new Date();
+      startTime.setHours(hours, minutes, 0, 0);
+      
+      const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
+      
+      return endTime.toLocaleTimeString('ru-RU', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+    } catch (error) {
+      return '';
+    }
+  };
 
   // Загружаем список учеников
   useEffect(() => {
@@ -131,7 +155,7 @@ export default function SubscriptionCalendarForm({
         const lessonDate = new Date(selectedDate.date);
         lessonDate.setHours(hours, minutes, 0, 0);
         
-        const endTime = new Date(lessonDate.getTime() + formData.duration * 60000);
+        const endTime = new Date(lessonDate.getTime() + parseInt(formData.duration) * 60000);
         
         const dayInfo = weekDays.find(d => d.value === lessonDate.getDay());
         
@@ -280,8 +304,12 @@ export default function SubscriptionCalendarForm({
       errors.cost = 'Стоимость должна быть больше 0';
     }
     
+    if (!formData.duration || parseInt(formData.duration) < 1 || parseInt(formData.duration) > 480) {
+      errors.duration = 'Продолжительность должна быть от 1 до 480 минут';
+    }
+    
     if (user?.role === 'ADMIN' && !formData.userId) {
-      errors.userId = 'Выберите пользователя (учителя)';
+      errors.userId = 'Выберите учителя';
     }
 
     if (selectedDates.filter(sd => sd.isSelected).length === 0) {
@@ -311,7 +339,7 @@ export default function SubscriptionCalendarForm({
         const lessonDate = new Date(selectedDate.date);
         lessonDate.setHours(hours, minutes, 0, 0);
         
-        const endTime = new Date(lessonDate.getTime() + formData.duration * 60000);
+        const endTime = new Date(lessonDate.getTime() + parseInt(formData.duration) * 60000);
 
         const lessonData = {
           date: lessonDate,
@@ -453,13 +481,18 @@ export default function SubscriptionCalendarForm({
                   e.stopPropagation();
                   handlePrepaidToggle(day);
                 }}
-                className={`text-xs px-2 py-1 rounded ${
+                className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 hover:scale-110 ${
                   isPrepaid 
                     ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' 
                     : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
                 }`}
+                title={isPrepaid ? 'Предоплачено' : 'Запланировано'}
               >
-                {isPrepaid ? 'Предоплачено' : 'Запланировано'}
+                {isPrepaid ? (
+                  <CreditCard className="w-4 h-4" />
+                ) : (
+                  <Calendar className="w-4 h-4" />
+                )}
               </button>
             </div>
           )}
@@ -477,7 +510,7 @@ export default function SubscriptionCalendarForm({
       <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Абонимент - Запись на несколько дней</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Запись на несколько дней</h2>
             <p className="text-sm text-gray-600 mt-1">Выберите дни и настройте параметры занятий</p>
           </div>
           <button
@@ -499,12 +532,12 @@ export default function SubscriptionCalendarForm({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Левая колонка - Настройки */}
             <div className="space-y-6">
-              {/* Выбор пользователя - только для админов */}
+              {/* Выбор учителя - только для админов */}
               {user?.role === 'ADMIN' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <User className="w-4 h-4 inline mr-2" />
-                    Пользователь (учитель)
+                    Учитель
                   </label>
                   <UserSelector
                     selectedUserId={formData.userId || undefined}
@@ -523,24 +556,6 @@ export default function SubscriptionCalendarForm({
                   )}
                 </div>
               )}
-
-              {/* Тип занятия */}
-              <div>
-                <label htmlFor="lessonType" className="block text-sm font-medium text-gray-700 mb-2">
-                  <FileText className="w-4 h-4 inline mr-2" />
-                  Тип занятия
-                </label>
-                <select
-                  id="lessonType"
-                  name="lessonType"
-                  value={formData.lessonType}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="individual">Индивидуальное</option>
-                  <option value="group">Групповое</option>
-                </select>
-              </div>
 
               {/* Выбор учеников */}
               <div>
@@ -583,6 +598,24 @@ export default function SubscriptionCalendarForm({
                     Выбрано учеников: {selectedStudents.length}
                   </p>
                 )}
+              </div>
+
+              {/* Тип занятия */}
+              <div>
+                <label htmlFor="lessonType" className="block text-sm font-medium text-gray-700 mb-2">
+                  <FileText className="w-4 h-4 inline mr-2" />
+                  Тип занятия
+                </label>
+                <select
+                  id="lessonType"
+                  name="lessonType"
+                  value={formData.lessonType}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="individual">Индивидуальное</option>
+                  <option value="group">Групповое</option>
+                </select>
               </div>
 
               {/* Стоимость */}
@@ -633,25 +666,34 @@ export default function SubscriptionCalendarForm({
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
+                    {formData.time && formData.duration && calculateEndTime() && (
+                      <p className="mt-2 text-sm text-gray-600 flex items-center">
+                        <Clock className="w-4 h-4 mr-1" />
+                        Занятие закончится в {calculateEndTime()}
+                      </p>
+                    )}
                   </div>
                   
                   <div>
                     <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
                       Продолжительность (минуты)
                     </label>
-                    <select
+                    <input
+                      type="number"
                       id="duration"
                       name="duration"
                       value={formData.duration}
                       onChange={handleChange}
+                      min="1"
+                      max="480"
+                      placeholder="60"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value={30}>30 минут</option>
-                      <option value={45}>45 минут</option>
-                      <option value={60}>1 час</option>
-                      <option value={90}>1.5 часа</option>
-                      <option value={120}>2 часа</option>
-                    </select>
+                    />
+                    {validationErrors.duration && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {validationErrors.duration}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

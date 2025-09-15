@@ -7,11 +7,8 @@ import {
   Users, 
   Clock, 
   DollarSign,
-  TrendingUp,
-  CheckCircle,
   AlertCircle,
   Eye,
-  Filter,
   Search
 } from 'lucide-react';
 import { useAuth } from '@/presentation/contexts';
@@ -19,23 +16,11 @@ import SubscriptionCalendarForm from '@/components/forms/SubscriptionCalendarFor
 import { apiRequest } from '@/lib/api';
 import { LessonWithOptionalStudent } from '@/types';
 
-interface SubscriptionStats {
-  totalSubscriptions: number;
-  activeSubscriptions: number;
-  totalRevenue: number;
-  upcomingLessons: number;
-}
 
 export default function SubscriptionsPage() {
   const { user } = useAuth();
   const [isSubscriptionFormOpen, setIsSubscriptionFormOpen] = useState(false);
   const [lessons, setLessons] = useState<LessonWithOptionalStudent[]>([]);
-  const [stats, setStats] = useState<SubscriptionStats>({
-    totalSubscriptions: 0,
-    activeSubscriptions: 0,
-    totalRevenue: 0,
-    upcomingLessons: 0
-  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,7 +38,6 @@ export default function SubscriptionsPage() {
       if (response.ok) {
         const data = await response.json();
         setLessons(data);
-        calculateStats(data);
       } else {
         setError('Ошибка при загрузке занятий');
       }
@@ -65,27 +49,6 @@ export default function SubscriptionsPage() {
     }
   };
 
-  const calculateStats = (lessonsData: LessonWithOptionalStudent[]) => {
-    const now = new Date();
-    const upcomingLessons = lessonsData.filter(lesson => 
-      new Date(lesson.date) > now && !lesson.isCancelled
-    );
-    
-    const activeSubscriptions = lessonsData.filter(lesson => 
-      !lesson.isCancelled && !lesson.isCompleted
-    );
-
-    const totalRevenue = lessonsData
-      .filter(lesson => lesson.isPaid)
-      .reduce((sum, lesson) => sum + lesson.cost, 0);
-
-    setStats({
-      totalSubscriptions: lessonsData.length,
-      activeSubscriptions: activeSubscriptions.length,
-      totalRevenue,
-      upcomingLessons: upcomingLessons.length
-    });
-  };
 
   const handleSubscriptionSuccess = () => {
     fetchLessons(); // Обновляем данные после создания абонимента
@@ -136,12 +99,11 @@ export default function SubscriptionsPage() {
       <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <CalendarDays className="w-8 h-8 mr-3 text-purple-600" />
+            <h1 className="text-3xl font-bold text-gray-900">
               Абонименты
             </h1>
             <p className="text-gray-600 mt-2">
-              Управление занятиями на несколько дней и создание абониментов
+              Управление занятиями на несколько дней
             </p>
           </div>
           <button
@@ -154,60 +116,7 @@ export default function SubscriptionsPage() {
         </div>
       </div>
 
-      {/* Статистика */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <CalendarDays className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Всего занятий</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalSubscriptions}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Активные</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.activeSubscriptions}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Доход</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {stats.totalRevenue.toLocaleString()} ₸
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <Clock className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Предстоящие</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.upcomingLessons}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Фильтры и поиск */}
+{/* Фильтры и поиск */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">

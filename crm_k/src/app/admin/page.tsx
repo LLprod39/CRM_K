@@ -321,7 +321,7 @@ export default function AdminPage() {
           >
             <Calendar className="w-6 h-6 text-purple-600 mb-3" />
             <div className="font-medium text-gray-900">Создать занятие</div>
-            <div className="text-sm text-gray-600">Новое занятие или абонемент</div>
+            <div className="text-sm text-gray-600">Новое занятие</div>
           </button>
           
           <button

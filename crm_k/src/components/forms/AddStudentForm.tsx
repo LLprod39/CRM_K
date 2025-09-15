@@ -10,7 +10,6 @@ import Input from '@/components/ui/Input';
 import PhotoUpload from './PhotoUpload';
 import DateTimePicker from '@/components/ui/DateTimePicker';
 import UserSelector from '@/components/ui/UserSelector';
-import UnifiedSubscriptionModal from './UnifiedSubscriptionModal';
 
 interface AddStudentFormProps {
   isOpen: boolean;
@@ -45,7 +44,6 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [createLesson, setCreateLesson] = useState(false);
   const [step, setStep] = useState<'student' | 'lesson'>('student');
-  const [showUnifiedSubscriptionForm, setShowUnifiedSubscriptionForm] = useState(false);
   const [createdStudent, setCreatedStudent] = useState<any>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -188,12 +186,9 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
         }
       }
 
-      // Сбрасываем форму только если не создаем абонемент
-      if (!showUnifiedSubscriptionForm) {
-        resetForm();
-        onSuccess();
-        onClose();
-      }
+      resetForm();
+      onSuccess();
+      onClose();
     }
   };
 
@@ -256,15 +251,10 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
                     type="button"
                     onClick={async () => {
                       const newStudent = await createStudent();
-                      if (newStudent) {
-                        setCreatedStudent(newStudent);
-                        setShowUnifiedSubscriptionForm(true);
-                      }
                     }}
-                    className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors font-medium"
-                    title="Создать абонемент (обычный или гибкий)"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Создать абонемент
+                    Создать ученика
                   </button>
                 </>
               )}
@@ -595,23 +585,6 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
         </div>
       </div>
       
-      {/* Унифицированное модальное окно абонемента */}
-      <UnifiedSubscriptionModal
-        isOpen={showUnifiedSubscriptionForm}
-        onClose={() => {
-          setShowUnifiedSubscriptionForm(false);
-          resetForm();
-          onSuccess();
-          onClose();
-        }}
-        onSuccess={() => {
-          setShowUnifiedSubscriptionForm(false);
-          resetForm();
-          onSuccess();
-          onClose();
-        }}
-        selectedStudent={createdStudent}
-      />
     </div>
   );
 }

@@ -8,7 +8,6 @@ import { useAuth } from '@/presentation/contexts';
 import DateTimePicker from '../ui/DateTimePicker';
 import StudentSearch from '@/components/ui/StudentSearch';
 import UserSelector from '@/components/ui/UserSelector';
-import UnifiedSubscriptionModal from './UnifiedSubscriptionModal';
 
 interface AddLessonFormProps {
   isOpen: boolean;
@@ -54,7 +53,6 @@ export default function AddLessonForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [showUnifiedSubscriptionForm, setShowUnifiedSubscriptionForm] = useState(false);
 
   // Загружаем список учеников
   useEffect(() => {
@@ -277,18 +275,6 @@ export default function AddLessonForm({
             <h2 className="text-lg font-semibold text-gray-900">Добавить занятие</h2>
           </div>
           <div className="flex items-center gap-2">
-            {user?.role === 'ADMIN' && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowUnifiedSubscriptionForm(true)}
-                  className="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors font-medium"
-                  title="Создать абонемент (обычный или гибкий)"
-                >
-                  Создать абонемент
-                </button>
-              </>
-            )}
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -592,16 +578,6 @@ export default function AddLessonForm({
         </form>
       </div>
       
-      {/* Унифицированное модальное окно абонемента */}
-      <UnifiedSubscriptionModal
-        isOpen={showUnifiedSubscriptionForm}
-        onClose={() => setShowUnifiedSubscriptionForm(false)}
-        onSuccess={() => {
-          setShowUnifiedSubscriptionForm(false);
-          onSuccess();
-        }}
-        selectedStudent={selectedStudents.length > 0 ? selectedStudents[0] : undefined}
-      />
     </div>
   );
 }

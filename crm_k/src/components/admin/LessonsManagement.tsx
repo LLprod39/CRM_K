@@ -31,7 +31,6 @@ import { useAuth } from '@/presentation/contexts'
 import { getLessonStatusInfo, getLessonStatus, getLessonStatusText } from '@/lib/lessonStatusUtils'
 import BulkLessonForm from '../forms/BulkLessonForm'
 import PrepaymentForm from '../forms/PrepaymentForm'
-import SubscriptionModal from '../forms/SubscriptionModal'
 
 interface LessonsManagementProps {
   className?: string
@@ -54,7 +53,6 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
   const [selectedLesson, setSelectedLesson] = useState<LessonWithDetails | null>(null)
   const [showBulkForm, setShowBulkForm] = useState(false)
   const [showPrepaymentForm, setShowPrepaymentForm] = useState(false)
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'list' | 'create'>('list')
 
   // Проверяем, что пользователь является админом
@@ -375,17 +373,8 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
 
       {activeTab === 'create' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Создание занятий и абонементов</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => setShowSubscriptionModal(true)}
-              className="p-6 bg-purple-50 hover:bg-purple-100 rounded-xl border border-purple-200 transition-all duration-200 text-left hover:shadow-md"
-            >
-              <CreditCard className="w-8 h-8 text-purple-600 mb-3" />
-              <div className="font-medium text-gray-900">Абонемент</div>
-              <div className="text-sm text-gray-600">Создать гибкий абонемент</div>
-            </button>
-            
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Создание занятий</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={() => setShowBulkForm(true)}
               className="p-6 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 transition-all duration-200 text-left hover:shadow-md"
@@ -536,14 +525,6 @@ export default function LessonsManagement({ className }: LessonsManagementProps)
       )}
       
       {/* Модальные окна */}
-      <SubscriptionModal
-        isOpen={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
-        onSuccess={() => {
-          setShowSubscriptionModal(false);
-          fetchLessons();
-        }}
-      />
       
       <BulkLessonForm
         isOpen={showBulkForm}
