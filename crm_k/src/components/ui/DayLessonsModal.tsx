@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, CheckCircle, AlertCircle, Clock, History, ArrowUpDown, Calendar, Users, DollarSign, CreditCard, AlertTriangle } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Clock, History, ArrowUpDown, Calendar, Users, DollarSign, CreditCard, AlertTriangle, User } from 'lucide-react';
 import { LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
 import LunchTimeSelector from './LunchTimeSelector';
 import Modal, { ModalSection, InfoCard } from './Modal';
@@ -227,35 +227,15 @@ export default function DayLessonsModal({
   );
 
   const modalFooter = (
-    <div className="flex justify-between items-center">
-      <div className="flex items-center gap-4">
-        {userRole === 'ADMIN' && (
-          <button
-            onClick={() => {
-              // Здесь можно добавить логику для добавления нового занятия
-              onClose();
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm"
-          >
-            <span className="text-lg">+</span>
-            Добавить занятие
-          </button>
+    <div className="flex justify-center items-center">
+      <div className="text-sm text-gray-600">
+        {lessons.length > 0 && (
+          <span>
+            Всего занятий: {lessons.length}
+            {sortedLessons.length !== lessons.length && ` • Показано: ${sortedLessons.length}`}
+          </span>
         )}
-        <div className="text-sm text-gray-600">
-          {lessons.length > 0 && (
-            <span>
-              Всего занятий: {lessons.length}
-              {sortedLessons.length !== lessons.length && ` • Показано: ${sortedLessons.length}`}
-            </span>
-          )}
-        </div>
       </div>
-      <button
-        onClick={onClose}
-        className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-      >
-        Закрыть
-      </button>
     </div>
   );
 
@@ -288,45 +268,27 @@ export default function DayLessonsModal({
           <p className="text-gray-600 mb-8">
             На эту дату не запланировано занятий
           </p>
-          <div className="bg-gradient-to-br from-gray-50 to-gray-50/50 rounded-xl p-6 max-w-md mx-auto border border-gray-100">
-            <h4 className="text-lg font-medium text-gray-800 mb-4">Возможности дня:</h4>
-            <div className="space-y-3 text-left mb-6">
-              <div className="flex items-center gap-3 text-gray-700">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Добавить новое занятие</span>
-              </div>
-              <div className="flex items-center gap-3 text-gray-700">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-sm">Планирование на будущее</span>
-              </div>
-              <div className="flex items-center gap-3 text-gray-700">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span className="text-sm">Время для подготовки</span>
-              </div>
-            </div>
-            
-            {/* Кнопка добавления занятия для администраторов */}
-            {userRole === 'ADMIN' && (
-              <button
-                onClick={() => {
-                  // Закрываем модальное окно и открываем форму добавления занятия
-                  onClose();
-                  // Используем setTimeout чтобы дать время модальному окну закрыться
-                  setTimeout(() => {
-                    // Находим родительский компонент и вызываем onAddLesson
-                    const event = new CustomEvent('addLesson', { 
-                      detail: { date } 
-                    });
-                    window.dispatchEvent(event);
-                  }, 100);
-                }}
-                className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
-              >
-                <Calendar className="w-5 h-5" />
-                Добавить занятие
-              </button>
-            )}
-          </div>
+          {/* Кнопка добавления занятия для администраторов */}
+          {userRole === 'ADMIN' && (
+            <button
+              onClick={() => {
+                // Закрываем модальное окно и открываем форму добавления занятия
+                onClose();
+                // Используем setTimeout чтобы дать время модальному окну закрыться
+                setTimeout(() => {
+                  // Находим родительский компонент и вызываем onAddLesson
+                  const event = new CustomEvent('addLesson', { 
+                    detail: { date } 
+                  });
+                  window.dispatchEvent(event);
+                }, 100);
+              }}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 mx-auto"
+            >
+              <Calendar className="w-5 h-5" />
+              Добавить занятие
+            </button>
+          )}
         </div>
       ) : (
         <div className="p-6">
@@ -354,6 +316,14 @@ export default function DayLessonsModal({
                       <ArrowUpDown className="w-3 h-3 text-gray-400" />
                     </div>
                   </th>
+                  {userRole === 'ADMIN' && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div className="flex items-center gap-2">
+                        <User className="w-3.5 h-3.5" />
+                        Учитель
+                      </div>
+                    </th>
+                  )}
                   <th 
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => handleSort('cost')}
@@ -414,17 +384,22 @@ export default function DayLessonsModal({
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
-                            <div className={`h-10 w-10 rounded-full flex items-center justify-center ring-2 ring-offset-2 ${
+                            <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-lg ${
                               lesson.lessonType === 'group' 
-                                ? 'bg-purple-100 text-purple-800 ring-purple-200' 
-                                : 'bg-blue-100 text-blue-800 ring-blue-200'
+                                ? 'bg-purple-100 text-purple-600' 
+                                : 'bg-purple-100 text-purple-600'
                             }`}>
-                              <span className="text-sm font-semibold">
-                                {lesson.lessonType === 'group' 
-                                  ? <Users className="w-5 h-5" />
-                                  : (lesson.student?.fullName || `#${lesson.studentId}`).charAt(0).toUpperCase()
-                                }
-                              </span>
+                              {lesson.lessonType === 'group' ? (
+                                <Users className="w-5 h-5" />
+                              ) : lesson.student?.photoUrl ? (
+                                <img
+                                  src={lesson.student.photoUrl}
+                                  alt={lesson.student.fullName}
+                                  className="w-full h-full object-cover rounded-full"
+                                />
+                              ) : (
+                                <User className="w-5 h-5" />
+                              )}
                             </div>
                           </div>
                           <div className="ml-4">
@@ -445,6 +420,29 @@ export default function DayLessonsModal({
                           </div>
                         </div>
                       </td>
+                      {userRole === 'ADMIN' && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shadow-lg">
+                                <span className="text-sm font-semibold">
+                                  {lesson.teacher?.name ? lesson.teacher.name.charAt(0).toUpperCase() : '?'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {lesson.teacher?.name || 'Не назначен'}
+                              </div>
+                              {lesson.teacher?.email && (
+                                <div className="text-xs text-gray-500">
+                                  {lesson.teacher.email}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">
                           {lesson.cost.toLocaleString()} ₸

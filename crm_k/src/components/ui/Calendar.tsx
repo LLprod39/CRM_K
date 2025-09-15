@@ -102,15 +102,12 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
     
     const dayLessons = lessonsByDay[day] || [];
     
-    // Всегда показываем модальное окно дня для администраторов (чтобы они могли редактировать обеды)
-    // Для обычных пользователей показываем модальное окно только если есть занятия
-    if (userRole === 'ADMIN' || dayLessons.length > 0) {
-      setSelectedDayLessons(dayLessons);
-      setSelectedDayDate(newDate);
-      setShowDayModal(true);
-      
-      console.log('Calendar: Модальное окно должно показаться', { showDayModal: true, dayLessons: dayLessons.length, userRole });
-    }
+    // Всегда показываем модальное окно дня для всех пользователей (чтобы они могли редактировать обеды)
+    setSelectedDayLessons(dayLessons);
+    setSelectedDayDate(newDate);
+    setShowDayModal(true);
+    
+    console.log('Calendar: Модальное окно должно показаться', { showDayModal: true, dayLessons: dayLessons.length, userRole });
   };
 
   const getStatusColor = (lesson: Lesson) => {

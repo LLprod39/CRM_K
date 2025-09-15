@@ -287,26 +287,6 @@ export default function AddLessonForm({
                 >
                   Создать абонемент
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const yesterday = new Date();
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    yesterday.setHours(10, 0, 0, 0);
-                    const endTime = new Date(yesterday.getTime() + 60 * 60 * 1000);
-                    setFormData(prev => ({
-                      ...prev,
-                      date: toLocalISOString(yesterday),
-                      endTime: toLocalISOString(endTime),
-                      isCompleted: true,
-                      isPaid: true
-                    }));
-                  }}
-                  className="px-3 py-1.5 text-xs bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 transition-colors font-medium"
-                  title="Быстро добавить занятие на вчера"
-                >
-                  Вчера
-                </button>
               </>
             )}
             <button
@@ -557,9 +537,6 @@ export default function AddLessonForm({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none"
               placeholder="Дополнительная информация о занятии, цели, задачи, особенности ученика..."
             />
-            <p className="mt-1 text-xs text-gray-500">
-              Опишите особенности занятия, цели, задачи или любую другую важную информацию
-            </p>
           </div>
 
           {/* Комментарий о поведении ребенка - только для прошедших занятий */}
@@ -584,21 +561,6 @@ export default function AddLessonForm({
             </div>
           )}
 
-          {/* Кнопка абонемента для админов */}
-          {user?.role === 'ADMIN' && (
-            <div className="flex gap-2 pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={() => setShowUnifiedSubscriptionForm(true)}
-                className="px-4 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors font-medium text-sm"
-              >
-                Создать абонемент
-              </button>
-              <span className="text-xs text-gray-500 ml-2 self-center">
-                Обычный или гибкий абонемент
-              </span>
-            </div>
-          )}
 
           {/* Кнопки */}
           <div className="flex gap-3 pt-6 border-t border-gray-200">

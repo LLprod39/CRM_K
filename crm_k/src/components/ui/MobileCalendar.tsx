@@ -115,15 +115,12 @@ export default function MobileCalendar({
     console.log('MobileCalendar: userRole:', userRole);
     console.log('MobileCalendar: onAddLesson:', !!onAddLesson);
     
-    // Всегда показываем модальное окно дня для администраторов (чтобы они могли редактировать обеды)
-    // Для обычных пользователей показываем модальное окно только если есть занятия
-    if (userRole === 'ADMIN' || dayLessons.length > 0) {
-      console.log('MobileCalendar: открываем модальное окно с занятиями');
-      setSelectedDayLessons(dayLessons);
-      setSelectedDayDate(newDate);
-      setShowDayModal(true);
-      console.log('MobileCalendar: showDayModal установлен в true');
-    }
+    // Всегда показываем модальное окно дня для всех пользователей (чтобы они могли редактировать обеды)
+    console.log('MobileCalendar: открываем модальное окно с занятиями');
+    setSelectedDayLessons(dayLessons);
+    setSelectedDayDate(newDate);
+    setShowDayModal(true);
+    console.log('MobileCalendar: showDayModal установлен в true');
   };
 
   // Упрощенная обработка событий для мобильных устройств
