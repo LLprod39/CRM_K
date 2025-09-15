@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { FileText, Calendar, DollarSign, Edit, Trash2, BookOpen, Loader2, AlertCircle } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import UnifiedSubscriptionModal from '@/components/forms/UnifiedSubscriptionModal'
 
@@ -167,83 +168,153 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <div className="text-gray-500">Загрузка абонементов...</div>
+      <div className="flex justify-center items-center p-12">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-white animate-spin" />
+          </div>
+          <p className="text-gray-600 font-medium">Загрузка абонементов...</p>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        {error}
+      <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl shadow-lg">
+        <div className="flex items-center">
+          <div className="w-8 h-8 bg-red-100 rounded-xl mr-3 flex items-center justify-center">
+            <AlertCircle className="w-4 h-4 text-red-600" />
+          </div>
+          <div>
+            <p className="font-semibold">Ошибка загрузки</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (subscriptions.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        Абонементы не найдены
+      <div className="text-center py-16">
+        <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl mx-auto mb-6 flex items-center justify-center">
+          <FileText className="w-12 h-12 text-gray-400" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-700 mb-3">Абонементы не найдены</h3>
+        <p className="text-gray-500 mb-6">Создайте первый абонемент для начала работы</p>
+        <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-auto"></div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      {subscriptions.map(subscription => (
-        <div key={subscription.id} className="border border-gray-200 rounded-lg p-6">
-          <div className="flex justify-between items-start mb-4">
+    <div className="space-y-6">
+      {/* Десктопная версия */}
+      <div className="hidden lg:block">
+        {subscriptions.map((subscription, index) => (
+          <div 
+            key={subscription.id} 
+            className="group bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 animate-fade-in"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            <div className="p-8">
+              {/* Заголовок карточки */}
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${
+                      subscription.type === 'flexible' 
+                        ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600' 
+                        : 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600'
+                    }`}>
+                      {subscription.type === 'flexible' ? (
+                        <Calendar className="w-6 h-6 text-white" />
+                      ) : (
+                        <FileText className="w-6 h-6 text-white" />
+                      )}
+                    </div>
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">{subscription.name}</h3>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSubscriptionTypeColor(subscription.type)}`}>
+                      <h3 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {subscription.name}
+                      </h3>
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getSubscriptionTypeColor(subscription.type)}`}>
                   {getSubscriptionTypeLabel(subscription.type)}
                 </span>
               </div>
-              <p className="text-sm text-gray-600">
-                Ученик: {subscription.student.fullName}
-              </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center text-gray-600">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                        <span className="font-medium">Ученик:</span>
+                        <span className="ml-2 font-semibold text-gray-900">{subscription.student.fullName}</span>
+                      </div>
               {subscription.teacher && (
-                <p className="text-sm text-gray-600">
-                  Преподаватель: {subscription.teacher.name}
-                </p>
-              )}
-              <p className="text-sm text-gray-600">
-                Период: {formatDate(subscription.startDate)} - {formatDate(subscription.endDate)}
-              </p>
+                        <div className="flex items-center text-gray-600">
+                          <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
+                          <span className="font-medium">Преподаватель:</span>
+                          <span className="ml-2 font-semibold text-gray-900">{subscription.teacher.name}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center text-gray-600">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                        <span className="font-medium">Период:</span>
+                        <span className="ml-2 font-semibold text-gray-900">
+                          {formatDate(subscription.startDate)} - {formatDate(subscription.endDate)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
             </div>
-            <div className="text-right">
-              <div className="text-lg font-semibold text-gray-900">
+                
+                <div className="text-right ml-6">
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 shadow-inner">
+                    <div className="text-3xl font-bold text-gray-900 mb-2">
                 {subscription.totalCost.toLocaleString('ru-RU')} ₸
               </div>
-              <div className={`text-sm ${subscription.isPaid ? 'text-green-600' : 'text-red-600'}`}>
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                      subscription.isPaid 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      <span className="w-2 h-2 rounded-full mr-2 bg-current"></span>
                 {subscription.isPaid ? 'Оплачено' : 'Не оплачено'}
+                    </div>
               </div>
             </div>
           </div>
 
+              {/* Описание */}
           {subscription.description && (
-            <p className="text-sm text-gray-600 mb-4">{subscription.description}</p>
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+                  <p className="text-gray-700 font-medium">{subscription.description}</p>
+                </div>
           )}
 
           {/* Расписание недель (только для гибких абонементов) */}
           {subscription.type === 'flexible' && subscription.weekSchedules && subscription.weekSchedules.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-medium text-gray-900 mb-2">Расписание:</h4>
-              <div className="space-y-3">
+                <div className="mb-6">
+                  <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <span className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl mr-3 flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-white" />
+                    </span>
+                    Расписание занятий
+                  </h4>
+                  <div className="space-y-4">
                 {subscription.weekSchedules.map((week: any) => (
-                  <div key={week.id} className="bg-gray-50 p-3 rounded">
-                    <div className="font-medium text-sm text-gray-700 mb-2">
+                      <div key={week.id} className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+                        <div className="font-semibold text-gray-800 mb-3 text-center">
                       Неделя {week.weekNumber}: {formatDate(week.startDate)} - {formatDate(week.endDate)}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {week.weekDays?.map((day: any) => (
-                        <div key={day.id} className="bg-white p-2 rounded border text-xs">
-                          <div className="font-medium">{getDayName(day.dayOfWeek)}</div>
-                          <div>{formatTime(day.startTime)} - {formatTime(day.endTime)}</div>
-                          <div className="text-green-600">{day.cost} ₸</div>
-                          <div className="text-gray-500">{day.location}</div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {week.weekDays?.map((day: any) => (
+                            <div key={day.id} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                              <div className="font-semibold text-gray-900 mb-2">{getDayName(day.dayOfWeek)}</div>
+                              <div className="text-sm text-gray-600 mb-1">{formatTime(day.startTime)} - {formatTime(day.endTime)}</div>
+                              <div className="text-green-600 font-semibold mb-1">{day.cost} ₸</div>
+                              <div className="text-xs text-gray-500">{day.location}</div>
                         </div>
                       ))}
                     </div>
@@ -255,44 +326,164 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
 
           {/* Платежи */}
           {subscription.payments && subscription.payments.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-medium text-gray-900 mb-2">Платежи:</h4>
-              <div className="space-y-1">
+                <div className="mb-6">
+                  <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <span className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl mr-3 flex items-center justify-center">
+                      <DollarSign className="w-4 h-4 text-white" />
+                    </span>
+                    История платежей
+                  </h4>
+                  <div className="space-y-2">
                 {subscription.payments.map((payment: any) => (
-                  <div key={payment.id} className="flex justify-between text-sm">
-                    <span>{formatDate(payment.date)} - {payment.description}</span>
-                    <span className="text-green-600">{payment.amount.toLocaleString('ru-RU')} ₸</span>
+                      <div key={payment.id} className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                        <div>
+                          <span className="font-medium text-gray-800">{formatDate(payment.date)}</span>
+                          <span className="text-gray-600 ml-2">- {payment.description}</span>
+                        </div>
+                        <span className="text-green-600 font-bold text-lg">{payment.amount.toLocaleString('ru-RU')} ₸</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Действия */}
-          <div className="flex justify-end space-x-2">
-            <button
-              onClick={() => handleEdit(subscription)}
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-            >
-              Редактировать
-            </button>
-            <button
-              onClick={() => handleDelete(subscription.id)}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-            >
-              Удалить
-            </button>
+              {/* Действия */}
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => handleEdit(subscription)}
+                  className="group px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center space-x-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span>Редактировать</span>
+                </button>
+                <button
+                  onClick={() => handleDelete(subscription.id)}
+                  className="group px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center space-x-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Удалить</span>
+                </button>
+                {subscription.type === 'flexible' && (
+                  <button
+                    onClick={() => generateLessons(subscription.id)}
+                    className="group px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center space-x-2"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>Создать уроки</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Мобильная версия */}
+      <div className="lg:hidden space-y-4">
+        {subscriptions.map((subscription, index) => (
+          <div 
+            key={subscription.id} 
+            className="mobile-card-modern animate-mobile-pop-in mobile-interactive-modern"
+            style={{ animationDelay: `${index * 150}ms` }}
+          >
+            {/* Заголовок */}
+            <div className="flex items-center mb-4">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mr-4 shadow-lg ${
+                subscription.type === 'flexible' 
+                  ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600' 
+                  : 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600'
+              }`}>
+                {subscription.type === 'flexible' ? (
+                  <Calendar className="w-6 h-6 text-white" />
+                ) : (
+                  <FileText className="w-6 h-6 text-white" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">{subscription.name}</h3>
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSubscriptionTypeColor(subscription.type)}`}>
+                  {getSubscriptionTypeLabel(subscription.type)}
+                </span>
+              </div>
+            </div>
+
+            {/* Информация */}
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center text-gray-700">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                <span className="font-medium">Ученик:</span>
+                <span className="ml-2 font-semibold">{subscription.student.fullName}</span>
+              </div>
+              {subscription.teacher && (
+                <div className="flex items-center text-gray-700">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
+                  <span className="font-medium">Преподаватель:</span>
+                  <span className="ml-2 font-semibold">{subscription.teacher.name}</span>
+                </div>
+              )}
+              <div className="flex items-center text-gray-700">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                <span className="font-medium">Период:</span>
+                <span className="ml-2 font-semibold text-sm">
+                  {formatDate(subscription.startDate)} - {formatDate(subscription.endDate)}
+                </span>
+              </div>
+            </div>
+
+            {/* Стоимость и статус */}
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 mb-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900 mb-2">
+                  {subscription.totalCost.toLocaleString('ru-RU')} ₸
+                </div>
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                  subscription.isPaid 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  <span className="w-2 h-2 rounded-full mr-2 bg-current"></span>
+                  {subscription.isPaid ? 'Оплачено' : 'Не оплачено'}
+                </div>
+              </div>
+            </div>
+
+            {/* Описание */}
+            {subscription.description && (
+              <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl">
+                <p className="text-gray-700 text-sm font-medium">{subscription.description}</p>
+              </div>
+            )}
+
+            {/* Действия */}
+            <div className="flex space-x-2">
+              <button
+                onClick={() => handleEdit(subscription)}
+                className="flex-1 mobile-btn-gradient bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 font-bold text-sm flex items-center justify-center space-x-2"
+              >
+                <Edit className="w-4 h-4" />
+                <span>Редактировать</span>
+              </button>
+              <button
+                onClick={() => handleDelete(subscription.id)}
+                className="flex-1 mobile-btn-gradient bg-gradient-to-r from-red-500 to-red-600 text-white py-3 font-bold text-sm flex items-center justify-center space-x-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Удалить</span>
+              </button>
+            </div>
+            
             {subscription.type === 'flexible' && (
               <button
                 onClick={() => generateLessons(subscription.id)}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                className="w-full mobile-btn-gradient bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 font-bold text-sm mt-2 flex items-center justify-center space-x-2"
               >
-                Создать уроки
+                <BookOpen className="w-4 h-4" />
+                <span>Создать уроки</span>
               </button>
             )}
           </div>
+        ))}
         </div>
-      ))}
 
       {/* Модальное окно для редактирования */}
       {editingSubscription && (
