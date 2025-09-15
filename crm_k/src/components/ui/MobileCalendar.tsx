@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Clock, User, Calendar as CalendarIcon, History } from 'lucide-react';
 import { Lesson, LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
 import DayLessonsModal from './DayLessonsModal';
@@ -28,6 +28,21 @@ export default function MobileCalendar({
   const [selectedDayLessons, setSelectedDayLessons] = useState<LessonWithOptionalStudent[]>([]);
   const [selectedDayDate, setSelectedDayDate] = useState<Date>(new Date());
   const [activeDay, setActiveDay] = useState<number | null>(null);
+
+  // Обработчик события добавления занятия из модального окна
+  useEffect(() => {
+    const handleAddLesson = (event: CustomEvent) => {
+      if (onAddLesson && event.detail?.date) {
+        onAddLesson(event.detail.date);
+      }
+    };
+
+    window.addEventListener('addLesson', handleAddLesson as EventListener);
+    
+    return () => {
+      window.removeEventListener('addLesson', handleAddLesson as EventListener);
+    };
+  }, [onAddLesson]);
 
   // Получаем занятия для выбранного месяца
   const monthLessons = lessons.filter(lesson => {
@@ -100,19 +115,15 @@ export default function MobileCalendar({
     console.log('MobileCalendar: userRole:', userRole);
     console.log('MobileCalendar: onAddLesson:', !!onAddLesson);
     
-    // Если день пустой и есть функция onAddLesson, и пользователь - админ, открываем форму добавления занятия
-    if (dayLessons.length === 0 && onAddLesson && userRole === 'ADMIN') {
-      console.log('MobileCalendar: открываем форму добавления занятия');
-      onAddLesson(newDate);
-      return;
+    // Всегда показываем модальное окно дня для администраторов (чтобы они могли редактировать обеды)
+    // Для обычных пользователей показываем модальное окно только если есть занятия
+    if (userRole === 'ADMIN' || dayLessons.length > 0) {
+      console.log('MobileCalendar: открываем модальное окно с занятиями');
+      setSelectedDayLessons(dayLessons);
+      setSelectedDayDate(newDate);
+      setShowDayModal(true);
+      console.log('MobileCalendar: showDayModal установлен в true');
     }
-    
-    // Если есть занятия, показываем модальное окно
-    console.log('MobileCalendar: открываем модальное окно с занятиями');
-    setSelectedDayLessons(dayLessons);
-    setSelectedDayDate(newDate);
-    setShowDayModal(true);
-    console.log('MobileCalendar: showDayModal установлен в true');
   };
 
   // Упрощенная обработка событий для мобильных устройств

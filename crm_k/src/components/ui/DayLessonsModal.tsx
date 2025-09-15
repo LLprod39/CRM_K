@@ -290,7 +290,7 @@ export default function DayLessonsModal({
           </p>
           <div className="bg-gradient-to-br from-gray-50 to-gray-50/50 rounded-xl p-6 max-w-md mx-auto border border-gray-100">
             <h4 className="text-lg font-medium text-gray-800 mb-4">Возможности дня:</h4>
-            <div className="space-y-3 text-left">
+            <div className="space-y-3 text-left mb-6">
               <div className="flex items-center gap-3 text-gray-700">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm">Добавить новое занятие</span>
@@ -304,6 +304,28 @@ export default function DayLessonsModal({
                 <span className="text-sm">Время для подготовки</span>
               </div>
             </div>
+            
+            {/* Кнопка добавления занятия для администраторов */}
+            {userRole === 'ADMIN' && (
+              <button
+                onClick={() => {
+                  // Закрываем модальное окно и открываем форму добавления занятия
+                  onClose();
+                  // Используем setTimeout чтобы дать время модальному окну закрыться
+                  setTimeout(() => {
+                    // Находим родительский компонент и вызываем onAddLesson
+                    const event = new CustomEvent('addLesson', { 
+                      detail: { date } 
+                    });
+                    window.dispatchEvent(event);
+                  }, 100);
+                }}
+                className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <Calendar className="w-5 h-5" />
+                Добавить занятие
+              </button>
+            )}
           </div>
         </div>
       ) : (

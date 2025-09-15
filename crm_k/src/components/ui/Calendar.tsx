@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Clock, User, History } from 'lucide-react';
 import { Lesson, LessonWithOptionalStudent, getLessonStatus, getLessonStatusText } from '@/types';
 import MobileCalendar from './MobileCalendar';
@@ -22,6 +22,21 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
   const [showDayModal, setShowDayModal] = useState(false);
   const [selectedDayLessons, setSelectedDayLessons] = useState<LessonWithOptionalStudent[]>([]);
   const [selectedDayDate, setSelectedDayDate] = useState<Date>(new Date());
+
+  // Обработчик события добавления занятия из модального окна
+  useEffect(() => {
+    const handleAddLesson = (event: CustomEvent) => {
+      if (onAddLesson && event.detail?.date) {
+        onAddLesson(event.detail.date);
+      }
+    };
+
+    window.addEventListener('addLesson', handleAddLesson as EventListener);
+    
+    return () => {
+      window.removeEventListener('addLesson', handleAddLesson as EventListener);
+    };
+  }, [onAddLesson]);
 
   // Получаем занятия для выбранного месяца
   const monthLessons = lessons.filter(lesson => {
@@ -87,18 +102,15 @@ export default function Calendar({ lessons, onDateClick, onLessonClick, onAddLes
     
     const dayLessons = lessonsByDay[day] || [];
     
-    // Если день пустой и есть функция onAddLesson, и пользователь - админ, открываем форму добавления занятия
-    if (dayLessons.length === 0 && onAddLesson && userRole === 'ADMIN') {
-      onAddLesson(newDate);
-      return;
+    // Всегда показываем модальное окно дня для администраторов (чтобы они могли редактировать обеды)
+    // Для обычных пользователей показываем модальное окно только если есть занятия
+    if (userRole === 'ADMIN' || dayLessons.length > 0) {
+      setSelectedDayLessons(dayLessons);
+      setSelectedDayDate(newDate);
+      setShowDayModal(true);
+      
+      console.log('Calendar: Модальное окно должно показаться', { showDayModal: true, dayLessons: dayLessons.length, userRole });
     }
-    
-    // Если есть занятия, показываем модальное окно
-    setSelectedDayLessons(dayLessons);
-    setSelectedDayDate(newDate);
-    setShowDayModal(true);
-    
-    console.log('Calendar: Модальное окно должно показаться', { showDayModal: true, dayLessons: dayLessons.length });
   };
 
   const getStatusColor = (lesson: Lesson) => {

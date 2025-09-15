@@ -92,12 +92,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Пользователь не найден в базе данных' }, { status: 404 });
     }
 
-    // Админ не может добавлять собственные обеды
-    if (user.role === 'ADMIN') {
+    const { date, startTime, endTime, userId } = await request.json();
+
+    // Определяем для какого пользователя создаем обед
+    let targetUserId = user.id;
+    if (user.role === 'ADMIN' && userId) {
+      // Админ может создавать обеды для других пользователей
+      targetUserId = userId;
+    } else if (user.role === 'ADMIN' && !userId) {
+      // Админ не может создавать собственные обеды
       return NextResponse.json({ error: 'Администратор не может добавлять собственные обеды' }, { status: 403 });
     }
-
-    const { date, startTime, endTime } = await request.json();
 
     if (!date || !startTime || !endTime) {
       return NextResponse.json({ error: 'Не все обязательные поля заполнены' }, { status: 400 });
@@ -110,10 +115,10 @@ export async function POST(request: NextRequest) {
     endOfDay.setHours(23, 59, 59, 999);
 
 
-    // Проверяем, есть ли уже время обеда на эту дату
+    // Проверяем, есть ли уже время обеда на эту дату для целевого пользователя
     const existingLunchBreak = await prisma.lunchBreak.findFirst({
       where: {
-        userId: user.id,
+        userId: targetUserId,
         date: {
           gte: startOfDay,
           lte: endOfDay
@@ -125,7 +130,7 @@ export async function POST(request: NextRequest) {
       date: targetDate,
       startTime: new Date(startTime),
       endTime: new Date(endTime),
-      userId: user.id
+      userId: targetUserId
     };
 
     let lunchBreak;
