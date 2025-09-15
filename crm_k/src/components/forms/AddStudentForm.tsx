@@ -76,13 +76,8 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateStudentForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    // Для админов проверяем выбор пользователя только если создаем занятие
-    if (user?.role === 'ADMIN' && createLesson && !selectedUserId) {
-      newErrors.userId = 'Выберите пользователя (учителя)';
-    }
 
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'ФИО обязательно для заполнения';
@@ -106,8 +101,24 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateLessonForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Для админов проверяем выбор пользователя
+    if (user?.role === 'ADMIN' && !selectedUserId) {
+      newErrors.userId = 'Выберите учителя для занятия';
+    }
+
+    if (!lessonData.cost || lessonData.cost <= 0) {
+      newErrors.cost = 'Стоимость должна быть больше 0';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const createStudent = async () => {
-    if (!validateForm()) {
+    if (!validateStudentForm()) {
       return null;
     }
 
@@ -146,6 +157,13 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Если мы на шаге занятия, проверяем валидацию урока
+    if (step === 'lesson') {
+      if (!validateLessonForm()) {
+        return;
+      }
+    }
+    
     const newStudent = await createStudent();
     
     if (newStudent) {
@@ -156,7 +174,7 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
         const lessonRequestData = {
           ...lessonData,
           studentId: newStudent.id,
-          userId: user?.role === 'ADMIN' ? selectedUserId : undefined
+          userId: user?.role === 'ADMIN' ? selectedUserId : user?.id
         };
         
         const lessonResponse = await apiRequest('/api/lessons', {
@@ -406,22 +424,39 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
               </>
             ) : (
               <>
-                {/* Информация для админов */}
+                {/* Выбор учителя для админов */}
                 {user?.role === 'ADMIN' && (
-                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
-                    <div className="flex items-center space-x-2">
-                      <User className="w-5 h-5 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800">
-                        Администратор
-                      </span>
-                    </div>
-                    <p className="text-sm text-blue-700 mt-2">
-                      Ученик будет создан как "нечейный" и может быть назначен любому учителю при создании занятия.
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <User className="w-4 h-4 inline mr-2" />
+                      Назначить учителя
+                    </label>
+                    <UserSelector
+                      selectedUserId={selectedUserId}
+                      onUserChange={(userId) => {
+                        setSelectedUserId(userId);
+                        // Очищаем ошибку при выборе учителя
+                        if (errors.userId) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.userId;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      placeholder="Выберите учителя для занятия..."
+                      showUserCount={true}
+                    />
+                    {errors.userId && (
+                      <p className="text-red-500 text-sm mt-1">{errors.userId}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">
+                      Ученик будет назначен выбранному учителю
                     </p>
                   </div>
                 )}
 
-                {/* Время проведения */}
+                {/* Время и длительность проведения */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/50">
                   <DateTimePicker
                     value={lessonData.date.toISOString()}
@@ -517,7 +552,9 @@ export default function AddStudentForm({ isOpen, onClose, onSuccess }: AddStuden
                     variant="primary"
                     onClick={() => {
                       if (createLesson) {
-                        setStep('lesson');
+                        if (validateStudentForm()) {
+                          setStep('lesson');
+                        }
                       } else {
                         handleSubmit(new Event('submit') as any);
                       }

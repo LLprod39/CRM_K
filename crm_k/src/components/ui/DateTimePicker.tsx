@@ -324,27 +324,56 @@ export default function DateTimePicker({
       {/* Длительность занятия */}
       {showDurationSelector && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="flex items-center text-sm font-medium text-gray-700">
+            <Clock className="w-4 h-4 mr-2" />
             Длительность занятия
           </label>
           
-          <div className="flex flex-wrap gap-2">
-            {DURATION_OPTIONS.map((option) => (
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={duration}
+              onChange={(e) => handleDurationChange(parseInt(e.target.value) || 60)}
+              disabled={disabled}
+              min="15"
+              max="180"
+              step="15"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              placeholder="60"
+            />
+            <span className="text-sm text-gray-500">минут</span>
+            
+            {/* Кнопки быстрой настройки длительности */}
+            <div className="flex space-x-2">
               <button
-                key={option.value}
                 type="button"
-                onClick={() => handleDurationChange(option.value)}
+                onClick={() => handleDurationChange(30)}
                 disabled={disabled}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                  duration === option.value
+                className={`px-3 py-1 text-sm rounded-lg border transition-colors ${
+                  duration === 30
                     ? 'bg-green-100 border-green-300 text-green-700'
                     : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
+                title="30 минут"
               >
-                {option.label}
+                30 мин
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => handleDurationChange(60)}
+                disabled={disabled}
+                className={`px-3 py-1 text-sm rounded-lg border transition-colors ${
+                  duration === 60
+                    ? 'bg-green-100 border-green-300 text-green-700'
+                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                title="1 час"
+              >
+                1 час
+              </button>
+            </div>
           </div>
+
         </div>
       )}
 
