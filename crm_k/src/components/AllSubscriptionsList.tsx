@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { FileText, Calendar, DollarSign, Edit, Trash2, BookOpen, Loader2, AlertCircle } from 'lucide-react'
+import { FileText, Calendar, DollarSign, Trash2, Loader2, AlertCircle } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import UnifiedSubscriptionModal from '@/components/forms/UnifiedSubscriptionModal'
 
@@ -114,30 +114,6 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
     }
   }
 
-  const generateLessons = async (subscriptionId: string | number) => {
-    // Проверяем, является ли ID строкой и начинается ли с 'regular_'
-    if (typeof subscriptionId === 'string' && subscriptionId.startsWith('regular_')) {
-      alert('Создание уроков для обычных абонементов пока не поддерживается')
-      return
-    }
-
-    try {
-      const response = await apiRequest(`/api/flexible-subscriptions/${subscriptionId}/generate-lessons`, {
-        method: 'POST'
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        alert(`Создано ${result.createdLessons} уроков`)
-        loadSubscriptions()
-      } else {
-        const errorData = await response.json()
-        alert(`Ошибка: ${errorData.error}`)
-      }
-    } catch (error) {
-      alert('Ошибка при генерации уроков')
-    }
-  }
 
   const handleEditSuccess = () => {
     setShowEditModal(false)
@@ -215,12 +191,25 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
         {subscriptions.map((subscription, index) => (
           <div 
             key={subscription.id} 
-            className="group bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 animate-fade-in"
+            className="group bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 animate-fade-in cursor-pointer"
             style={{ animationDelay: `${index * 100}ms` }}
+            onClick={() => handleEdit(subscription)}
           >
-            <div className="p-8">
+            <div className="p-8 relative">
+              {/* Кнопка удаления в правом верхнем углу */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDelete(subscription.id)
+                }}
+                className="absolute top-4 right-4 w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-sm hover:shadow-md"
+                title="Удалить абонемент"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+
               {/* Заголовок карточки */}
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start mb-6 pr-12">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${
@@ -235,9 +224,6 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
                       )}
                     </div>
             <div>
-                      <h3 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {subscription.name}
-                      </h3>
                       <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getSubscriptionTypeColor(subscription.type)}`}>
                   {getSubscriptionTypeLabel(subscription.type)}
                 </span>
@@ -314,7 +300,6 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
                               <div className="font-semibold text-gray-900 mb-2">{getDayName(day.dayOfWeek)}</div>
                               <div className="text-sm text-gray-600 mb-1">{formatTime(day.startTime)} - {formatTime(day.endTime)}</div>
                               <div className="text-green-600 font-semibold mb-1">{day.cost} ₸</div>
-                              <div className="text-xs text-gray-500">{day.location}</div>
                         </div>
                       ))}
                     </div>
@@ -347,32 +332,6 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
             </div>
           )}
 
-              {/* Действия */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => handleEdit(subscription)}
-                  className="group px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center space-x-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  <span>Редактировать</span>
-                </button>
-                <button
-                  onClick={() => handleDelete(subscription.id)}
-                  className="group px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center space-x-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Удалить</span>
-                </button>
-                {subscription.type === 'flexible' && (
-                  <button
-                    onClick={() => generateLessons(subscription.id)}
-                    className="group px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center space-x-2"
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    <span>Создать уроки</span>
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         ))}
@@ -383,11 +342,24 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
         {subscriptions.map((subscription, index) => (
           <div 
             key={subscription.id} 
-            className="mobile-card-modern animate-mobile-pop-in mobile-interactive-modern"
+            className="mobile-card-modern animate-mobile-pop-in mobile-interactive-modern relative cursor-pointer"
             style={{ animationDelay: `${index * 150}ms` }}
+            onClick={() => handleEdit(subscription)}
           >
+            {/* Кнопка удаления в правом верхнем углу */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDelete(subscription.id)
+              }}
+              className="absolute top-3 right-3 w-7 h-7 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-sm hover:shadow-md z-10"
+              title="Удалить абонемент"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+
             {/* Заголовок */}
-            <div className="flex items-center mb-4">
+            <div className="flex items-center mb-4 pr-12">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mr-4 shadow-lg ${
                 subscription.type === 'flexible' 
                   ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600' 
@@ -400,7 +372,6 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 mb-1">{subscription.name}</h3>
                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSubscriptionTypeColor(subscription.type)}`}>
                   {getSubscriptionTypeLabel(subscription.type)}
                 </span>
@@ -454,33 +425,7 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
               </div>
             )}
 
-            {/* Действия */}
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handleEdit(subscription)}
-                className="flex-1 mobile-btn-gradient bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 font-bold text-sm flex items-center justify-center space-x-2"
-              >
-                <Edit className="w-4 h-4" />
-                <span>Редактировать</span>
-              </button>
-              <button
-                onClick={() => handleDelete(subscription.id)}
-                className="flex-1 mobile-btn-gradient bg-gradient-to-r from-red-500 to-red-600 text-white py-3 font-bold text-sm flex items-center justify-center space-x-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Удалить</span>
-              </button>
-            </div>
             
-            {subscription.type === 'flexible' && (
-              <button
-                onClick={() => generateLessons(subscription.id)}
-                className="w-full mobile-btn-gradient bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 font-bold text-sm mt-2 flex items-center justify-center space-x-2"
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>Создать уроки</span>
-              </button>
-            )}
           </div>
         ))}
         </div>

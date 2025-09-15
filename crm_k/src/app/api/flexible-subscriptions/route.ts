@@ -104,9 +104,8 @@ export async function POST(request: NextRequest) {
     console.log('Получены данные для создания абонемента:', body)
     
     // Валидация обязательных полей
-    if (!body.name || !body.studentId || !body.userId || !body.startDate || !body.endDate) {
+    if (!body.studentId || !body.userId || !body.startDate || !body.endDate) {
       console.log('Валидация не прошла - отсутствуют обязательные поля:', {
-        name: !!body.name,
         studentId: !!body.studentId,
         userId: !!body.userId,
         startDate: !!body.startDate,
@@ -207,7 +206,6 @@ export async function POST(request: NextRequest) {
       // Создаем абонемент
       const newSubscription = await (tx as any).flexibleSubscription.create({
         data: {
-          name: body.name,
           studentId: body.studentId,
           userId: body.userId,
           startDate: new Date(body.startDate),
@@ -341,6 +339,106 @@ export async function POST(request: NextRequest) {
     })
 
     console.log('Абонемент успешно создан:', subscription.id)
+    
+    // Автоматически генерируем уроки для созданного абонемента
+    try {
+      console.log('Начинаем автоматическую генерацию уроков для абонемента:', subscription.id)
+      
+      // Получаем полные данные абонемента для генерации уроков
+      const fullSubscription = await (prisma as any).flexibleSubscription.findUnique({
+        where: { id: subscription.id },
+        include: {
+          student: true,
+          weekSchedules: {
+            include: {
+              weekDays: true
+            }
+          },
+          paidDays: {
+            include: {
+              day: true
+            }
+          }
+        }
+      })
+
+      if (!fullSubscription) {
+        console.log('Не удалось получить данные абонемента для генерации уроков')
+        return NextResponse.json(subscription, { status: 201 })
+      }
+
+      // Создаем карту оплаченных дней для быстрого поиска
+      const paidDaysMap = new Map()
+      fullSubscription.paidDays.forEach((paidDay: any) => {
+        paidDaysMap.set(paidDay.dayId, paidDay)
+      })
+
+      // Генерируем уроки для каждой недели
+      const lessonsToCreate = []
+      
+      for (const week of fullSubscription.weekSchedules) {
+        for (const day of week.weekDays) {
+          // Вычисляем дату урока
+          const weekStartDate = new Date(week.startDate)
+          const dayOfWeek = day.dayOfWeek
+          
+          // Находим дату нужного дня недели в этой неделе
+          const lessonDate = new Date(weekStartDate)
+          const currentDayOfWeek = weekStartDate.getDay()
+          const daysToAdd = (dayOfWeek - currentDayOfWeek + 7) % 7
+          lessonDate.setDate(lessonDate.getDate() + daysToAdd)
+          
+          // Устанавливаем время урока
+          const startTime = new Date(day.startTime)
+          lessonDate.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0)
+          
+          // Проверяем, что урок попадает в диапазон дат абонемента
+          if (lessonDate >= new Date(fullSubscription.startDate) && lessonDate <= new Date(fullSubscription.endDate)) {
+            // Определяем статус оплаты урока
+            let lessonPaymentStatus = 'UNPAID'
+            if (fullSubscription.paymentStatus === 'PAID') {
+              lessonPaymentStatus = 'PAID'
+            } else if (fullSubscription.paymentStatus === 'PARTIAL') {
+              // Проверяем, оплачен ли этот день
+              const dayId = day.id
+              if (paidDaysMap.has(dayId)) {
+                lessonPaymentStatus = 'PAID'
+              }
+            }
+
+            const lessonToCreate = {
+              date: lessonDate,
+              endTime: new Date(lessonDate.getTime() + (new Date(day.endTime).getTime() - new Date(day.startTime).getTime())),
+              studentId: fullSubscription.studentId,
+              teacherId: fullSubscription.userId,
+              cost: day.cost,
+              paymentStatus: lessonPaymentStatus,
+              isPaid: lessonPaymentStatus === 'PAID',
+              notes: day.notes,
+              lessonType: 'individual',
+              location: day.location
+            }
+            
+            lessonsToCreate.push(lessonToCreate)
+          }
+        }
+      }
+      
+      console.log('Итого уроков для автоматического создания:', lessonsToCreate.length)
+
+      // Создаем все уроки
+      if (lessonsToCreate.length > 0) {
+        await prisma.lesson.createMany({
+          data: lessonsToCreate
+        })
+        console.log('Автоматически создано уроков:', lessonsToCreate.length)
+      }
+      
+    } catch (lessonError) {
+      console.error('Ошибка при автоматической генерации уроков:', lessonError)
+      // Не прерываем создание абонемента, если не удалось создать уроки
+    }
+    
     return NextResponse.json(subscription, { status: 201 })
   } catch (error) {
     console.error('Ошибка при создании гибкого абонемента:', error)

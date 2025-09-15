@@ -47,7 +47,6 @@ interface RegularSubscriptionData {
 }
 
 interface FlexibleSubscriptionData {
-  name: string;
   studentId: number;
   userId: number;
   startDate: string;
@@ -552,11 +551,6 @@ const FlexibleSubscriptionForm = ({
     { value: 0, label: 'Воскресенье' }
   ];
 
-  const LOCATIONS = [
-    { value: 'office', label: 'Офис' },
-    { value: 'online', label: 'Онлайн' },
-    { value: 'home', label: 'На дому' }
-  ];
 
   const addWeek = () => {
     // Проверяем, что даты начала и окончания абонемента заполнены
@@ -662,23 +656,6 @@ const FlexibleSubscriptionForm = ({
       {/* Основная информация */}
       <ModalSection icon={<Users />} title="Основная информация">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Название абонемента *
-            </label>
-            <input
-              type="text"
-              value={data.name}
-              onChange={(e) => setData((prev: FlexibleSubscriptionData) => ({ ...prev, name: e.target.value }))}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                validationErrors.name ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="Например: Гибкий абонемент на месяц"
-            />
-            {validationErrors.name && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
-            )}
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1049,20 +1026,6 @@ const FlexibleSubscriptionForm = ({
                             />
                           </div>
 
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Место</label>
-                            <select
-                              value={day.location}
-                              onChange={(e) => updateDay(weekIndex, dayIndex, 'location', e.target.value)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500"
-                            >
-                              {LOCATIONS.map(location => (
-                                <option key={location.value} value={location.value}>
-                                  {location.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
 
                           <div className="flex items-end">
                             <button
@@ -1146,7 +1109,6 @@ export default function UnifiedSubscriptionModal({
 
   // Состояние для гибкого абонемента
   const [flexibleData, setFlexibleData] = useState<FlexibleSubscriptionData>({
-    name: '',
     studentId: selectedStudent?.id || 0,
     userId: 0,
     startDate: '',
@@ -1196,7 +1158,6 @@ export default function UnifiedSubscriptionModal({
     if (editingSubscription) {
       setSubscriptionType('flexible'); // Редактируем только гибкие абонементы
       setFlexibleData({
-        name: editingSubscription.name,
         studentId: editingSubscription.studentId,
         userId: editingSubscription.userId,
         startDate: new Date(editingSubscription.startDate).toISOString().split('T')[0],
@@ -1366,9 +1327,6 @@ export default function UnifiedSubscriptionModal({
         errors.paymentStatus = 'Выберите статус платежа';
       }
     } else if (subscriptionType === 'flexible') {
-      if (!flexibleData.name) {
-        errors.name = 'Введите название абонемента';
-      }
       if (!flexibleData.studentId) {
         errors.studentId = 'Выберите ученика';
       }
@@ -1528,12 +1486,12 @@ export default function UnifiedSubscriptionModal({
           }
           confirmText={
             loading 
-              ? (editingSubscription ? 'Сохранение...' : 'Создание...') 
+              ? (editingSubscription ? 'Сохранение...' : (subscriptionType === 'flexible' ? 'Создание абонемента и уроков...' : 'Создание...')) 
               : subscriptionType === 'regular' 
                 ? `Создать абонемент (${lessonsCount} занятий)` 
                 : editingSubscription
                   ? `Сохранить изменения (${flexibleTotalAmount.toLocaleString()} ₸)`
-                  : `Создать гибкий абонемент (${flexibleTotalAmount.toLocaleString()} ₸)`
+                  : `Создать гибкий абонемент и уроки (${flexibleTotalAmount.toLocaleString()} ₸)`
           }
           loading={loading}
         />
