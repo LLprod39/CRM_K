@@ -545,9 +545,8 @@ export default function BulkLessonForm({
           </div>
 
           {/* Время и продолжительность */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-              <Clock className="w-5 h-5 mr-2" />
+          <div>
+            <h3 className="text-sm font-medium text-gray-900 mb-4">
               Время и продолжительность
             </h3>
             
@@ -623,9 +622,8 @@ export default function BulkLessonForm({
 
           {/* Предварительный просмотр */}
           {previewLessons.length > 0 && (
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <h3 className="text-sm font-normal text-gray-900 mb-4">
                 Предварительный просмотр ({previewLessons.length} занятий)
               </h3>
               
@@ -673,7 +671,7 @@ export default function BulkLessonForm({
             <button
               type="submit"
               disabled={loading || previewLessons.length === 0}
-              className="flex-1 px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors font-medium flex items-center justify-center"
+              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium flex items-center justify-center"
             >
               {loading ? (
                 <>

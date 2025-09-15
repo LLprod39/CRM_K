@@ -510,7 +510,7 @@ export default function SubscriptionCalendarForm({
       <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Запись на несколько дней</h2>
+            <h2 className="text-sm font-medium text-gray-900">Запись на несколько дней</h2>
             <p className="text-sm text-gray-600 mt-1">Выберите дни и настройте параметры занятий</p>
           </div>
           <button
@@ -647,9 +647,8 @@ export default function SubscriptionCalendarForm({
               </div>
 
               {/* Время и продолжительность */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                  <Clock className="w-5 h-5 mr-2" />
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 mb-4">
                   Время и продолжительность
                 </h3>
                 
@@ -803,10 +802,9 @@ export default function SubscriptionCalendarForm({
 
               {/* Предварительный просмотр */}
               {lessonPreview.length > 0 && (
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                      <Eye className="w-5 h-5 mr-2" />
+                    <h3 className="text-sm font-normal text-gray-900">
                       Предварительный просмотр ({lessonPreview.length} занятий)
                     </h3>
                     <button
@@ -869,7 +867,7 @@ export default function SubscriptionCalendarForm({
             <button
               type="submit"
               disabled={loading || lessonPreview.length === 0}
-              className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 transition-colors font-medium flex items-center justify-center"
+              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium flex items-center justify-center"
             >
               {loading ? (
                 <>
