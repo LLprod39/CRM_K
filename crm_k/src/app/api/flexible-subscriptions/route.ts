@@ -206,6 +206,7 @@ export async function POST(request: NextRequest) {
       // Создаем абонемент
       const newSubscription = await (tx as any).flexibleSubscription.create({
         data: {
+          name: body.name || `Гибкий абонемент ${new Date().toLocaleDateString()}`, // Добавляем обязательное поле name
           studentId: body.studentId,
           userId: body.userId,
           startDate: new Date(body.startDate),

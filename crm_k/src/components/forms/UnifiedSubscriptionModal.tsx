@@ -12,6 +12,8 @@ import { useAuth } from '@/presentation/contexts';
 import Modal, { ModalSection, ModalFooter } from '@/components/ui/Modal';
 import StudentSearch from '@/components/ui/StudentSearch';
 import UserSelector from '@/components/ui/UserSelector';
+import CalendarSelector from './CalendarSelector';
+import TimeScheduler from './TimeScheduler';
 
 interface UnifiedSubscriptionModalProps {
   isOpen: boolean;
@@ -52,22 +54,15 @@ interface FlexibleSubscriptionData {
   startDate: string;
   endDate: string;
   description: string;
-  paymentStatus: PaymentStatus;
-  paidDayIds: number[]; // ID дней, которые оплачены (для PARTIAL статуса)
-  weekSchedules: {
-    weekNumber: number;
-    startDate: string;
-    endDate: string;
-    weekDays: {
-      id?: number; // Добавляем ID для отслеживания оплаченных дней
-      dayOfWeek: number;
-      startTime: string;
-      endTime: string;
-      cost: string;
-      location: string;
-      notes?: string;
-    }[];
-  }[];
+  selectedDays: string[]; // Массив дат в формате 'YYYY-MM-DD'
+  timeSlots: Record<string, {
+    id: string;
+    startTime: string;
+    endTime: string;
+    cost: number;
+    paymentStatus: 'PAID' | 'UNPAID';
+    notes: string;
+  }[]>; // Ключ - дата, значение - массив временных слотов
 }
 
 // Компонент для быстрого выбора периода
@@ -541,122 +536,11 @@ const FlexibleSubscriptionForm = ({
   totalAmount, 
   validationErrors 
 }: any) => {
-  const DAYS_OF_WEEK = [
-    { value: 1, label: 'Понедельник' },
-    { value: 2, label: 'Вторник' },
-    { value: 3, label: 'Среда' },
-    { value: 4, label: 'Четверг' },
-    { value: 5, label: 'Пятница' },
-    { value: 6, label: 'Суббота' },
-    { value: 0, label: 'Воскресенье' }
-  ];
-
-
-  const addWeek = () => {
-    // Проверяем, что даты начала и окончания абонемента заполнены
-    if (!data.startDate || !data.endDate) {
-      alert('Сначала заполните даты начала и окончания абонемента');
-      return;
-    }
-    
-    // Вычисляем даты для новой недели на основе общей даты начала абонемента
-    const subscriptionStartDate = new Date(data.startDate);
-    const weekNumber = data.weekSchedules.length + 1;
-    
-    // Начинаем с даты начала абонемента + (номер недели - 1) * 7 дней
-    const weekStartDate = new Date(subscriptionStartDate);
-    weekStartDate.setDate(weekStartDate.getDate() + (weekNumber - 1) * 7);
-    
-    const weekEndDate = new Date(weekStartDate);
-    weekEndDate.setDate(weekEndDate.getDate() + 6); // Неделя = 7 дней, но конец на 6 дней позже
-    
-    const newWeek = {
-      weekNumber: weekNumber,
-      startDate: weekStartDate.toISOString().split('T')[0],
-      endDate: weekEndDate.toISOString().split('T')[0],
-      weekDays: []
-    };
-    
-    setData((prev: FlexibleSubscriptionData) => ({
-      ...prev,
-      weekSchedules: [...prev.weekSchedules, newWeek]
-    }));
-  };
-
-  const removeWeek = (weekIndex: number) => {
-    setData((prev: FlexibleSubscriptionData) => ({
-      ...prev,
-      weekSchedules: prev.weekSchedules.filter((_, index) => index !== weekIndex)
-    }));
-  };
-
-  const addDayToWeek = (weekIndex: number) => {
-    const newDay = {
-      id: Date.now() + Math.random(), // Генерируем уникальный ID
-      dayOfWeek: 1,
-      startTime: '10:00',
-      endTime: '11:00',
-      cost: '1000',
-      location: 'office',
-      notes: ''
-    };
-
-    setData((prev: FlexibleSubscriptionData) => ({
-      ...prev,
-      weekSchedules: prev.weekSchedules.map((week, index) => 
-        index === weekIndex 
-          ? { ...week, weekDays: [...week.weekDays, newDay] }
-          : week
-      )
-    }));
-  };
-
-  const removeDayFromWeek = (weekIndex: number, dayIndex: number) => {
-    setData((prev: FlexibleSubscriptionData) => ({
-      ...prev,
-      weekSchedules: prev.weekSchedules.map((week, index) => 
-        index === weekIndex 
-          ? { ...week, weekDays: week.weekDays.filter((_, dIndex) => dIndex !== dayIndex) }
-          : week
-      )
-    }));
-  };
-
-  const updateWeek = (weekIndex: number, field: string, value: any) => {
-    setData((prev: FlexibleSubscriptionData) => ({
-      ...prev,
-      weekSchedules: prev.weekSchedules.map((week, index) => 
-        index === weekIndex 
-          ? { ...week, [field]: value }
-          : week
-      )
-    }));
-  };
-
-  const updateDay = (weekIndex: number, dayIndex: number, field: string, value: any) => {
-    setData((prev: FlexibleSubscriptionData) => ({
-      ...prev,
-      weekSchedules: prev.weekSchedules.map((week, wIndex) => 
-        wIndex === weekIndex 
-          ? {
-              ...week,
-              weekDays: week.weekDays.map((day, dIndex) => 
-                dIndex === dayIndex 
-                  ? { ...day, [field]: value }
-                  : day
-              )
-            }
-          : week
-      )
-    }));
-  };
-
   return (
     <>
       {/* Основная информация */}
       <ModalSection icon={<Users />} title="Основная информация">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Ученик *
@@ -698,39 +582,6 @@ const FlexibleSubscriptionForm = ({
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Дата начала *
-            </label>
-            <input
-              type="date"
-              value={data.startDate}
-              onChange={(e) => setData((prev: FlexibleSubscriptionData) => ({ ...prev, startDate: e.target.value }))}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                validationErrors.startDate ? 'border-red-300' : 'border-gray-300'
-              }`}
-            />
-            {validationErrors.startDate && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.startDate}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Дата окончания *
-            </label>
-            <input
-              type="date"
-              value={data.endDate}
-              onChange={(e) => setData((prev: FlexibleSubscriptionData) => ({ ...prev, endDate: e.target.value }))}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                validationErrors.endDate ? 'border-red-300' : 'border-gray-300'
-              }`}
-            />
-            {validationErrors.endDate && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.endDate}</p>
-            )}
-          </div>
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -747,306 +598,33 @@ const FlexibleSubscriptionForm = ({
         </div>
       </ModalSection>
 
-      {/* Статус платежа */}
-      <ModalSection icon={<CreditCard />} title="Статус платежа">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Статус платежа *
-            </label>
-            <select
-              value={data.paymentStatus}
-              onChange={(e) => {
-                const newStatus = e.target.value as PaymentStatus;
-                setData((prev: FlexibleSubscriptionData) => {
-                  let newPaidDayIds: string[] = [];
-                  
-                  if (newStatus === 'PARTIAL') {
-                    // При выборе частичной оплаты сохраняем текущие выбранные дни
-                    newPaidDayIds = prev.paidDayIds;
-                  } else if (newStatus === 'PAID') {
-                    // При выборе полной оплаты автоматически отмечаем все дни как оплаченные
-                    newPaidDayIds = [];
-                    prev.weekSchedules.forEach((week: any, weekIndex: number) => {
-                      week.weekDays.forEach((day: any, dayIndex: number) => {
-                        newPaidDayIds.push(`${weekIndex}-${dayIndex}`);
-                      });
-                    });
-                  }
-                  // При UNPAID очищаем все
-                  
-                  return {
-                    ...prev, 
-                    paymentStatus: newStatus,
-                    paidDayIds: newPaidDayIds
-                  };
-                });
-              }}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                validationErrors.paymentStatus ? 'border-red-300' : 'border-gray-300'
-              }`}
-            >
-              <option value="UNPAID">Не оплачено - запланировано не оплачено</option>
-              <option value="PAID">Оплачено - идет в предоплату ученика</option>
-              <option value="PARTIAL">Частично оплачено - оплачены только выбранные дни</option>
-            </select>
-            {validationErrors.paymentStatus && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.paymentStatus}</p>
-            )}
-          </div>
-
-          {/* Выбор оплаченных дней для частичной оплаты */}
-          {data.paymentStatus === 'PARTIAL' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Выберите оплаченные дни
-              </label>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm text-gray-600">
-                    Отметьте дни, которые уже оплачены. Остальные дни будут созданы как неоплаченные.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // Отмечаем все дни как оплаченные
-                        const allDayIds: string[] = [];
-                        data.weekSchedules.forEach((week: any, weekIndex: number) => {
-                          week.weekDays.forEach((day: any, dayIndex: number) => {
-                            allDayIds.push(`${weekIndex}-${dayIndex}`);
-                          });
-                        });
-                        setData((prev: FlexibleSubscriptionData) => ({
-                          ...prev,
-                          paidDayIds: allDayIds
-                        }));
-                      }}
-                      className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors font-medium"
-                    >
-                      Выбрать все
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setData((prev: FlexibleSubscriptionData) => ({
-                          ...prev,
-                          paidDayIds: []
-                        }));
-                      }}
-                      className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors font-medium"
-                    >
-                      Снять все
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {data.weekSchedules.map((week: any, weekIndex: number) => (
-                    <div key={weekIndex} className="border rounded-lg p-3">
-                      <h4 className="font-medium text-sm text-gray-800 mb-2">
-                        Неделя {week.weekNumber} ({week.startDate} - {week.endDate})
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {week.weekDays.map((day: any, dayIndex: number) => {
-                          // Всегда используем строковый формат "weekIndex-dayIndex" для совместимости
-                          const dayId = `${weekIndex}-${dayIndex}`;
-                          const isPaid = data.paidDayIds.includes(dayId);
-                          const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
-                          
-                          return (
-                            <label key={dayIndex} className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={isPaid}
-                                onChange={(e) => {
-                                  const newPaidDayIds = e.target.checked
-                                    ? [...data.paidDayIds, dayId]
-                                    : data.paidDayIds.filter((id: any) => id !== dayId);
-                                  setData((prev: FlexibleSubscriptionData) => ({
-                                    ...prev,
-                                    paidDayIds: newPaidDayIds
-                                  }));
-                                }}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <span className="text-sm text-gray-700">
-                                {dayNames[day.dayOfWeek]} ({day.startTime}-{day.endTime})
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {data.weekSchedules.length === 0 && (
-                  <p className="text-sm text-gray-500 italic">
-                    Сначала добавьте расписание недель, чтобы выбрать оплаченные дни.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+      {/* Календарь для выбора дней */}
+      <ModalSection icon={<CalendarDays />} title="Выбор периода и дней занятий">
+        <CalendarSelector
+          startDate={data.startDate}
+          endDate={data.endDate}
+          selectedDays={data.selectedDays}
+          onDaysChange={(days) => setData((prev: FlexibleSubscriptionData) => ({ ...prev, selectedDays: days }))}
+          onPeriodChange={(startDate, endDate) => setData((prev: FlexibleSubscriptionData) => ({ 
+            ...prev, 
+            startDate, 
+            endDate,
+            // Очищаем выбранные дни при изменении периода
+            selectedDays: [],
+            timeSlots: {}
+          }))}
+        />
       </ModalSection>
 
-      {/* Расписание недель */}
-      <ModalSection icon={<CalendarDays />} title="Расписание недель">
-        <div className="flex justify-between items-center mb-4">
-          <p className="text-sm text-gray-600">Настройте индивидуальное расписание для каждой недели</p>
-          <button
-            type="button"
-            onClick={addWeek}
-            className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Добавить неделю
-          </button>
-        </div>
-
-        {data.weekSchedules.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p>Добавьте первую неделю расписания</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {data.weekSchedules.map((week: any, weekIndex: number) => (
-              <div key={weekIndex} className="border border-gray-200 rounded-xl p-4 bg-gray-50">
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-medium text-gray-900 flex items-center">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Неделя {week.weekNumber}
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={() => removeWeek(weekIndex)}
-                    className="text-red-500 hover:text-red-700 p-1 rounded"
-                    title="Удалить неделю"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Дата начала недели *
-                    </label>
-                    <input
-                      type="date"
-                      value={week.startDate}
-                      onChange={(e) => updateWeek(weekIndex, 'startDate', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Дата окончания недели *
-                    </label>
-                    <input
-                      type="date"
-                      value={week.endDate}
-                      onChange={(e) => updateWeek(weekIndex, 'endDate', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Дни недели */}
-                <div className="bg-white rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium text-gray-700 flex items-center">
-                      <Clock className="w-4 h-4 mr-2" />
-                      Дни и время занятий
-                    </h5>
-                    <button
-                      type="button"
-                      onClick={() => addDayToWeek(weekIndex)}
-                      className="flex items-center px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors"
-                    >
-                      <Plus className="w-3 h-3 mr-1" />
-                      Добавить день
-                    </button>
-                  </div>
-
-                  {week.weekDays.length === 0 ? (
-                    <div className="text-center py-4 text-gray-500 text-sm">
-                      Добавьте дни занятий для этой недели
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {week.weekDays.map((day: any, dayIndex: number) => (
-                        <div key={dayIndex} className="grid grid-cols-1 md:grid-cols-6 gap-3 p-3 bg-gray-50 rounded-lg">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">День</label>
-                            <select
-                              value={day.dayOfWeek}
-                              onChange={(e) => updateDay(weekIndex, dayIndex, 'dayOfWeek', parseInt(e.target.value))}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500"
-                            >
-                              {DAYS_OF_WEEK.map(dayOption => (
-                                <option key={dayOption.value} value={dayOption.value}>
-                                  {dayOption.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Начало</label>
-                            <input
-                              type="time"
-                              value={day.startTime}
-                              onChange={(e) => updateDay(weekIndex, dayIndex, 'startTime', e.target.value)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Окончание</label>
-                            <input
-                              type="time"
-                              value={day.endTime}
-                              onChange={(e) => updateDay(weekIndex, dayIndex, 'endTime', e.target.value)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Стоимость</label>
-                            <input
-                              type="number"
-                              value={day.cost}
-                              onChange={(e) => updateDay(weekIndex, dayIndex, 'cost', e.target.value)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500"
-                              min="0"
-                              step="100"
-                            />
-                          </div>
-
-
-                          <div className="flex items-end">
-                            <button
-                              type="button"
-                              onClick={() => removeDayFromWeek(weekIndex, dayIndex)}
-                              className="w-full px-2 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
-                              title="Удалить день"
-                            >
-                              <Minus className="w-3 h-3 mx-auto" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Настройка времени занятий */}
+      <ModalSection icon={<Clock />} title="Настройка времени занятий">
+        <TimeScheduler
+          selectedDays={data.selectedDays}
+          timeSlots={data.timeSlots}
+          onTimeSlotsChange={(timeSlots) => setData((prev: FlexibleSubscriptionData) => ({ ...prev, timeSlots }))}
+        />
       </ModalSection>
+
 
       {/* Общая стоимость */}
       {totalAmount > 0 && (
@@ -1059,7 +637,7 @@ const FlexibleSubscriptionForm = ({
             <span className="text-2xl font-bold text-green-700">{totalAmount.toLocaleString()} ₸</span>
           </div>
           <p className="text-sm text-green-600 mt-2">
-            Включает все занятия из расписания недель
+            Включает все занятия из выбранных дней
           </p>
         </div>
       )}
@@ -1108,15 +686,19 @@ export default function UnifiedSubscriptionModal({
   });
 
   // Состояние для гибкого абонемента
+  // Устанавливаем период по умолчанию на текущий месяц
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  
   const [flexibleData, setFlexibleData] = useState<FlexibleSubscriptionData>({
     studentId: selectedStudent?.id || 0,
     userId: 0,
-    startDate: '',
-    endDate: '',
+    startDate: firstDay.toISOString().split('T')[0],
+    endDate: lastDay.toISOString().split('T')[0],
     description: '',
-    paymentStatus: 'UNPAID',
-    paidDayIds: [],
-    weekSchedules: []
+    selectedDays: [],
+    timeSlots: {}
   });
 
   // Загружаем список учеников
@@ -1157,28 +739,41 @@ export default function UnifiedSubscriptionModal({
   useEffect(() => {
     if (editingSubscription) {
       setSubscriptionType('flexible'); // Редактируем только гибкие абонементы
+      
+      // Преобразуем старую структуру weekSchedules в новую структуру selectedDays и timeSlots
+      const selectedDays: string[] = [];
+      const timeSlots: Record<string, any[]> = {};
+      
+      editingSubscription.weekSchedules.forEach((week: any) => {
+        week.weekDays.forEach((day: any) => {
+          const dayDate = new Date(day.startTime).toISOString().split('T')[0];
+          if (!selectedDays.includes(dayDate)) {
+            selectedDays.push(dayDate);
+          }
+          
+          if (!timeSlots[dayDate]) {
+            timeSlots[dayDate] = [];
+          }
+          
+          timeSlots[dayDate].push({
+            id: day.id || `${dayDate}-${Date.now()}-${Math.random()}`,
+            startTime: new Date(day.startTime).toTimeString().split(' ')[0].substring(0, 5),
+            endTime: new Date(day.endTime).toTimeString().split(' ')[0].substring(0, 5),
+            cost: parseInt(day.cost) || 0,
+            paymentStatus: 'UNPAID', // Всегда устанавливаем как неоплаченный
+            notes: day.notes || ''
+          });
+        });
+      });
+      
       setFlexibleData({
         studentId: editingSubscription.studentId,
         userId: editingSubscription.userId,
         startDate: new Date(editingSubscription.startDate).toISOString().split('T')[0],
         endDate: new Date(editingSubscription.endDate).toISOString().split('T')[0],
         description: editingSubscription.description || '',
-        paymentStatus: editingSubscription.paymentStatus || 'UNPAID',
-        paidDayIds: editingSubscription.paidDays?.map((pd: any) => pd.dayId) || [],
-        weekSchedules: editingSubscription.weekSchedules.map((week: any) => ({
-          weekNumber: week.weekNumber,
-          startDate: new Date(week.startDate).toISOString().split('T')[0],
-          endDate: new Date(week.endDate).toISOString().split('T')[0],
-          weekDays: week.weekDays.map((day: any) => ({
-            id: day.id,
-            dayOfWeek: day.dayOfWeek,
-            startTime: new Date(day.startTime).toISOString().split('T')[0] + 'T' + new Date(day.startTime).toTimeString().split(' ')[0],
-            endTime: new Date(day.endTime).toISOString().split('T')[0] + 'T' + new Date(day.endTime).toTimeString().split(' ')[0],
-            cost: day.cost,
-            location: day.location || 'office',
-            notes: day.notes || ''
-          }))
-        }))
+        selectedDays: selectedDays.sort(),
+        timeSlots: timeSlots
       });
       setSelectedStudents([editingSubscription.student]);
     }
@@ -1217,12 +812,10 @@ export default function UnifiedSubscriptionModal({
   // Расчет общей суммы для гибкого абонемента
   const flexibleTotalAmount = useMemo(() => {
     if (subscriptionType !== 'flexible') return 0;
-    return flexibleData.weekSchedules.reduce((total, week) => {
-      return total + week.weekDays.reduce((weekTotal, day) => {
-        return weekTotal + (parseFloat(day.cost) || 0);
-      }, 0);
+    return Object.values(flexibleData.timeSlots).reduce((total, slots) => {
+      return total + slots.reduce((dayTotal, slot) => dayTotal + slot.cost, 0);
     }, 0);
-  }, [subscriptionType, flexibleData.weekSchedules]);
+  }, [subscriptionType, flexibleData.timeSlots]);
 
   // Автоматически обновляем сумму предоплаты при изменении общей суммы
   useEffect(() => {
@@ -1334,19 +927,16 @@ export default function UnifiedSubscriptionModal({
         errors.userId = 'Выберите преподавателя';
       }
       if (!flexibleData.startDate) {
-        errors.startDate = 'Выберите дату начала';
+        errors.startDate = 'Выберите дату начала в календаре';
       }
       if (!flexibleData.endDate) {
-        errors.endDate = 'Выберите дату окончания';
+        errors.endDate = 'Выберите дату окончания в календаре';
       }
-      if (!flexibleData.weekSchedules || flexibleData.weekSchedules.length === 0) {
-        errors.weekSchedules = 'Добавьте расписание недель';
+      if (!flexibleData.selectedDays || flexibleData.selectedDays.length === 0) {
+        errors.selectedDays = 'Выберите дни занятий в календаре';
       }
-      if (!flexibleData.paymentStatus) {
-        errors.paymentStatus = 'Выберите статус платежа';
-      }
-      if (flexibleData.paymentStatus === 'PARTIAL' && flexibleData.paidDayIds.length === 0) {
-        errors.paidDays = 'Выберите хотя бы один оплаченный день';
+      if (!flexibleData.timeSlots || Object.keys(flexibleData.timeSlots).length === 0) {
+        errors.timeSlots = 'Настройте время занятий';
       }
     }
 
@@ -1429,12 +1019,79 @@ export default function UnifiedSubscriptionModal({
           }
         }
       } else if (subscriptionType === 'flexible') {
+        // Преобразуем новую структуру данных в формат, ожидаемый API
+        const weekSchedules = [];
+        const selectedDays = flexibleData.selectedDays.sort();
+        
+        // Группируем дни по неделям
+        let currentWeek = 1;
+        let weekStartDate = '';
+        let weekEndDate = '';
+        let weekDays: any[] = [];
+        
+        selectedDays.forEach((date, index) => {
+          const dayDate = new Date(date);
+          const dayOfWeek = dayDate.getDay();
+          
+          // Если это первый день или начало новой недели
+          if (index === 0 || (index > 0 && dayDate.getTime() - new Date(selectedDays[index - 1]).getTime() > 7 * 24 * 60 * 60 * 1000)) {
+            // Сохраняем предыдущую неделю, если есть дни
+            if (weekDays.length > 0) {
+              weekSchedules.push({
+                weekNumber: currentWeek,
+                startDate: weekStartDate,
+                endDate: weekEndDate,
+                weekDays: weekDays
+              });
+              currentWeek++;
+            }
+            
+            // Начинаем новую неделю
+            weekStartDate = date;
+            weekEndDate = date;
+            weekDays = [];
+          }
+          
+          // Обновляем конец недели
+          weekEndDate = date;
+          
+          // Добавляем временные слоты для этого дня
+          const dayTimeSlots = flexibleData.timeSlots[date] || [];
+          dayTimeSlots.forEach(slot => {
+            weekDays.push({
+              id: slot.id,
+              dayOfWeek: dayOfWeek,
+              startTime: `${slot.startTime}:00`, // Отправляем только время в формате HH:MM:SS
+              endTime: `${slot.endTime}:00`, // Отправляем только время в формате HH:MM:SS
+              cost: slot.cost.toString(),
+              location: 'office', // Устанавливаем по умолчанию
+              notes: slot.notes
+            });
+          });
+        });
+        
+        // Добавляем последнюю неделю
+        if (weekDays.length > 0) {
+          weekSchedules.push({
+            weekNumber: currentWeek,
+            startDate: weekStartDate,
+            endDate: weekEndDate,
+            weekDays: weekDays
+          });
+        }
+        
         // Создание или редактирование гибкого абонемента
         const requestData = {
-          ...flexibleData,
+          name: flexibleData.description || `Гибкий абонемент ${new Date().toLocaleDateString()}`, // Добавляем обязательное поле name
+          studentId: flexibleData.studentId,
+          userId: flexibleData.userId,
+          startDate: flexibleData.startDate,
+          endDate: flexibleData.endDate,
+          description: flexibleData.description,
+          paymentStatus: 'UNPAID', // Всегда создаем как неоплаченный
           totalCost: flexibleTotalAmount,
-          // Преобразуем paidDayIds в правильный формат для API
-          paidDayIds: flexibleData.paymentStatus === 'PARTIAL' ? flexibleData.paidDayIds : []
+          weekSchedules: weekSchedules,
+          paidDayIds: [] // Убираем логику частичной оплаты
         };
 
         const isEditing = !!editingSubscription;
