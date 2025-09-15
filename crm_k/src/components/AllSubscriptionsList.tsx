@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { FileText, Calendar, DollarSign, Trash2, Loader2, AlertCircle } from 'lucide-react'
+import { FileText, Calendar, DollarSign, Trash2, Loader2, AlertCircle, User } from 'lucide-react'
 import { apiRequest } from '@/lib/api'
 import UnifiedSubscriptionModal from '@/components/forms/UnifiedSubscriptionModal'
 
@@ -12,6 +12,7 @@ interface Subscription {
   student: {
     id: number
     fullName: string
+    photoUrl?: string
     user?: {
       name: string
     }
@@ -211,32 +212,30 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
               {/* Заголовок карточки */}
               <div className="flex justify-between items-start mb-6 pr-12">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${
-                      subscription.type === 'flexible' 
-                        ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600' 
-                        : 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600'
-                    }`}>
-                      {subscription.type === 'flexible' ? (
-                        <Calendar className="w-6 h-6 text-white" />
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+                      {subscription.student.photoUrl ? (
+                        <img
+                          src={subscription.student.photoUrl}
+                          alt={subscription.student.fullName}
+                          className="w-full h-full object-cover rounded-2xl"
+                        />
                       ) : (
-                        <FileText className="w-6 h-6 text-white" />
+                        <User className="w-6 h-6 text-purple-600" />
                       )}
                     </div>
-            <div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">
+                        {subscription.student.fullName}
+                      </h3>
                       <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getSubscriptionTypeColor(subscription.type)}`}>
-                  {getSubscriptionTypeLabel(subscription.type)}
-                </span>
-              </div>
+                        {getSubscriptionTypeLabel(subscription.type)}
+                      </span>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <div className="flex items-center text-gray-600">
-                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                        <span className="font-medium">Ученик:</span>
-                        <span className="ml-2 font-semibold text-gray-900">{subscription.student.fullName}</span>
-                      </div>
               {subscription.teacher && (
                         <div className="flex items-center text-gray-600">
                           <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
@@ -282,10 +281,7 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
           {/* Расписание недель (только для гибких абонементов) */}
           {subscription.type === 'flexible' && subscription.weekSchedules && subscription.weekSchedules.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                    <span className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl mr-3 flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-white" />
-                    </span>
+                  <h4 className="text-lg font-bold text-gray-900 mb-4">
                     Расписание занятий
                   </h4>
                   <div className="space-y-4">
@@ -360,18 +356,21 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
 
             {/* Заголовок */}
             <div className="flex items-center mb-4 pr-12">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mr-4 shadow-lg ${
-                subscription.type === 'flexible' 
-                  ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600' 
-                  : 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600'
-              }`}>
-                {subscription.type === 'flexible' ? (
-                  <Calendar className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center mr-4 shadow-lg overflow-hidden">
+                {subscription.student.photoUrl ? (
+                  <img
+                    src={subscription.student.photoUrl}
+                    alt={subscription.student.fullName}
+                    className="w-full h-full object-cover rounded-2xl"
+                  />
                 ) : (
-                  <FileText className="w-6 h-6 text-white" />
+                  <User className="w-6 h-6 text-purple-600" />
                 )}
               </div>
               <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  {subscription.student.fullName}
+                </h3>
                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSubscriptionTypeColor(subscription.type)}`}>
                   {getSubscriptionTypeLabel(subscription.type)}
                 </span>
@@ -380,11 +379,6 @@ export default function AllSubscriptionsList({ studentId }: AllSubscriptionsList
 
             {/* Информация */}
             <div className="space-y-3 mb-4">
-              <div className="flex items-center text-gray-700">
-                <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                <span className="font-medium">Ученик:</span>
-                <span className="ml-2 font-semibold">{subscription.student.fullName}</span>
-              </div>
               {subscription.teacher && (
                 <div className="flex items-center text-gray-700">
                   <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>

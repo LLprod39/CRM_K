@@ -136,6 +136,15 @@ export default function EditStudentForm({ isOpen, onClose, onSuccess, student }:
 
         {/* Форма */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Фото ученика */}
+          <div>
+            <PhotoUpload
+              studentId={student.id}
+              currentPhotoUrl={formData.photoUrl}
+              onPhotoChange={(photoUrl) => setFormData(prev => ({ ...prev, photoUrl: photoUrl || '' }))}
+            />
+          </div>
+
           {/* ФИО */}
           <div>
             <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -240,15 +249,6 @@ export default function EditStudentForm({ isOpen, onClose, onSuccess, student }:
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               placeholder="Например: Аутизм, ЗПР, ДЦП"
-            />
-          </div>
-
-          {/* Фото ученика */}
-          <div>
-            <PhotoUpload
-              studentId={student.id}
-              currentPhotoUrl={formData.photoUrl}
-              onPhotoChange={(photoUrl) => setFormData(prev => ({ ...prev, photoUrl: photoUrl || '' }))}
             />
           </div>
 

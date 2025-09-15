@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { getAuthUser } from '@/lib/auth';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
@@ -8,14 +8,9 @@ import { existsSync } from 'fs';
 export async function POST(request: NextRequest) {
   try {
     // Проверяем авторизацию
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'Токен не предоставлен' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: 'Неверный токен' }, { status: 401 });
+    const authUser = getAuthUser(request);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Необходима аутентификация' }, { status: 401 });
     }
 
     const formData = await request.formData();
@@ -30,16 +25,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ID ученика не предоставлен' }, { status: 400 });
     }
 
-    // Проверяем, что ученик существует и принадлежит пользователю
-    const student = await prisma.student.findFirst({
+    // Проверяем, что ученик существует
+    const student = await prisma.student.findUnique({
       where: {
-        id: parseInt(studentId),
-        userId: user.id
+        id: parseInt(studentId)
       }
     });
 
     if (!student) {
       return NextResponse.json({ error: 'Ученик не найден' }, { status: 404 });
+    }
+
+    // Если не админ, проверяем права доступа к ученику
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, принадлежит ли ученик пользователю напрямую
+      const isDirectOwner = student.userId === authUser.id;
+      
+      // Проверяем, есть ли у пользователя занятия с этим учеником (как учитель)
+      const hasLessonsWithStudent = await prisma.lesson.findFirst({
+        where: {
+          studentId: student.id,
+          teacherId: authUser.id
+        }
+      });
+      
+      // Доступ разрешен, если пользователь владелец ученика или преподает ему
+      if (!isDirectOwner && !hasLessonsWithStudent) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        );
+      }
     }
 
     // Проверяем тип файла
@@ -92,14 +108,9 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // Проверяем авторизацию
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'Токен не предоставлен' }, { status: 401 });
-    }
-
-    const user = await verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: 'Неверный токен' }, { status: 401 });
+    const authUser = getAuthUser(request);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Необходима аутентификация' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -109,16 +120,37 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID ученика не предоставлен' }, { status: 400 });
     }
 
-    // Проверяем, что ученик существует и принадлежит пользователю
-    const student = await prisma.student.findFirst({
+    // Проверяем, что ученик существует
+    const student = await prisma.student.findUnique({
       where: {
-        id: parseInt(studentId),
-        userId: user.id
+        id: parseInt(studentId)
       }
     });
 
     if (!student) {
       return NextResponse.json({ error: 'Ученик не найден' }, { status: 404 });
+    }
+
+    // Если не админ, проверяем права доступа к ученику
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем, принадлежит ли ученик пользователю напрямую
+      const isDirectOwner = student.userId === authUser.id;
+      
+      // Проверяем, есть ли у пользователя занятия с этим учеником (как учитель)
+      const hasLessonsWithStudent = await prisma.lesson.findFirst({
+        where: {
+          studentId: student.id,
+          teacherId: authUser.id
+        }
+      });
+      
+      // Доступ разрешен, если пользователь владелец ученика или преподает ему
+      if (!isDirectOwner && !hasLessonsWithStudent) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        );
+      }
     }
 
     // Удаляем фото из базы данных

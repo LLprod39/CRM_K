@@ -155,10 +155,10 @@ export default function PhotoUpload({
             </div>
           ) : (
             <div 
-              className={`w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-lg cursor-pointer hover:scale-105 transition-transform duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-20 h-20 rounded-full bg-purple-100 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={handleClick}
             >
-              <Camera className="w-8 h-8" />
+              <Camera className="w-8 h-8 text-purple-600" />
             </div>
           )}
         </div>
