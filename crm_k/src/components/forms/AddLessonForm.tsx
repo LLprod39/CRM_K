@@ -218,7 +218,12 @@ export default function AddLessonForm({
         setValidationErrors({});
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Ошибка при создании занятия');
+        if (errorData.details && Array.isArray(errorData.details)) {
+          // Показываем детальные ошибки конфликтов
+          setError(errorData.details.join('; '));
+        } else {
+          setError(errorData.error || 'Ошибка при создании занятия');
+        }
       }
     } catch {
       setError('Ошибка при создании занятия');

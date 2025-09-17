@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
 
 // GET /api/admin/users - получить всех пользователей
 export async function GET(request: NextRequest) {
   try {
     const authUser = getAuthUser(request)
-    if (!authUser || authUser.role !== 'ADMIN') {
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
+    if (authUser.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Доступ запрещен' },
         { status: 403 }
@@ -43,8 +48,6 @@ export async function GET(request: NextRequest) {
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
@@ -52,7 +55,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authUser = getAuthUser(request)
-    if (!authUser || authUser.role !== 'ADMIN') {
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
+    if (authUser.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Доступ запрещен' },
         { status: 403 }
@@ -64,6 +74,14 @@ export async function POST(request: NextRequest) {
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: 'Необходимо заполнить все обязательные поля' },
+        { status: 400 }
+      )
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailPattern.test(email)) {
+      return NextResponse.json(
+        { error: 'Некорректный формат email' },
         { status: 400 }
       )
     }
@@ -110,7 +128,5 @@ export async function POST(request: NextRequest) {
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }

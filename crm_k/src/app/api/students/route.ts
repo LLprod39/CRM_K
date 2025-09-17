@@ -134,9 +134,24 @@ export async function POST(request: NextRequest) {
     let isAssigned = false
 
     if (authUser.role === 'ADMIN') {
-      // Админ создает "нечейного" ученика
-      userId = null
-      isAssigned = false
+      if (body.userId) {
+        const targetUser = await prisma.user.findUnique({
+          where: { id: body.userId }
+        })
+
+        if (!targetUser) {
+          return NextResponse.json(
+            { error: 'Пользователь для назначения не найден' },
+            { status: 400 }
+          )
+        }
+
+        userId = body.userId
+        isAssigned = true
+      } else {
+        userId = null
+        isAssigned = false
+      }
     } else {
       // Учитель создает ученика и привязывает к себе
       userId = authUser.id

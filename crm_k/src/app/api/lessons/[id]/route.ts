@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/auth'
 import { isValidStatusTransition, getCancellationInfo, getLessonStatus } from '@/lib/lessonStatusUtils'
 import { UpdateLessonData } from '@/types'
 import { updateStudentBalance } from '@/lib/balanceUtils'
+import { checkLessonConflicts, checkSlotAvailability, releaseSlot } from '@/lib/lessonConflictUtils'
 
 // GET /api/lessons/[id] - получить занятие по ID
 export async function GET(
@@ -134,14 +135,11 @@ export async function PUT(
       )
     }
 
-    // Если не админ, проверяем права доступа к занятию
+    // Проверяем права доступа к занятию
+    const isStudentOwner = existingLesson.student.userId === authUser.id;
+    const isTeacher = existingLesson.teacherId === authUser.id;
+    
     if (authUser.role !== 'ADMIN') {
-      // Проверяем, принадлежит ли ученик пользователю напрямую
-      const isStudentOwner = existingLesson.student.userId === authUser.id;
-      
-      // Проверяем, является ли пользователь учителем этого занятия
-      const isTeacher = existingLesson.teacherId === authUser.id;
-      
       // Доступ разрешен, если пользователь владелец ученика или учитель занятия
       if (!isStudentOwner && !isTeacher) {
         return NextResponse.json(
@@ -151,41 +149,49 @@ export async function PUT(
       }
     }
 
-    // Валидация переходов статусов согласно новой логике
-    const currentStatus = getLessonStatus(
-      existingLesson.isCompleted,
-      existingLesson.isPaid,
-      existingLesson.isCancelled,
-      existingLesson.date
-    );
-    
-    const newStatus = getLessonStatus(
-      body.isCompleted ?? existingLesson.isCompleted,
-      body.isPaid ?? existingLesson.isPaid,
-      body.isCancelled ?? existingLesson.isCancelled,
-      existingLesson.date
+    // Валидация переходов статусов согласно новой логике (только если статусы действительно меняются)
+    const statusChanged = (
+      body.isCompleted !== undefined ||
+      body.isPaid !== undefined ||
+      body.isCancelled !== undefined
     );
 
-    if (!isValidStatusTransition(currentStatus, newStatus)) {
-      return NextResponse.json(
-        { error: `Недопустимый переход статуса с "${currentStatus}" на "${newStatus}"` },
-        { status: 400 }
-      )
+    if (statusChanged) {
+      const currentStatus = getLessonStatus(
+        existingLesson.isCompleted,
+        existingLesson.isPaid,
+        existingLesson.isCancelled,
+        existingLesson.date
+      );
+      
+      const newStatus = getLessonStatus(
+        body.isCompleted ?? existingLesson.isCompleted,
+        body.isPaid ?? existingLesson.isPaid,
+        body.isCancelled ?? existingLesson.isCancelled,
+        existingLesson.date
+      );
+
+      if (!isValidStatusTransition(currentStatus, newStatus)) {
+        return NextResponse.json(
+          { error: `Недопустимый переход статуса с "${currentStatus}" на "${newStatus}"` },
+          { status: 400 }
+        )
+      }
     }
 
-    // Если не админ, ограничиваем изменение статуса - можно менять только на отменено
-    if (authUser.role !== 'ADMIN') {
-      // Проверяем, что пользователь пытается изменить только статус отмены
-      const isOnlyChangingCancelled = (
-        (body.isCompleted === undefined || body.isCompleted === existingLesson.isCompleted) &&
-        (body.isPaid === undefined || body.isPaid === existingLesson.isPaid) &&
-        (body.isCancelled !== undefined && body.isCancelled !== existingLesson.isCancelled)
+    // Ограничиваем изменение статуса для учителей - только если они также не владельцы ученика
+    if (authUser.role !== 'ADMIN' && !isStudentOwner && isTeacher) {
+      // Учитель может изменить только статус отмены и завершения занятия
+      const allowedChanges = (
+        (body.cost === undefined || body.cost === existingLesson.cost) &&
+        (body.studentId === undefined || body.studentId === existingLesson.studentId) &&
+        (body.date === undefined) &&
+        (body.endTime === undefined)
       )
 
-      // Если пользователь пытается изменить другие статусы, запрещаем
-      if (!isOnlyChangingCancelled && (body.isCompleted !== undefined || body.isPaid !== undefined)) {
+      if (!allowedChanges) {
         return NextResponse.json(
-          { error: 'Вы можете изменить только статус отмены занятия' },
+          { error: 'Учитель может изменить только статус занятия и комментарий' },
           { status: 403 }
         )
       }
@@ -215,6 +221,42 @@ export async function PUT(
       }
     }
 
+    // Если изменяется время или учитель, проверяем конфликты
+    const isTimeChanged = body.date || body.endTime
+    const isTeacherChanged = body.teacherId && body.teacherId !== existingLesson.teacherId
+    
+    if (isTimeChanged || isTeacherChanged) {
+      const newDate = body.date ? new Date(body.date) : existingLesson.date
+      const newEndTime = body.endTime ? new Date(body.endTime) : existingLesson.endTime
+      const newTeacherId = body.teacherId || existingLesson.teacherId
+      const newStudentId = body.studentId || existingLesson.studentId
+
+      // Проверяем доступность слота
+      const slotAvailability = await checkSlotAvailability(newTeacherId, newDate, newEndTime)
+      if (!slotAvailability.isAvailable) {
+        return NextResponse.json({ 
+          error: `Слот недоступен: ${slotAvailability.reason}` 
+        }, { status: 400 })
+      }
+
+      // Проверяем конфликты
+      const conflictCheck = await checkLessonConflicts({
+        date: newDate,
+        endTime: newEndTime,
+        teacherId: newTeacherId,
+        studentIds: [newStudentId],
+        lessonType: existingLesson.lessonType as 'individual' | 'group',
+        excludeLessonId: id
+      })
+
+      if (!conflictCheck.canCreate) {
+        return NextResponse.json({ 
+          error: 'Конфликт времени занятий',
+          details: conflictCheck.conflicts
+        }, { status: 400 })
+      }
+    }
+
     const updatedLesson = await prisma.lesson.update({
       where: { id },
       data: {
@@ -233,7 +275,7 @@ export async function PUT(
     })
 
     // Обновляем баланс ученика после изменения статуса занятия
-    await updateStudentBalance(body.studentId)
+    await updateStudentBalance(body.studentId ?? existingLesson.studentId)
 
     return NextResponse.json(updatedLesson)
   } catch (error) {
@@ -259,13 +301,6 @@ export async function DELETE(
       )
     }
 
-    // Только администраторы могут удалять занятия
-    if (authUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Доступ запрещен. Только администраторы могут удалять занятия.' },
-        { status: 403 }
-      )
-    }
 
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id)
@@ -312,6 +347,9 @@ export async function DELETE(
     await prisma.lesson.delete({
       where: { id }
     })
+
+    // Освобождаем слот после удаления занятия
+    await releaseSlot(existingLesson.teacherId, existingLesson.date, existingLesson.endTime)
 
     return NextResponse.json({ message: 'Занятие успешно удалено' })
   } catch (error) {

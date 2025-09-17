@@ -1,51 +1,72 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+import { getAuthUser } from '@/lib/auth'
+import { releaseSlot } from '@/lib/lessonConflictUtils'
 
-// GET /api/lunch-breaks - получить время обеда для конкретной даты
+function formatIso(value?: Date | string | null) {
+  if (!value) {
+    return value ?? null
+  }
+
+  if (typeof value === 'string') {
+    return value
+  }
+
+  return value.toISOString().replace('.000Z', 'Z')
+}
+
+function formatLunchBreakResponse(
+  lunchBreak: any,
+  overrides?: { date?: string; startTime?: string; endTime?: string }
+) {
+  return {
+    ...lunchBreak,
+    date: overrides?.date ?? formatIso(lunchBreak.date),
+    startTime: overrides?.startTime ?? formatIso(lunchBreak.startTime),
+    endTime: overrides?.endTime ?? formatIso(lunchBreak.endTime)
+  }
+}
+
+function getDayRange(dateValue: string) {
+  const target = new Date(dateValue)
+  const start = new Date(target)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(target)
+  end.setHours(23, 59, 59, 999)
+  return { start, end }
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'Токен не предоставлен' }, { status: 401 });
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json({ error: 'Необходима аутентификация' }, { status: 401 })
     }
 
-    const user = await verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: 'Неверный токен' }, { status: 401 });
+    const { searchParams } = new URL(request.url)
+    const dateParam = searchParams.get('date')
+
+    if (!dateParam) {
+      return NextResponse.json({ error: 'Дата не указана' }, { status: 400 })
     }
 
-    const { searchParams } = new URL(request.url);
-    const date = searchParams.get('date');
-    
-    if (!date) {
-      return NextResponse.json({ error: 'Дата не указана' }, { status: 400 });
-    }
-
-    const targetDate = new Date(date);
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // Если админ, получаем все обеды на эту дату, иначе только свои
-    const whereClause = user.role === 'ADMIN' 
-      ? {
-          date: {
-            gte: startOfDay,
-            lte: endOfDay
-          }
-        }
-      : {
-          userId: user.id,
-          date: {
-            gte: startOfDay,
-            lte: endOfDay
-          }
-        };
+    const { start, end } = getDayRange(dateParam)
 
     const lunchBreaks = await prisma.lunchBreak.findMany({
-      where: whereClause,
+      where: authUser.role === 'ADMIN'
+        ? {
+            date: {
+              gte: start,
+              lte: end
+            }
+          }
+        : {
+            userId: authUser.id,
+            date: {
+              gte: start,
+              lte: end
+            }
+          },
       include: {
         user: {
           select: {
@@ -55,231 +76,178 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-    });
+    })
 
-    // Для обратной совместимости, если не админ, возвращаем первый обед
-    const lunchBreak = user.role === 'ADMIN' ? lunchBreaks : lunchBreaks[0] || null;
+    const response = authUser.role === 'ADMIN'
+      ? {
+          lunchBreak: lunchBreaks.length > 0 ? formatLunchBreakResponse(lunchBreaks[0]) : null,
+          lunchBreaks: lunchBreaks.map(item => formatLunchBreakResponse(item))
+        }
+      : {
+          lunchBreak: lunchBreaks.length > 0 ? formatLunchBreakResponse(lunchBreaks[0]) : null
+        }
 
-    return NextResponse.json({ 
-      lunchBreak,
-      lunchBreaks: user.role === 'ADMIN' ? lunchBreaks : undefined
-    });
+    return NextResponse.json(response)
   } catch (error) {
-    console.error('Ошибка при получении времени обеда:', error);
-    return NextResponse.json({ error: 'Внутренняя ошибка сервера' }, { status: 500 });
+    console.error('Ошибка при получении времени обеда:', error)
+    return NextResponse.json({ error: 'Внутренняя ошибка сервера' }, { status: 500 })
   }
 }
 
-// POST /api/lunch-breaks - создать или обновить время обеда
 export async function POST(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'Токен не предоставлен' }, { status: 401 });
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json({ error: 'Необходима аутентификация' }, { status: 401 })
     }
 
-    const user = await verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: 'Неверный токен' }, { status: 401 });
-    }
-
-    // Проверяем, что пользователь существует в базе данных
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id }
-    });
-
-    if (!dbUser) {
-      return NextResponse.json({ error: 'Пользователь не найден в базе данных' }, { status: 404 });
-    }
-
-    const { date, startTime, endTime, userId } = await request.json();
-
-    // Определяем для какого пользователя создаем обед
-    let targetUserId = user.id;
-    if (user.role === 'ADMIN' && userId) {
-      // Админ может создавать обеды для других пользователей
-      targetUserId = userId;
-    } else if (user.role === 'ADMIN' && !userId) {
-      // Админ не может создавать собственные обеды
-      return NextResponse.json({ error: 'Администратор не может добавлять собственные обеды' }, { status: 403 });
-    }
+    const body = await request.json()
+    const { date, startTime, endTime, userId } = body
 
     if (!date || !startTime || !endTime) {
-      return NextResponse.json({ error: 'Не все обязательные поля заполнены' }, { status: 400 });
+      return NextResponse.json({ error: 'Не все обязательные поля заполнены' }, { status: 400 })
     }
 
-    const targetDate = new Date(date);
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    let targetUserId = authUser.id
 
+    if (authUser.role === 'ADMIN') {
+      if (!userId || userId === authUser.id) {
+        return NextResponse.json({ error: 'Администратор не может добавлять собственные обеды' }, { status: 403 })
+      }
 
-    // Проверяем, есть ли уже время обеда на эту дату для целевого пользователя
+      const targetUser = await prisma.user.findUnique({ where: { id: userId } })
+      if (!targetUser || targetUser.role === 'ADMIN') {
+        return NextResponse.json({ error: 'Пользователь для назначения не найден' }, { status: 400 })
+      }
+
+      targetUserId = userId
+    }
+
+    const { start, end } = getDayRange(date)
+
     const existingLunchBreak = await prisma.lunchBreak.findFirst({
       where: {
         userId: targetUserId,
         date: {
-          gte: startOfDay,
-          lte: endOfDay
+          gte: start,
+          lte: end
         }
       }
-    });
+    })
 
     const lunchBreakData = {
-      date: targetDate,
+      date: new Date(date),
       startTime: new Date(startTime),
       endTime: new Date(endTime),
       userId: targetUserId
-    };
-
-    let lunchBreak;
-    if (existingLunchBreak) {
-      // Обновляем существующее время обеда
-      lunchBreak = await prisma.lunchBreak.update({
-        where: { id: existingLunchBreak.id },
-        data: lunchBreakData
-      });
-    } else {
-      // Создаем новое время обеда
-      lunchBreak = await prisma.lunchBreak.create({
-        data: lunchBreakData
-      });
     }
 
-    return NextResponse.json({ lunchBreak });
+    const lunchBreak = existingLunchBreak
+      ? await prisma.lunchBreak.update({
+          where: { id: existingLunchBreak.id },
+          data: lunchBreakData
+        })
+      : await prisma.lunchBreak.create({ data: lunchBreakData })
+
+    return NextResponse.json({
+      lunchBreak: formatLunchBreakResponse(lunchBreak, { date, startTime, endTime })
+    })
   } catch (error) {
-    console.error('Ошибка при создании/обновлении времени обеда:', error);
-    return NextResponse.json({ error: 'Внутренняя ошибка сервера' }, { status: 500 });
+    console.error('Ошибка при создании/обновлении времени обеда:', error)
+    return NextResponse.json({ error: 'Внутренняя ошибка сервера' }, { status: 500 })
   }
 }
 
-// DELETE /api/lunch-breaks - удалить время обеда
 export async function DELETE(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'Токен не предоставлен' }, { status: 401 });
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json({ error: 'Необходима аутентификация' }, { status: 401 })
     }
 
-    const user = await verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: 'Неверный токен' }, { status: 401 });
-    }
+    const { searchParams } = new URL(request.url)
+    const date = searchParams.get('date')
+    const lunchBreakId = searchParams.get('lunchBreakId')
 
-    const { searchParams } = new URL(request.url);
-    const date = searchParams.get('date');
-    const lunchBreakId = searchParams.get('lunchBreakId');
-    
-    if (!date) {
-      return NextResponse.json({ error: 'Дата не указана' }, { status: 400 });
-    }
+    let lunchBreak
 
-    const targetDate = new Date(date);
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    let lunchBreak;
-    
-    if (lunchBreakId && user.role === 'ADMIN') {
-      // Админ может удалить конкретный обед по ID
+    if (lunchBreakId && authUser.role === 'ADMIN') {
       lunchBreak = await prisma.lunchBreak.findUnique({
-        where: { id: parseInt(lunchBreakId) }
-      });
+        where: { id: parseInt(lunchBreakId, 10) }
+      })
     } else {
-      // Обычный пользователь может удалить только свой обед
+      if (!date) {
+        return NextResponse.json({ error: 'Дата не указана' }, { status: 400 })
+      }
+
+      const { start, end } = getDayRange(date)
       lunchBreak = await prisma.lunchBreak.findFirst({
         where: {
-          userId: user.id,
+          userId: authUser.id,
           date: {
-            gte: startOfDay,
-            lte: endOfDay
+            gte: start,
+            lte: end
           }
         }
-      });
+      })
     }
 
     if (!lunchBreak) {
-      return NextResponse.json({ error: 'Время обеда не найдено' }, { status: 404 });
+      return NextResponse.json({ error: 'Время обеда не найдено' }, { status: 404 })
     }
 
+    await prisma.lunchBreak.delete({ where: { id: lunchBreak.id } })
 
-    await prisma.lunchBreak.delete({
-      where: { id: lunchBreak.id }
-    });
+    // Освобождаем слот после удаления обеденного перерыва
+    await releaseSlot(lunchBreak.userId, lunchBreak.startTime, lunchBreak.endTime)
 
-    return NextResponse.json({ message: 'Время обеда удалено' });
+    return NextResponse.json({ message: 'Время обеда удалено' })
   } catch (error) {
-    console.error('Ошибка при удалении времени обеда:', error);
-    return NextResponse.json({ error: 'Внутренняя ошибка сервера' }, { status: 500 });
+    console.error('Ошибка при удалении времени обеда:', error)
+    return NextResponse.json({ error: 'Внутренняя ошибка сервера' }, { status: 500 })
   }
 }
 
-// PUT /api/lunch-breaks - обновить время обеда (только для админа)
 export async function PUT(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'Токен не предоставлен' }, { status: 401 });
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json({ error: 'Необходима аутентификация' }, { status: 401 })
     }
 
-    const user = await verifyToken(token);
-    if (!user) {
-      return NextResponse.json({ error: 'Неверный токен' }, { status: 401 });
+    if (authUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Только администратор может редактировать обеды' }, { status: 403 })
     }
 
-    // Только админ может редактировать обеды
-    if (user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Только администратор может редактировать обеды' }, { status: 403 });
-    }
-
-    const { lunchBreakId, date, startTime, endTime } = await request.json();
+    const body = await request.json()
+    const { lunchBreakId, date, startTime, endTime } = body
 
     if (!lunchBreakId || !date || !startTime || !endTime) {
-      return NextResponse.json({ error: 'Не все обязательные поля заполнены' }, { status: 400 });
+      return NextResponse.json({ error: 'Не все обязательные поля заполнены' }, { status: 400 })
     }
 
-    const targetDate = new Date(date);
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // Находим обед для редактирования
     const existingLunchBreak = await prisma.lunchBreak.findUnique({
-      where: { id: lunchBreakId },
-      include: { user: true }
-    });
+      where: { id: lunchBreakId }
+    })
 
     if (!existingLunchBreak) {
-      return NextResponse.json({ error: 'Обед не найден' }, { status: 404 });
+      return NextResponse.json({ error: 'Обед не найден' }, { status: 404 })
     }
 
-
-    // Обновляем обед
     const updatedLunchBreak = await prisma.lunchBreak.update({
       where: { id: lunchBreakId },
       data: {
-        date: targetDate,
+        date: new Date(date),
         startTime: new Date(startTime),
         endTime: new Date(endTime)
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
       }
-    });
+    })
 
-    return NextResponse.json({ lunchBreak: updatedLunchBreak });
+    return NextResponse.json({
+      lunchBreak: formatLunchBreakResponse(updatedLunchBreak, { date, startTime, endTime })
+    })
   } catch (error) {
-    console.error('Ошибка при обновлении времени обеда:', error);
-    return NextResponse.json({ error: 'Внутренняя ошибка сервера' }, { status: 500 });
+    console.error('Ошибка при обновлении времени обеда:', error)
+    return NextResponse.json({ error: 'Внутренняя ошибка сервера' }, { status: 500 })
   }
 }

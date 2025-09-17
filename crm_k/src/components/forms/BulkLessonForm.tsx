@@ -239,7 +239,12 @@ export default function BulkLessonForm({
         setPreviewLessons([]);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Ошибка при создании занятий');
+        if (errorData.details && Array.isArray(errorData.details)) {
+          // Показываем детальные ошибки конфликтов
+          setError(errorData.details.join('\n'));
+        } else {
+          setError(errorData.error || 'Ошибка при создании занятий');
+        }
       }
     } catch {
       setError('Ошибка при создании занятий');

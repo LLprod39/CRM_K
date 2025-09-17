@@ -1,5 +1,7 @@
 // Основные типы для CRM системы
 import { Student as PrismaStudent, Lesson as PrismaLesson, User as PrismaUser, UserRole as PrismaUserRole, Toy as PrismaToy } from '@prisma/client'
+import type { LessonStatus } from '@/domain/entities/Lesson'
+
 
 // Экспортируем типы из Prisma
 export type Student = PrismaStudent
@@ -26,39 +28,8 @@ export interface AISuggestion {
 }
 
 // Типы для статусов уроков согласно новой логике
-export type LessonStatus = 'scheduled' | 'prepaid' | 'cancelled' | 'completed' | 'debt' | 'unpaid'
-
-// Утилиты для работы со статусами
-export function getLessonStatus(lesson: Lesson): LessonStatus {
-  if (lesson.isCancelled) return 'cancelled'
-  if (lesson.isCompleted && lesson.isPaid) return 'completed' // Проведено + Оплачено = Оплачено (доход)
-  if (lesson.isCompleted && !lesson.isPaid) return 'debt' // Проведено без оплаты = Задолженность
-  if (!lesson.isCompleted && lesson.isPaid) return 'prepaid' // Предоплачено
-  if (!lesson.isCompleted && !lesson.isPaid) return 'scheduled' // Запланировано
-  return 'unpaid' // Не оплачено (резервный статус)
-}
-
-export function getLessonStatusText(status: LessonStatus): string {
-  const statusMap = {
-    scheduled: 'Запланировано',
-    prepaid: 'Предоплачено',
-    cancelled: 'Отменено',
-    completed: 'Проведено',
-    debt: 'Задолженность',
-    unpaid: 'Не оплачено'
-  }
-  return statusMap[status] || 'Неизвестно'
-}
-
-export function getCombinedLessonStatus(lesson: Lesson): string {
-  const statuses = []
-  if (lesson.isCompleted) statuses.push('Проведено')
-  if (lesson.isPaid) statuses.push('Оплачено')
-  if (lesson.isCancelled) statuses.push('Отменено')
-  
-  if (statuses.length === 0) return 'Запланировано'
-  return statuses.join(' + ')
-}
+export type { LessonStatus } from '@/domain/entities/Lesson'
+export { getLessonStatus, getLessonStatusText, getCombinedLessonStatus } from '@/lib/lessonStatusUtils'
 
 // Утилиты для работы со статусами платежей занятий
 export function getPaymentStatusText(status: PaymentStatus): string {
@@ -277,3 +248,4 @@ export interface AdminStats {
   recentLessons: Lesson[];
   usersWithStats: UserWithStats[];
 }
+

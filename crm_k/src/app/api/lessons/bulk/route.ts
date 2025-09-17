@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
+import { checkLessonConflicts, checkSlotAvailability } from '@/lib/lessonConflictUtils'
 
 interface BulkLessonData {
   studentId?: string;
@@ -112,6 +113,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
+
+    // Проверяем конфликты для всех занятий перед созданием
+    const conflictChecks = await Promise.all(
+      lessonsToCreate.map(async (lessonData) => {
+        const slotAvailability = await checkSlotAvailability(body.userId, lessonData.date, lessonData.endTime)
+        if (!slotAvailability.isAvailable) {
+          return {
+            hasConflict: true,
+            conflicts: [`Слот недоступен: ${slotAvailability.reason}`],
+            lessonData
+          }
+        }
+
+        const conflictCheck = await checkLessonConflicts({
+          date: lessonData.date,
+          endTime: lessonData.endTime,
+          teacherId: body.userId,
+          studentIds: [lessonData.studentId],
+          lessonType: body.lessonType
+        })
+
+        return {
+          ...conflictCheck,
+          lessonData
+        }
+      })
+    )
+
+    // Проверяем, есть ли конфликты
+    const conflictingLessons = conflictChecks.filter(check => check.hasConflict)
+    if (conflictingLessons.length > 0) {
+      const conflicts = conflictingLessons.map(conflict => 
+        `Занятие ${conflict.lessonData.date.toLocaleDateString()} ${conflict.lessonData.date.toLocaleTimeString()}: ${conflict.conflicts.join(', ')}`
+      )
+      
+      return NextResponse.json({
+        error: 'Обнаружены конфликты при создании занятий',
+        details: conflicts
+      }, { status: 400 })
+    }
 
     // Создаем занятия в транзакции
     const createdLessons = await prisma.$transaction(async (tx) => {

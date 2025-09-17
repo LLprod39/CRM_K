@@ -5,7 +5,8 @@ import { useAuth } from '@/presentation/contexts'
 import { useRouter } from 'next/navigation'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { apiRequest } from '@/lib/api'
-import { User, Student, Lesson, UserRole, AdminStats, UserWithStats } from '@/types'
+import { User, Student, Lesson, AdminStats, UserWithStats } from '@/types'
+import { UserRole } from '@/domain/entities/User'
 import StatsCard from '@/components/admin/StatsCard'
 import UserCard from '@/components/admin/UserCard'
 import AddUserModal from '@/components/admin/AddUserModal'
@@ -19,6 +20,7 @@ import StudentAssignment from '@/components/admin/StudentAssignment'
 import CommandPalette from '@/components/admin/CommandPalette'
 import WhatsAppPage from '@/components/admin/WhatsAppPage'
 import NotificationSettings from '@/components/admin/NotificationSettings'
+import ExtractorSettings from '@/components/admin/ExtractorSettings'
 import NotificationWorkerManager from '@/components/admin/NotificationWorkerManager'
 import WhatsAppInitializer from '@/components/WhatsAppInitializer'
 import WhatsAppStatus from '@/components/admin/WhatsAppStatus'
@@ -72,6 +74,12 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterRole, setFilterRole] = useState<UserRole | 'all'>('all')
   const [showCommandPalette, setShowCommandPalette] = useState(false)
+  const [searchFilters, setSearchFilters] = useState({
+    hasStudents: 'all',
+    hasRevenue: 'all',
+    createdAfter: '',
+    createdBefore: ''
+  })
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== 'ADMIN')) {
@@ -390,23 +398,34 @@ export default function AdminPage() {
     
     const matchesRole = filterRole === 'all' || user.role === filterRole
     
-    return matchesSearch && matchesRole
+    const matchesStudents = searchFilters.hasStudents === 'all' || 
+      (searchFilters.hasStudents === 'yes' && user.stats.totalStudents > 0) ||
+      (searchFilters.hasStudents === 'no' && user.stats.totalStudents === 0)
+    
+    const matchesRevenue = searchFilters.hasRevenue === 'all' ||
+      (searchFilters.hasRevenue === 'yes' && user.stats.totalRevenue > 0) ||
+      (searchFilters.hasRevenue === 'no' && user.stats.totalRevenue === 0)
+    
+    const matchesDateRange = (!searchFilters.createdAfter || new Date(user.createdAt) >= new Date(searchFilters.createdAfter)) &&
+      (!searchFilters.createdBefore || new Date(user.createdAt) <= new Date(searchFilters.createdBefore))
+    
+    return matchesSearch && matchesRole && matchesStudents && matchesRevenue && matchesDateRange
   }) || []
 
   const renderUsers = () => (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Фильтры и поиск */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
               <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Поиск пользователей..."
+                placeholder="Поиск пользователей по имени или email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
             </div>
           </div>
@@ -414,7 +433,7 @@ export default function AdminPage() {
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value as UserRole | 'all')}
-              className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             >
               <option value="all">Все роли</option>
               <option value="ADMIN">Администраторы</option>
@@ -424,17 +443,74 @@ export default function AdminPage() {
               onClick={() => {
                 setSearchQuery('')
                 setFilterRole('all')
+                setSearchFilters({
+                  hasStudents: 'all',
+                  hasRevenue: 'all',
+                  createdAfter: '',
+                  createdBefore: ''
+                })
               }}
-              className="px-4 py-2 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors"
-              title="Сбросить фильтры"
+              className="px-4 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors text-sm"
+              title="Сбросить все фильтры"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
         
+        {/* Расширенные фильтры */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Ученики</label>
+              <select
+                value={searchFilters.hasStudents}
+                onChange={(e) => setSearchFilters(prev => ({ ...prev, hasStudents: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              >
+                <option value="all">Все</option>
+                <option value="yes">Есть ученики</option>
+                <option value="no">Нет учеников</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Доход</label>
+              <select
+                value={searchFilters.hasRevenue}
+                onChange={(e) => setSearchFilters(prev => ({ ...prev, hasRevenue: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              >
+                <option value="all">Все</option>
+                <option value="yes">Есть доход</option>
+                <option value="no">Нет дохода</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Создан после</label>
+              <input
+                type="date"
+                value={searchFilters.createdAfter}
+                onChange={(e) => setSearchFilters(prev => ({ ...prev, createdAfter: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Создан до</label>
+              <input
+                type="date"
+                value={searchFilters.createdBefore}
+                onChange={(e) => setSearchFilters(prev => ({ ...prev, createdBefore: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
+            </div>
+          </div>
+        </div>
+        
         {/* Результаты поиска */}
-        {(searchQuery || filterRole !== 'all') && (
+        {(searchQuery || filterRole !== 'all' || searchFilters.hasStudents !== 'all' || searchFilters.hasRevenue !== 'all' || searchFilters.createdAfter || searchFilters.createdBefore) && (
           <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <div className="flex items-center justify-between">
               <span className="text-sm text-blue-700">
@@ -444,6 +520,12 @@ export default function AdminPage() {
                 onClick={() => {
                   setSearchQuery('')
                   setFilterRole('all')
+                  setSearchFilters({
+                    hasStudents: 'all',
+                    hasRevenue: 'all',
+                    createdAfter: '',
+                    createdBefore: ''
+                  })
                 }}
                 className="text-xs text-blue-600 hover:text-blue-800 underline"
               >
@@ -623,6 +705,11 @@ export default function AdminPage() {
                   <span className="hidden sm:inline">Поиск</span>
                   <kbd className="hidden lg:inline px-1 py-0.5 bg-gray-200 rounded text-xs">⌘K</kbd>
                 </button>
+                
+                <div className="text-xs text-gray-500 hidden lg:block">
+                  <div>Ctrl+K - командная палитра</div>
+                  <div>Ctrl+Shift+K - глобальный поиск</div>
+                </div>
                 
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
@@ -955,7 +1042,8 @@ export default function AdminPage() {
                 </div>
               )}
               {activeTab === 'settings' && (
-                <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 space-y-6">
+                  <ExtractorSettings />
                   <SystemSettings />
                 </div>
               )}

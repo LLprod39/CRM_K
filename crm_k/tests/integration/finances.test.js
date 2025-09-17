@@ -25,7 +25,7 @@ describe('Finances API', () => {
       // Create some lessons and payments
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: true
         }
@@ -33,7 +33,7 @@ describe('Finances API', () => {
 
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('group', testData.student.id),
+          ...createTestLesson('group', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: false
         }
@@ -90,7 +90,7 @@ describe('Finances API', () => {
 
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: true
         }
@@ -123,7 +123,7 @@ describe('Finances API', () => {
       // Create lessons on different dates
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           date: baseDate,
           isCompleted: true,
           isPaid: true
@@ -132,7 +132,7 @@ describe('Finances API', () => {
 
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('group', testData.student.id),
+          ...createTestLesson('group', testData.student.id, testData.user.id),
           date: new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000), // +7 days
           isCompleted: true,
           isPaid: true
@@ -171,7 +171,7 @@ describe('Finances API', () => {
       for (const date of dates) {
         await testHelpers.prisma.lesson.create({
           data: {
-            ...createTestLesson('individual', testData.student.id),
+            ...createTestLesson('individual', testData.student.id, testData.user.id),
             date,
             isCompleted: true,
             isPaid: true
@@ -222,7 +222,7 @@ describe('Finances API', () => {
       // Create completed but unpaid lessons
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: false
         }
@@ -230,7 +230,7 @@ describe('Finances API', () => {
 
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('group', testData.student.id),
+          ...createTestLesson('group', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: false
         }
@@ -260,7 +260,7 @@ describe('Finances API', () => {
       // Create only paid lessons
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: true
         }
@@ -290,7 +290,7 @@ describe('Finances API', () => {
       // Create prepaid lessons (paid but not completed)
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           isCompleted: false,
           isPaid: true
         }
@@ -298,7 +298,7 @@ describe('Finances API', () => {
 
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('group', testData.student.id),
+          ...createTestLesson('group', testData.student.id, testData.user.id),
           isCompleted: false,
           isPaid: true
         }
@@ -333,7 +333,7 @@ describe('Finances API', () => {
       // Create lessons and payments
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: true
         }
@@ -341,7 +341,7 @@ describe('Finances API', () => {
 
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('group', testData.student.id),
+          ...createTestLesson('group', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: false
         }
@@ -430,7 +430,7 @@ describe('Finances API', () => {
       // Create some data
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: true
         }

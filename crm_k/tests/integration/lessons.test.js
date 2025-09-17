@@ -24,7 +24,7 @@ describe('Lessons API', () => {
     it('should return lessons for authenticated user', async () => {
       // Create a lesson for the student
       const lesson = await testHelpers.prisma.lesson.create({
-        data: createTestLesson('individual', testData.student.id)
+        data: createTestLesson('individual', testData.student.id, testData.user.id)
       })
 
       const headers = testHelpers.createAuthHeaders(testData.user)
@@ -63,11 +63,11 @@ describe('Lessons API', () => {
       })
 
       await testHelpers.prisma.lesson.create({
-        data: createTestLesson('individual', testData.student.id)
+        data: createTestLesson('individual', testData.student.id, testData.user.id)
       })
 
       await testHelpers.prisma.lesson.create({
-        data: createTestLesson('group', student2.id)
+        data: createTestLesson('group', student2.id, testData.user.id)
       })
 
       const headers = testHelpers.createAuthHeaders(testData.admin)
@@ -89,14 +89,14 @@ describe('Lessons API', () => {
       // Create lessons on different dates
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           date: baseDate
         }
       })
 
       await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('group', testData.student.id),
+          ...createTestLesson('group', testData.student.id, testData.user.id),
           date: new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000) // +7 days
         }
       })
@@ -123,7 +123,7 @@ describe('Lessons API', () => {
 
   describe('POST /api/lessons', () => {
     it('should create new individual lesson', async () => {
-      const lessonData = createTestLesson('individual', testData.student.id)
+      const lessonData = createTestLesson('individual', testData.student.id, testData.user.id)
       const headers = testHelpers.createAuthHeaders(testData.user)
       
       const response = await fetch('http://localhost:3000/api/lessons', {
@@ -153,7 +153,7 @@ describe('Lessons API', () => {
       })
 
       const lessonData = {
-        ...createTestLesson('group', testData.student.id),
+        ...createTestLesson('group', testData.student.id, testData.user.id),
         studentIds: [testData.student.id, student2.id]
       }
       const headers = testHelpers.createAuthHeaders(testData.user)
@@ -188,7 +188,7 @@ describe('Lessons API', () => {
 
 
     it('should allow admin to create lesson for any student', async () => {
-      const lessonData = createTestLesson('individual', testData.student.id)
+      const lessonData = createTestLesson('individual', testData.student.id, testData.admin.id)
       const headers = testHelpers.createAuthHeaders(testData.admin)
       
       const response = await fetch('http://localhost:3000/api/lessons', {
@@ -206,7 +206,7 @@ describe('Lessons API', () => {
 
     beforeEach(async () => {
       lesson = await testHelpers.prisma.lesson.create({
-        data: createTestLesson('individual', testData.student.id)
+        data: createTestLesson('individual', testData.student.id, testData.user.id)
       })
     })
 
@@ -276,7 +276,7 @@ describe('Lessons API', () => {
       })
 
       const lesson2 = await testHelpers.prisma.lesson.create({
-        data: createTestLesson('individual', student2.id)
+        data: createTestLesson('individual', student2.id, user2.id)
       })
 
       const updateData = { cost: 9999 }
@@ -313,7 +313,7 @@ describe('Lessons API', () => {
 
     beforeEach(async () => {
       lesson = await testHelpers.prisma.lesson.create({
-        data: createTestLesson('individual', testData.student.id)
+        data: createTestLesson('individual', testData.student.id, testData.user.id)
       })
     })
 
@@ -356,7 +356,7 @@ describe('Lessons API', () => {
       })
 
       const lesson2 = await testHelpers.prisma.lesson.create({
-        data: createTestLesson('individual', student2.id)
+        data: createTestLesson('individual', student2.id, user2.id)
       })
 
       const headers = testHelpers.createAuthHeaders(testData.user)

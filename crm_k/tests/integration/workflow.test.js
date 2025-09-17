@@ -35,7 +35,7 @@ describe('Complete Workflow Integration Tests', () => {
       const newStudent = await createStudentResponse.json()
 
       // 2. Create lessons for the student
-      const lesson1Data = createTestLesson('individual', newStudent.id)
+      const lesson1Data = createTestLesson('individual', newStudent.id, testData.user.id)
       const createLesson1Response = await fetch('http://localhost:3000/api/lessons', {
         method: 'POST',
         headers,
@@ -44,7 +44,10 @@ describe('Complete Workflow Integration Tests', () => {
       expect(createLesson1Response.status).toBe(201)
       const lesson1 = await createLesson1Response.json()
 
-      const lesson2Data = createTestLesson('group', newStudent.id)
+      const lesson2Data = {
+        ...createTestLesson('group', newStudent.id, testData.user.id),
+        studentIds: [newStudent.id]
+      }
       const createLesson2Response = await fetch('http://localhost:3000/api/lessons', {
         method: 'POST',
         headers,
@@ -136,7 +139,7 @@ describe('Complete Workflow Integration Tests', () => {
       // 1. Create multiple lessons with different statuses
       const completedPaidLesson = await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: true
         }
@@ -144,7 +147,7 @@ describe('Complete Workflow Integration Tests', () => {
 
       const completedUnpaidLesson = await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('group', testData.student.id),
+          ...createTestLesson('group', testData.student.id, testData.user.id),
           isCompleted: true,
           isPaid: false
         }
@@ -152,7 +155,7 @@ describe('Complete Workflow Integration Tests', () => {
 
       const prepaidLesson = await testHelpers.prisma.lesson.create({
         data: {
-          ...createTestLesson('individual', testData.student.id),
+          ...createTestLesson('individual', testData.student.id, testData.user.id),
           isCompleted: false,
           isPaid: true
         }
@@ -200,7 +203,7 @@ describe('Complete Workflow Integration Tests', () => {
       expect(studentReport.totalPaid).toBeGreaterThan(0)
       expect(studentReport.totalDebt).toBe(0)
       expect(studentReport.lessonsCompleted).toBe(2)
-      expect(studentReport.lessonsPaid).toBe(2)
+      expect(studentReport.lessonsPaid).toBe(3)
 
       // 7. Export financial data
       const exportResponse = await fetch('http://localhost:3000/api/finances/export', { headers })

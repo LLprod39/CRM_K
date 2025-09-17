@@ -17,26 +17,53 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const studentId = searchParams.get('studentId')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
 
     // Базовые условия для фильтрации
     const baseWhere = authUser.role === 'ADMIN' 
       ? {} 
       : {
-          student: {
-            lessons: {
-              some: {
-                teacherId: authUser.id
+          OR: [
+            // Платежи за учеников, которые принадлежат пользователю
+            {
+              student: {
+                userId: authUser.id
+              }
+            },
+            // Платежи за учеников, с которыми пользователь проводит уроки
+            {
+              student: {
+                lessons: {
+                  some: {
+                    teacherId: authUser.id
+                  }
+                }
               }
             }
-          }
+          ]
         }
 
-    const whereClause = studentId 
-      ? {
-          ...baseWhere,
-          studentId: parseInt(studentId)
-        }
-      : baseWhere
+    // Добавляем фильтрацию по дате
+    const dateFilter: any = {}
+    if (startDate) {
+      dateFilter.gte = new Date(startDate)
+    }
+    if (endDate) {
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      dateFilter.lte = end
+    }
+
+    const whereClause: any = { ...baseWhere }
+    
+    if (studentId) {
+      whereClause.studentId = parseInt(studentId)
+    }
+    
+    if (Object.keys(dateFilter).length > 0) {
+      whereClause.date = dateFilter
+    }
 
     const payments = await prisma.payment.findMany({
       where: whereClause as any,
@@ -112,7 +139,7 @@ export async function POST(request: NextRequest) {
     if (!student) {
       return NextResponse.json(
         { error: 'Ученик не найден' },
-        { status: 404 }
+        { status: 400 }
       )
     }
 

@@ -4,14 +4,12 @@ import { Users, Calendar, DollarSign, TrendingUp, ArrowRight, Sparkles, AlertCir
 import { UserRole } from '@/domain/entities/User';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/presentation/contexts';
 import { apiRequest } from '@/lib/api';
 
 export default function Home() {
   const { user } = useAuth();
-  const router = useRouter();
   const [stats, setStats] = useState({
     students: 0,
     todayLessons: 0,
@@ -20,6 +18,20 @@ export default function Home() {
   });
 
   useEffect(() => {
+    // Отладочная информация
+    console.log('🔍 Отладка главной страницы:');
+    console.log('  user:', user);
+    console.log('  user?.role:', user?.role);
+    console.log('  UserRole.ADMIN:', UserRole.ADMIN);
+    console.log('  user?.role === UserRole.ADMIN:', user?.role === UserRole.ADMIN);
+    
+    // Перенаправляем админов на админ панель
+    if (user?.role === UserRole.ADMIN) {
+      console.log('✅ Перенаправляем админа на /admin');
+    } else {
+      console.log('❌ Пользователь не админ, остаемся на главной');
+    }
+
     // Загружаем статистику
     const fetchStats = async () => {
       if (!user) return;

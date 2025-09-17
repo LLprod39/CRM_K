@@ -27,7 +27,28 @@ export default function LoginPage() {
     try {
       const success = await login(formData)
       if (success) {
-        router.push('/')
+        // Получаем данные пользователя из localStorage для определения роли
+        const savedUser = localStorage.getItem('user')
+        console.log('🔍 Отладка логина:');
+        console.log('  savedUser:', savedUser);
+        
+        if (savedUser) {
+          const userData = JSON.parse(savedUser)
+          console.log('  userData:', userData);
+          console.log('  userData.role:', userData.role);
+          console.log('  userData.role === "ADMIN":', userData.role === 'ADMIN');
+          
+          if (userData.role === 'ADMIN') {
+            console.log('✅ Перенаправляем админа на /admin');
+            router.push('/admin')
+          } else {
+            console.log('❌ Пользователь не админ, идем на главную');
+            router.push('/')
+          }
+        } else {
+          console.log('❌ Нет данных пользователя в localStorage');
+          router.push('/')
+        }
       } else {
         setError('Неверный email или пароль')
       }

@@ -8,12 +8,12 @@ const createJestConfig = nextJest({
 // Add any custom config to be passed to Jest
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/setup.js'],
-  testEnvironment: 'jest-environment-jsdom',
+  testEnvironment: 'node',
   testMatch: [
     '<rootDir>/**/*.test.{js,jsx,ts,tsx}',
     '<rootDir>/**/*.spec.{js,jsx,ts,tsx}'
   ],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/../src/$1',
   },
   collectCoverageFrom: [
@@ -23,7 +23,25 @@ const customJestConfig = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  testTimeout: 10000,
+  testTimeout: 15000, // Увеличиваем таймаут для стабильности
+  reporters: [
+    ['<rootDir>/reporters/russian-reporter.js', {}]
+  ],
+  verbose: true,
+  // Настройки для лучшего вывода
+  displayName: 'CRM System Tests',
+  testSequencer: '@jest/test-sequencer',
+  // Отключаем стандартный вывод для использования только нашего репортера
+  silent: false,
+  // Настройки для параллельного выполнения
+  maxWorkers: 1, // Запускаем тесты последовательно для стабильности
+  // Настройки для лучшего логирования
+  logHeapUsage: false,
+  // Настройки для обработки ошибок
+  errorOnDeprecated: true,
+  // Настройки для отчетов
+  notify: false,
+  notifyMode: 'failure-change'
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/presentation/contexts'
-import { UserRole } from '@/types'
+import { UserRole } from '@/domain/entities/User'
 
 interface ProtectedRouteProps {
   children: React.ReactNode

@@ -1,15 +1,6 @@
-/**
- * Утилиты для работы со статусами занятий
- */
+import type { LessonStatus } from '@/domain/entities/Lesson';
 
-export type LessonStatus = 
-  | 'scheduled'      // Запланировано
-  | 'prepaid'        // Предоплачено
-  | 'cancelled'      // Отменено
-  | 'completed'      // Проведено
-  | 'paid'           // Оплачено
-  | 'debt'           // Задолженность
-  | 'unpaid';        // Не оплачено
+export type { LessonStatus } from '@/domain/entities/Lesson';
 
 export interface LessonStatusInfo {
   status: LessonStatus;
@@ -20,179 +11,193 @@ export interface LessonStatusInfo {
   icon: string;
 }
 
-/**
- * Получить информацию о статусе занятия
- */
-export function getLessonStatusInfo(
-  isCompleted: boolean,
-  isPaid: boolean,
-  isCancelled: boolean,
-  lessonDate?: Date
-): LessonStatusInfo {
-  // Отменено
-  if (isCancelled) {
-    return {
-      status: 'cancelled',
-      label: 'Отменено',
-      description: 'Занятие отменено',
-      color: 'text-orange-700',
-      bgColor: 'bg-orange-100',
-      icon: '❌'
-    };
-  }
+type LessonStatusSource = {
+  isCompleted: boolean;
+  isPaid: boolean;
+  isCancelled: boolean;
+  date?: Date | string | null;
+};
 
-  // Проведено
-  if (isCompleted) {
-    if (isPaid) {
-      return {
-        status: 'paid',
-        label: 'Оплачено',
-        description: 'Занятие проведено и оплачено',
-        color: 'text-green-700',
-        bgColor: 'bg-green-100',
-        icon: '✅'
-      };
-    } else {
-      return {
-        status: 'debt',
-        label: 'Задолженность',
-        description: 'Занятие проведено, но не оплачено',
-        color: 'text-red-700',
-        bgColor: 'bg-red-100',
-        icon: '⚠️'
-      };
-    }
-  }
+type NormalizedLessonStatusSource = {
+  isCompleted: boolean;
+  isPaid: boolean;
+  isCancelled: boolean;
+  date?: Date;
+};
 
-  // Не проведено
-  if (isPaid) {
-    return {
-      status: 'prepaid',
-      label: 'Предоплачено',
-      description: 'Занятие предоплачено',
-      color: 'text-yellow-700',
-      bgColor: 'bg-yellow-100',
-      icon: '💳'
-    };
-  }
+const ALL_STATUSES: LessonStatus[] = ['scheduled', 'prepaid', 'completed', 'debt', 'unpaid', 'cancelled'];
 
-  // Проверяем, прошло ли занятие
-  if (lessonDate && new Date() > lessonDate) {
-    return {
-      status: 'unpaid',
-      label: 'Не оплачено',
-      description: 'Занятие прошло, но не оплачено',
-      color: 'text-yellow-700',
-      bgColor: 'bg-yellow-100',
-      icon: '⏰'
-    };
-  }
-
-  // Запланировано
-  return {
-    status: 'scheduled',
+const STATUS_META: Record<LessonStatus, Omit<LessonStatusInfo, 'status'>> = {
+  scheduled: {
     label: 'Запланировано',
     description: 'Занятие запланировано',
     color: 'text-sky-700',
     bgColor: 'bg-sky-100',
-    icon: '📅'
+    icon: '??'
+  },
+  prepaid: {
+    label: 'Предоплачено',
+    description: 'Занятие предоплачено',
+    color: 'text-yellow-700',
+    bgColor: 'bg-yellow-100',
+    icon: '??'
+  },
+  completed: {
+    label: 'Проведено',
+    description: 'Занятие проведено и оплачено',
+    color: 'text-purple-700',
+    bgColor: 'bg-purple-100',
+    icon: '??'
+  },
+  debt: {
+    label: 'Задолженность',
+    description: 'Занятие проведено, но не оплачено',
+    color: 'text-red-700',
+    bgColor: 'bg-red-100',
+    icon: '??'
+  },
+  unpaid: {
+    label: 'Не оплачено',
+    description: 'Занятие прошло, но не оплачено',
+    color: 'text-yellow-700',
+    bgColor: 'bg-yellow-100',
+    icon: '?'
+  },
+  cancelled: {
+    label: 'Отменено',
+    description: 'Занятие отменено',
+    color: 'text-orange-700',
+    bgColor: 'bg-orange-100',
+    icon: '?'
+  }
+};
+
+const NEXT_STATUS_MAP: Record<LessonStatus, LessonStatus[]> = {
+  scheduled: ['prepaid', 'completed', 'debt', 'cancelled'],
+  prepaid: ['completed', 'cancelled'],
+  completed: [],
+  debt: ['completed'],
+  unpaid: ['completed', 'debt'],
+  cancelled: []
+};
+
+function isLessonStatusSource(value: unknown): value is LessonStatusSource {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'isCompleted' in value &&
+    'isPaid' in value &&
+    'isCancelled' in value
+  );
+}
+
+function isLessonStatus(value: unknown): value is LessonStatus {
+  return typeof value === 'string' && (ALL_STATUSES as string[]).includes(value);
+}
+
+function toDate(value?: Date | string | null): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function normalizeLessonStatusInput(
+  lessonOrIsCompleted: LessonStatusSource | boolean,
+  isPaid?: boolean,
+  isCancelled?: boolean,
+  lessonDate?: Date | string | null
+): NormalizedLessonStatusSource {
+  if (isLessonStatusSource(lessonOrIsCompleted)) {
+    return {
+      isCompleted: Boolean(lessonOrIsCompleted.isCompleted),
+      isPaid: Boolean(lessonOrIsCompleted.isPaid),
+      isCancelled: Boolean(lessonOrIsCompleted.isCancelled),
+      date: toDate(lessonOrIsCompleted.date)
+    };
+  }
+
+  return {
+    isCompleted: Boolean(lessonOrIsCompleted),
+    isPaid: Boolean(isPaid),
+    isCancelled: Boolean(isCancelled),
+    date: toDate(lessonDate)
   };
 }
 
-/**
- * Получить все возможные статусы
- */
-export function getAllLessonStatuses(): LessonStatusInfo[] {
-  return [
-    {
-      status: 'scheduled',
-      label: 'Запланировано',
-      description: 'Занятие запланировано',
-      color: 'text-sky-700',
-      bgColor: 'bg-sky-100',
-      icon: '📅'
-    },
-    {
-      status: 'prepaid',
-      label: 'Предоплачено',
-      description: 'Занятие предоплачено',
-      color: 'text-yellow-700',
-      bgColor: 'bg-yellow-100',
-      icon: '💳'
-    },
-    {
-      status: 'completed',
-      label: 'Проведено',
-      description: 'Занятие проведено',
-      color: 'text-purple-700',
-      bgColor: 'bg-purple-100',
-      icon: '🎯'
-    },
-    {
-      status: 'paid',
-      label: 'Оплачено',
-      description: 'Занятие проведено и оплачено',
-      color: 'text-green-700',
-      bgColor: 'bg-green-100',
-      icon: '✅'
-    },
-    {
-      status: 'debt',
-      label: 'Задолженность',
-      description: 'Занятие проведено, но не оплачено',
-      color: 'text-red-700',
-      bgColor: 'bg-red-100',
-      icon: '⚠️'
-    },
-    {
-      status: 'unpaid',
-      label: 'Не оплачено',
-      description: 'Занятие прошло, но не оплачено',
-      color: 'text-yellow-700',
-      bgColor: 'bg-yellow-100',
-      icon: '⏰'
-    },
-    {
-      status: 'cancelled',
-      label: 'Отменено',
-      description: 'Занятие отменено',
-      color: 'text-orange-700',
-      bgColor: 'bg-orange-100',
-      icon: '❌'
-    }
-  ];
+function determineStatus(source: NormalizedLessonStatusSource): LessonStatus {
+  if (source.isCancelled) {
+    return 'cancelled';
+  }
+
+  if (source.isCompleted) {
+    return source.isPaid ? 'completed' : 'debt';
+  }
+
+  if (source.isPaid) {
+    return 'prepaid';
+  }
+
+  if (source.date && Date.now() > source.date.getTime()) {
+    return 'unpaid';
+  }
+
+  return 'scheduled';
 }
 
-/**
- * Проверить, можно ли отменить занятие
- */
+export function getLessonStatusInfo(lesson: LessonStatusSource): LessonStatusInfo;
+export function getLessonStatusInfo(
+  isCompleted: boolean,
+  isPaid: boolean,
+  isCancelled: boolean,
+  lessonDate?: Date | string | null
+): LessonStatusInfo;
+export function getLessonStatusInfo(
+  lessonOrIsCompleted: LessonStatusSource | boolean,
+  isPaid?: boolean,
+  isCancelled?: boolean,
+  lessonDate?: Date | string | null
+): LessonStatusInfo {
+  const normalized = normalizeLessonStatusInput(lessonOrIsCompleted, isPaid, isCancelled, lessonDate);
+  const status = determineStatus(normalized);
+  const meta = STATUS_META[status];
+
+  return {
+    status,
+    ...meta
+  };
+}
+
+export function getAllLessonStatuses(): LessonStatusInfo[] {
+  return ALL_STATUSES.map((status) => ({
+    status,
+    ...STATUS_META[status]
+  }));
+}
+
 export function canCancelLesson(lessonDate: Date, hoursBeforeLesson: number = 5): boolean {
   const now = new Date();
   const timeDiff = lessonDate.getTime() - now.getTime();
   const hoursDiff = timeDiff / (1000 * 60 * 60);
-  
+
   return hoursDiff >= hoursBeforeLesson;
 }
 
-/**
- * Получить информацию об отмене занятия
- */
 export function getCancellationInfo(lessonDate: Date, cost: number) {
   const canCancel = canCancelLesson(lessonDate);
-  
+
   return {
     canCancel,
     refundType: canCancel ? 'prepaid' : 'income',
-    refundDescription: canCancel 
-      ? 'Сумма вернется в предоплату ученика'
-      : 'Сумма засчитывается как доход',
+    refundDescription: canCancel
+      ? 'Возврат производится в предоплаченный баланс'
+      : 'Возврат оформляется как доход компании',
     hoursBeforeLesson: Math.floor((lessonDate.getTime() - new Date().getTime()) / (1000 * 60 * 60))
   };
 }
 
-/**
- * Получить статистику по статусам занятий
- */
 export function getLessonStatusStats(lessons: Array<{
   isCompleted: boolean;
   isPaid: boolean;
@@ -204,7 +209,6 @@ export function getLessonStatusStats(lessons: Array<{
     scheduled: 0,
     prepaid: 0,
     completed: 0,
-    paid: 0,
     debt: 0,
     unpaid: 0,
     cancelled: 0,
@@ -213,22 +217,21 @@ export function getLessonStatusStats(lessons: Array<{
     totalPrepaid: 0
   };
 
-  lessons.forEach(lesson => {
-    const statusInfo = getLessonStatusInfo(
-      lesson.isCompleted,
-      lesson.isPaid,
-      lesson.isCancelled,
-      lesson.date
-    );
+  lessons.forEach((lesson) => {
+    const status = getLessonStatus({
+      isCompleted: lesson.isCompleted,
+      isPaid: lesson.isPaid,
+      isCancelled: lesson.isCancelled,
+      date: lesson.date
+    });
 
-    stats[statusInfo.status]++;
+    stats[status] += 1;
 
-    // Подсчет финансовых показателей
-    if (statusInfo.status === 'paid') {
+    if (status === 'completed') {
       stats.totalRevenue += lesson.cost;
-    } else if (statusInfo.status === 'debt' || statusInfo.status === 'unpaid') {
+    } else if (status === 'debt' || status === 'unpaid') {
       stats.totalDebt += lesson.cost;
-    } else if (statusInfo.status === 'prepaid') {
+    } else if (status === 'prepaid') {
       stats.totalPrepaid += lesson.cost;
     }
   });
@@ -236,87 +239,89 @@ export function getLessonStatusStats(lessons: Array<{
   return stats;
 }
 
-/**
- * Получить следующий возможный статус для занятия
- */
 export function getNextPossibleStatuses(
   isCompleted: boolean,
   isPaid: boolean,
   isCancelled: boolean,
-  lessonDate?: Date
+  lessonDate?: Date | string | null
 ): LessonStatus[] {
-  const currentStatus = getLessonStatusInfo(isCompleted, isPaid, isCancelled, lessonDate);
-  
-  switch (currentStatus.status) {
-    case 'scheduled':
-      return ['prepaid', 'completed', 'cancelled'];
-    case 'prepaid':
-      return ['completed', 'cancelled'];
-    case 'completed':
-      return ['paid', 'debt'];
-    case 'debt':
-      return ['paid'];
-    case 'unpaid':
-      return ['paid', 'debt'];
-    case 'paid':
-      return []; // Финальный статус
-    case 'cancelled':
-      return []; // Финальный статус
-    default:
-      return [];
-  }
+  const status = getLessonStatus(isCompleted, isPaid, isCancelled, lessonDate);
+  return NEXT_STATUS_MAP[status] ?? [];
 }
 
-/**
- * Проверить валидность перехода статуса
- */
 export function isValidStatusTransition(
   fromStatus: LessonStatus,
   toStatus: LessonStatus
 ): boolean {
-  const validTransitions: Record<LessonStatus, LessonStatus[]> = {
-    scheduled: ['prepaid', 'completed', 'cancelled'],
-    prepaid: ['completed', 'cancelled'],
-    completed: ['paid', 'debt'],
-    debt: ['paid'],
-    unpaid: ['paid', 'debt'],
-    paid: [],
-    cancelled: []
-  };
-
-  return validTransitions[fromStatus]?.includes(toStatus) || false;
+  return NEXT_STATUS_MAP[fromStatus]?.includes(toStatus) ?? false;
 }
 
-/**
- * Получить статус занятия (для совместимости)
- */
+export function getLessonStatus(lesson: LessonStatusSource): LessonStatus;
 export function getLessonStatus(
   isCompleted: boolean,
   isPaid: boolean,
   isCancelled: boolean,
-  lessonDate?: Date
+  lessonDate?: Date | string | null
+): LessonStatus;
+export function getLessonStatus(
+  lessonOrIsCompleted: LessonStatusSource | boolean,
+  isPaid?: boolean,
+  isCancelled?: boolean,
+  lessonDate?: Date | string | null
 ): LessonStatus {
-  const statusInfo = getLessonStatusInfo(isCompleted, isPaid, isCancelled, lessonDate);
-  return statusInfo.status;
+  const normalized = normalizeLessonStatusInput(lessonOrIsCompleted, isPaid, isCancelled, lessonDate);
+  return determineStatus(normalized);
 }
 
-/**
- * Получить текст статуса занятия (для совместимости)
- */
+export function getLessonStatusText(status: LessonStatus): string;
+export function getLessonStatusText(lesson: LessonStatusSource): string;
 export function getLessonStatusText(
+  lessonOrStatus: LessonStatus | LessonStatusSource | boolean,
+  isPaid?: boolean,
+  isCancelled?: boolean,
+  lessonDate?: Date | string | null
+): string {
+  if (isLessonStatus(lessonOrStatus)) {
+    return STATUS_META[lessonOrStatus]?.label ?? 'Неизвестно';
+  }
+
+  if (typeof lessonOrStatus === 'string') {
+    return 'Неизвестно';
+  }
+
+  const status = getLessonStatus(lessonOrStatus as LessonStatusSource | boolean, isPaid, isCancelled, lessonDate);
+  return STATUS_META[status]?.label ?? 'Неизвестно';
+}
+
+export function getCombinedLessonStatus(lesson: LessonStatusSource): string;
+export function getCombinedLessonStatus(
   isCompleted: boolean,
   isPaid: boolean,
-  isCancelled: boolean,
-  lessonDate?: Date
+  isCancelled: boolean
+): string;
+export function getCombinedLessonStatus(
+  lessonOrIsCompleted: LessonStatusSource | boolean,
+  isPaid?: boolean,
+  isCancelled?: boolean
 ): string {
-  const statusInfo = getLessonStatusInfo(isCompleted, isPaid, isCancelled, lessonDate);
-  return statusInfo.label;
+  const normalized = normalizeLessonStatusInput(lessonOrIsCompleted, isPaid, isCancelled);
+  const parts: string[] = [];
+
+  if (normalized.isCompleted) {
+    parts.push(STATUS_META.completed.label);
+  }
+
+  if (normalized.isPaid) {
+    parts.push('Оплачено');
+  }
+
+  if (normalized.isCancelled) {
+    parts.push(STATUS_META.cancelled.label);
+  }
+
+  return parts.length ? parts.join(' + ') : STATUS_META.scheduled.label;
 }
 
-/**
- * Определить статус после проведения занятия
- * Используется для автоматического обновления статусов прошедших занятий
- */
 export function getStatusAfterCompletion(lesson: {
   isCompleted: boolean;
   isPaid: boolean;
@@ -327,26 +332,25 @@ export function getStatusAfterCompletion(lesson: {
   isPaid: boolean;
   newStatus: LessonStatus;
 } {
-  // Если занятие уже проведено или отменено, возвращаем текущие значения
-  if (lesson.isCompleted || lesson.isCancelled) {
+  const normalized = normalizeLessonStatusInput(lesson);
+
+  if (normalized.isCompleted || normalized.isCancelled) {
     return {
-      isCompleted: lesson.isCompleted,
-      isPaid: lesson.isPaid,
-      newStatus: getLessonStatus(lesson.isCompleted, lesson.isPaid, lesson.isCancelled, lesson.date)
+      isCompleted: normalized.isCompleted,
+      isPaid: normalized.isPaid,
+      newStatus: determineStatus(normalized)
     };
   }
 
-  // Занятие еще не проведено, но уже прошло по времени
-  // Согласно логике:
-  // 1. Если было предоплачено (isPaid = true) -> становится проведенным и остается оплаченным
-  // 2. Если не было оплачено (isPaid = false) -> становится проведенным, но не оплаченным (задолженность)
-  
-  const newIsCompleted = true; // Занятие теперь проведено
-  const newIsPaid = lesson.isPaid; // Статус оплаты остается прежним
-  
+  const updated = {
+    ...normalized,
+    isCompleted: true
+  };
+
   return {
-    isCompleted: newIsCompleted,
-    isPaid: newIsPaid,
-    newStatus: getLessonStatus(newIsCompleted, newIsPaid, lesson.isCancelled, lesson.date)
+    isCompleted: true,
+    isPaid: updated.isPaid,
+    newStatus: determineStatus(updated)
   };
 }
+

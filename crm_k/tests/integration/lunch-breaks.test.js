@@ -151,8 +151,8 @@ describe('Lunch Breaks API', () => {
       expect(response.status).toBe(200)
       
       const data = await response.json()
-      expect(data.lunchBreak.startTime).toBe(updateData.startTime)
-      expect(data.lunchBreak.endTime).toBe(updateData.endTime)
+      expect(data.lunchBreak.startTime).toBe(updateData.startTime instanceof Date ? updateData.startTime.toISOString() : updateData.startTime)
+      expect(data.lunchBreak.endTime).toBe(updateData.endTime instanceof Date ? updateData.endTime.toISOString() : updateData.endTime)
     })
 
     it('should validate required fields', async () => {
@@ -228,8 +228,8 @@ describe('Lunch Breaks API', () => {
       expect(response.status).toBe(200)
       
       const data = await response.json()
-      expect(data.lunchBreak.startTime).toBe(updateData.startTime)
-      expect(data.lunchBreak.endTime).toBe(updateData.endTime)
+      expect(data.lunchBreak.startTime).toBe(updateData.startTime instanceof Date ? updateData.startTime.toISOString() : updateData.startTime)
+      expect(data.lunchBreak.endTime).toBe(updateData.endTime instanceof Date ? updateData.endTime.toISOString() : updateData.endTime)
     })
 
     it('should not allow user to update lunch break', async () => {

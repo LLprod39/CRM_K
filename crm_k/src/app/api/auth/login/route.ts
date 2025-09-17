@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { LoginData } from '@/types'
-
-const prisma = new PrismaClient()
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
@@ -19,7 +17,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Находим пользователя по email
+    // Ищем пользователя по email
     const user = await prisma.user.findUnique({
       where: { email }
     })
@@ -47,23 +45,20 @@ export async function POST(request: NextRequest) {
       { expiresIn: '7d' }
     )
 
-    // Возвращаем данные пользователя без пароля
-    const userData = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      token
-    }
-
-    return NextResponse.json(userData)
+    return NextResponse.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+      }
+    })
   } catch (error) {
     console.error('Ошибка входа:', error)
     return NextResponse.json(
-      { error: 'Внутренняя ошибка сервера' },
+      { error: 'Произошла ошибка при входе' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }

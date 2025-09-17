@@ -2,15 +2,15 @@ const { verifyToken } = require('../../src/lib/auth')
 const jwt = require('jsonwebtoken')
 
 describe('Authentication', () => {
-  const JWT_SECRET = 'test-secret-key'
+  const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key'
   
   describe('verifyToken', () => {
     it('should verify valid token and return user data', () => {
       const userData = {
         userId: 1,
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'USER'
+        email: 'admin@crm.com',
+        name: 'Admin CRM',
+        role: 'ADMIN'
       }
       
       const token = jwt.sign(userData, JWT_SECRET)
@@ -32,9 +32,9 @@ describe('Authentication', () => {
     it('should return null for expired token', () => {
       const userData = {
         userId: 1,
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'USER'
+        email: 'admin@crm.com',
+        name: 'Admin CRM',
+        role: 'ADMIN'
       }
       
       const token = jwt.sign(userData, JWT_SECRET, { expiresIn: '-1h' })
@@ -46,8 +46,8 @@ describe('Authentication', () => {
     it('should handle token with missing fields', () => {
       const userData = {
         userId: 1,
-        email: 'test@example.com',
-        role: 'USER'
+        email: 'admin@crm.com',
+        role: 'ADMIN'
         // missing name field
       }
       
@@ -65,8 +65,8 @@ describe('Authentication', () => {
     it('should handle ADMIN role', () => {
       const userData = {
         userId: 1,
-        email: 'admin@example.com',
-        name: 'Admin User',
+        email: 'admin@crm.com',
+        name: 'Admin CRM',
         role: 'ADMIN'
       }
       
@@ -74,6 +74,20 @@ describe('Authentication', () => {
       const result = verifyToken(token)
       
       expect(result.role).toBe('ADMIN')
+    })
+
+    it('should handle USER role', () => {
+      const userData = {
+        userId: 2,
+        email: 'user@test.com',
+        name: 'Test User',
+        role: 'USER'
+      }
+      
+      const token = jwt.sign(userData, JWT_SECRET)
+      const result = verifyToken(token)
+      
+      expect(result.role).toBe('USER')
     })
   })
 

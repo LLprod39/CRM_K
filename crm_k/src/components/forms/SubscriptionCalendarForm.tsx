@@ -366,7 +366,12 @@ export default function SubscriptionCalendarForm({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Ошибка при создании занятия');
+          if (errorData.details && Array.isArray(errorData.details)) {
+            // Показываем детальные ошибки конфликтов
+            throw new Error(errorData.details.join('; '));
+          } else {
+            throw new Error(errorData.error || 'Ошибка при создании занятия');
+          }
         }
 
         lessons.push(await response.json());

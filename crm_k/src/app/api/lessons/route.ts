@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
+import { checkLessonConflicts, checkSlotAvailability } from '@/lib/lessonConflictUtils'
 import { updateStudentBalance } from '@/lib/balanceUtils'
 
 function parseDateRange(params: URLSearchParams) {
@@ -131,9 +132,36 @@ export async function POST(request: NextRequest) {
       ? body.userId || students[0]?.userId || authUser.id
       : authUser.id
 
+    const lessonDate = new Date(body.date)
+    const lessonEndTime = new Date(body.endTime)
+
+    // Проверяем доступность слота (обеденные перерывы)
+    const slotAvailability = await checkSlotAvailability(teacherId, lessonDate, lessonEndTime)
+    if (!slotAvailability.isAvailable) {
+      return NextResponse.json({ 
+        error: `Слот недоступен: ${slotAvailability.reason}` 
+      }, { status: 400 })
+    }
+
+    // Проверяем конфликты занятий
+    const conflictCheck = await checkLessonConflicts({
+      date: lessonDate,
+      endTime: lessonEndTime,
+      teacherId,
+      studentIds,
+      lessonType
+    })
+
+    if (!conflictCheck.canCreate) {
+      return NextResponse.json({ 
+        error: 'Конфликт времени занятий',
+        details: conflictCheck.conflicts
+      }, { status: 400 })
+    }
+
     const lessonBase = {
-      date: new Date(body.date),
-      endTime: new Date(body.endTime),
+      date: lessonDate,
+      endTime: lessonEndTime,
       cost: body.cost,
       isCompleted: body.isCompleted ?? false,
       isPaid: body.isPaid ?? false,

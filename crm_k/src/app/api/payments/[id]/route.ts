@@ -56,14 +56,27 @@ export async function GET(
     // Проверяем права доступа
     if (authUser.role !== 'ADMIN') {
       // Проверяем, что пользователь имеет доступ к ученику
-      const hasAccess = await (prisma as any).lesson.findFirst({
+      const student = await prisma.student.findUnique({
+        where: { id: payment.studentId }
+      })
+
+      if (!student) {
+        return NextResponse.json(
+          { error: 'Ученик не найден' },
+          { status: 404 }
+        )
+      }
+
+      // Проверяем права доступа: либо владелец ученика, либо учитель
+      const isOwner = student.userId === authUser.id
+      const hasLessons = await prisma.lesson.findFirst({
         where: {
           studentId: payment.studentId,
           teacherId: authUser.id
         }
       })
 
-      if (!hasAccess) {
+      if (!isOwner && !hasLessons) {
         return NextResponse.json(
           { error: 'Доступ запрещен' },
           { status: 403 }
@@ -76,6 +89,102 @@ export async function GET(
     console.error('Ошибка при получении платежа:', error)
     return NextResponse.json(
       { error: 'Не удалось получить платеж' },
+      { status: 500 }
+    )
+  }
+}
+
+// PUT /api/payments/[id] - обновить платеж
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const authUser = getAuthUser(request)
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
+    const resolvedParams = await params
+    const paymentId = parseInt(resolvedParams.id)
+    if (isNaN(paymentId)) {
+      return NextResponse.json(
+        { error: 'Неверный ID платежа' },
+        { status: 400 }
+      )
+    }
+
+    const body = await request.json()
+
+    // Проверяем, что платеж существует
+    const existingPayment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        student: true
+      }
+    })
+
+    if (!existingPayment) {
+      return NextResponse.json(
+        { error: 'Платеж не найден' },
+        { status: 404 }
+      )
+    }
+
+    // Проверяем права доступа
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем права доступа: либо владелец ученика, либо учитель
+      const isOwner = existingPayment.student.userId === authUser.id
+      const hasLessons = await prisma.lesson.findFirst({
+        where: {
+          studentId: existingPayment.studentId,
+          teacherId: authUser.id
+        }
+      })
+
+      if (!isOwner && !hasLessons) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
+    }
+
+    // Обновляем платеж
+    const updatedPayment = await prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        amount: body.amount ?? existingPayment.amount,
+        date: body.date ? new Date(body.date) : existingPayment.date,
+        description: body.description ?? existingPayment.description
+      },
+      include: {
+        student: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        lessons: {
+          include: {
+            lesson: true
+          }
+        }
+      }
+    })
+
+    return NextResponse.json(updatedPayment)
+  } catch (error) {
+    console.error('Ошибка при обновлении платежа:', error)
+    return NextResponse.json(
+      { error: 'Не удалось обновить платеж' },
       { status: 500 }
     )
   }
@@ -95,13 +204,6 @@ export async function DELETE(
       )
     }
 
-    // Только администраторы могут удалять платежи
-    if (authUser.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Доступ запрещен. Только администраторы могут удалять платежи.' },
-        { status: 403 }
-      )
-    }
 
     const resolvedParams = await params
     const paymentId = parseInt(resolvedParams.id)
@@ -116,7 +218,8 @@ export async function DELETE(
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
       include: {
-        lessons: true
+        lessons: true,
+        student: true
       }
     })
 
@@ -125,6 +228,25 @@ export async function DELETE(
         { error: 'Платеж не найден' },
         { status: 404 }
       )
+    }
+
+    // Проверяем права доступа
+    if (authUser.role !== 'ADMIN') {
+      // Проверяем права доступа: либо владелец ученика, либо учитель
+      const isOwner = payment.student.userId === authUser.id
+      const hasLessons = await prisma.lesson.findFirst({
+        where: {
+          studentId: payment.studentId,
+          teacherId: authUser.id
+        }
+      })
+
+      if (!isOwner && !hasLessons) {
+        return NextResponse.json(
+          { error: 'Доступ запрещен' },
+          { status: 403 }
+        )
+      }
     }
 
     // Удаляем платеж в транзакции

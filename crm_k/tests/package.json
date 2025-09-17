@@ -3,22 +3,32 @@
   "version": "1.0.0",
   "description": "Comprehensive test suite for CRM platform",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:unit": "jest tests/unit",
-    "test:integration": "jest tests/integration",
-    "test:e2e": "jest tests/e2e",
-    "test:ci": "jest --ci --coverage --watchAll=false"
+    "test": "jest --runInBand --reporters=./reporters/russian-reporter.js",
+    "test:ru": "jest --runInBand --reporters=./reporters/russian-reporter.js",
+    "test:detailed": "node run-tests-detailed.js",
+    "test:watch": "jest --watch --reporters=./reporters/russian-reporter.js",
+    "test:coverage": "jest --coverage --reporters=./reporters/russian-reporter.js",
+    "test:unit": "jest tests/unit --reporters=./reporters/russian-reporter.js",
+    "test:integration": "jest tests/integration --reporters=./reporters/russian-reporter.js",
+    "test:e2e": "jest tests/e2e --reporters=./reporters/russian-reporter.js",
+    "test:ci": "jest --ci --coverage --watchAll=false --reporters=./reporters/russian-reporter.js",
+    "test:auth": "jest tests/integration/auth-api.test.js --reporters=./reporters/russian-reporter.js",
+    "test:users": "jest tests/integration/users.test.js --reporters=./reporters/russian-reporter.js",
+    "test:students": "jest tests/integration/students.test.js --reporters=./reporters/russian-reporter.js",
+    "test:lessons": "jest tests/integration/lessons.test.js --reporters=./reporters/russian-reporter.js",
+    "test:payments": "jest tests/integration/payments.test.js --reporters=./reporters/russian-reporter.js",
+    "test:finances": "jest tests/integration/finances.test.js --reporters=./reporters/russian-reporter.js",
+    "test:workflow": "jest tests/integration/workflow.test.js --reporters=./reporters/russian-reporter.js",
+    "test:app": "jest tests/e2e/app.test.js --reporters=./reporters/russian-reporter.js"
   },
   "dependencies": {
-    "@prisma/client": "^6.15.0",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
     "jest": "^29.0.0",
-    "jest-environment-jsdom": "^29.0.0"
+    "jest-environment-jsdom": "^29.0.0",
+    "prisma": "6.15.0"
   }
 }

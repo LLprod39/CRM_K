@@ -1,5 +1,6 @@
 const { TestHelpers } = require('../utils/testHelpers')
 const { createTestUser } = require('../fixtures/testData')
+const jwt = require('jsonwebtoken')
 
 describe('Authentication API', () => {
   let testHelpers
@@ -23,8 +24,8 @@ describe('Authentication API', () => {
   describe('POST /api/auth/login', () => {
     it('should login with valid credentials', async () => {
       const loginData = {
-        email: 'user@test.com',
-        password: 'user123'
+        email: 'admin@crm.com',
+        password: '123456'
       }
 
       const response = await fetch('http://localhost:3000/api/auth/login', {
@@ -41,12 +42,12 @@ describe('Authentication API', () => {
       expect(data).toHaveProperty('token')
       expect(data).toHaveProperty('user')
       expect(data.user.email).toBe(loginData.email)
-      expect(data.user.role).toBe('USER')
+      expect(data.user.role).toBe('ADMIN')
     })
 
     it('should reject invalid credentials', async () => {
       const loginData = {
-        email: 'user@test.com',
+        email: 'admin@crm.com',
         password: 'wrongpassword'
       }
 
@@ -137,7 +138,7 @@ describe('Authentication API', () => {
           name: testData.user.name,
           role: testData.user.role
         },
-        'test-secret-key',
+        process.env.JWT_SECRET || 'test-secret-key',
         { expiresIn: '-1h' }
       )
 
@@ -181,6 +182,19 @@ describe('Authentication API', () => {
 
     it('should allow USER to access user routes', async () => {
       const token = testHelpers.createToken(testData.user)
+      
+      const response = await fetch('http://localhost:3000/api/students', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      })
+
+      expect(response.status).toBe(200)
+    })
+
+    it('should allow ADMIN to access user routes', async () => {
+      const token = testHelpers.createToken(testData.admin)
       
       const response = await fetch('http://localhost:3000/api/students', {
         headers: {

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
-import { getLessonStatus } from '@/lib/lessonStatusUtils'
+import { buildDateRange } from '../utils'
 
-// GET /api/finances/stats - получить финансовую статистику
 export async function GET(request: NextRequest) {
   try {
     const authUser = getAuthUser(request)
@@ -15,110 +14,57 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const period = searchParams.get('period') || 'all' // all, month, week, day
+    const dateRange = buildDateRange(searchParams)
 
-    const now = new Date()
-    let dateFrom: Date | undefined
+    const baseWhere = authUser.role === 'ADMIN' ? {} : { teacherId: authUser.id }
 
-    switch (period) {
-      case 'day':
-        dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        break
-      case 'week':
-        const weekStart = new Date(now)
-        weekStart.setDate(now.getDate() - now.getDay())
-        weekStart.setHours(0, 0, 0, 0)
-        dateFrom = weekStart
-        break
-      case 'month':
-        dateFrom = new Date(now.getFullYear(), now.getMonth(), 1)
-        break
+    const lessonWhere: Record<string, unknown> = { ...baseWhere }
+    if (dateRange.gte || dateRange.lte) {
+      lessonWhere.date = dateRange
     }
 
-    // Базовые условия для фильтрации
-    const baseWhere = authUser.role === 'ADMIN' 
-      ? {} 
-      : {
-          teacherId: authUser.id
-        }
-
-    const whereClause = dateFrom ? {
-      ...baseWhere,
-      date: {
-        gte: dateFrom
-      },
-      isCompleted: true,
-      isPaid: true,
-      isCancelled: false
-    } as any : {
-      ...baseWhere,
-      isCompleted: true,
-      isPaid: true,
-      isCancelled: false
-    } as any
-
-    // Получаем статистику по оплаченным занятиям (статус "Проведено" = доход)
     const paidLessons = await prisma.lesson.findMany({
-      where: whereClause,
-      include: {
-        student: true,
-        teacher: true
-      } as any
+      where: {
+        ...lessonWhere,
+        isCompleted: true,
+        isPaid: true,
+        isCancelled: false
+      },
+      select: {
+        cost: true
+      }
     })
 
-    // Подсчитываем общую выручку (70% от оплаченных уроков)
-    const totalRevenue = paidLessons.reduce((sum, lesson) => sum + (lesson.cost * 0.7), 0)
-    
-    // Подсчитываем доход от пользователя (30% от оплаченных уроков)
-    const userRevenue = paidLessons.reduce((sum, lesson) => sum + (lesson.cost * 0.3), 0)
+    const totalRevenue = paidLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
 
-    // Статистика по месяцам (закомментировано, так как не используется)
-    // const monthlyStats = await prisma.lesson.groupBy({
-    //   by: ['date'],
-    //   where: {
-    //     status: 'PAID',
-    //     date: {
-    //       gte: new Date(now.getFullYear(), now.getMonth(), 1)
-    //     }
-    //   },
-    //   _sum: {
-    //     cost: true
-    //   },
-    //   _count: {
-    //     id: true
-    //   }
-    // })
-
-
-    // Подсчитываем задолженности (статус "Задолженность" - проведенные, но не оплаченные занятия)
     const debtLessons = await prisma.lesson.findMany({
       where: {
-        ...baseWhere,
+        ...lessonWhere,
         isCompleted: true,
         isPaid: false,
         isCancelled: false
-      } as any
+      },
+      select: {
+        cost: true
+      }
     })
 
-    // Подсчитываем предоплаченные занятия (статус "Предоплачено" - не проведенные, но оплаченные)
     const prepaidLessons = await prisma.lesson.findMany({
       where: {
-        ...baseWhere,
+        ...lessonWhere,
         isCompleted: false,
         isPaid: true,
         isCancelled: false
-      } as any
+      },
+      select: {
+        cost: true
+      }
     })
 
-    const totalDebt = debtLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
-    const totalPrepaid = prepaidLessons.reduce((sum, lesson) => sum + lesson.cost, 0)
-
-    // Получаем все занятия для статистики по статусам
     const allLessons = await prisma.lesson.findMany({
-      where: baseWhere as any
+      where: lessonWhere as any
     })
 
-    // Группируем по статусам согласно новой логике
     const statusGroups = {
       scheduled: allLessons.filter(l => !l.isCompleted && !l.isPaid && !l.isCancelled),
       prepaid: allLessons.filter(l => !l.isCompleted && l.isPaid && !l.isCancelled),
@@ -136,13 +82,11 @@ export async function GET(request: NextRequest) {
 
     const stats = {
       totalRevenue,
-      weeklyRevenue: period === 'week' ? totalRevenue : 0,
-      dailyRevenue: period === 'day' ? totalRevenue : 0,
       completedLessons: statusGroups.completed.length,
-      totalDebt,
-      totalPrepaid,
+      totalDebt: debtLessons.reduce((sum, lesson) => sum + lesson.cost, 0),
+      totalPrepaid: prepaidLessons.reduce((sum, lesson) => sum + lesson.cost, 0),
       prepaidLessons: statusGroups.prepaid.length,
-      userRevenue,
+      userRevenue: totalRevenue,
       statusStats
     }
 

@@ -14,7 +14,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const savedUser = localStorage.getItem('user')
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser))
+        const parsedUser = JSON.parse(savedUser)
+        console.log('🔍 Загруженный пользователь из localStorage:', parsedUser)
+        
+        // Проверяем структуру данных
+        if (parsedUser.user) {
+          // Если данные в формате { user: { ... } }, берем только user
+          setUser(parsedUser.user)
+        } else {
+          // Если данные уже в правильном формате
+          setUser(parsedUser)
+        }
       } catch (error) {
         console.error('Ошибка при загрузке пользователя:', error)
         localStorage.removeItem('user')
@@ -36,8 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const userData = await response.json()
-        setUser(userData)
-        localStorage.setItem('user', JSON.stringify(userData))
+        console.log('🔍 Данные от API:', userData)
+        
+        // API возвращает { token, user: { ... } }, но нам нужен только user
+        const actualUser = userData.user || userData
+        console.log('🔍 Фактические данные пользователя:', actualUser)
+        
+        setUser(actualUser)
+        localStorage.setItem('user', JSON.stringify(actualUser))
         localStorage.setItem('token', userData.token)
         return true
       } else {

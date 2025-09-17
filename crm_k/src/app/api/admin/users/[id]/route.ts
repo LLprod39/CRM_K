@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { getAuthUser } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient()
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // PUT /api/admin/users/[id] - обновить пользователя
 export async function PUT(
@@ -12,7 +12,14 @@ export async function PUT(
 ) {
   try {
     const authUser = getAuthUser(request)
-    if (!authUser || authUser.role !== 'ADMIN') {
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
+    if (authUser.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Доступ запрещен' },
         { status: 403 }
@@ -21,16 +28,15 @@ export async function PUT(
 
     const { id } = await params
     const userId = parseInt(id)
-    const { name, email, password, phone, role } = await request.json()
+    const body = await request.json()
 
-    if (!name || !email) {
+    if (!body || Object.keys(body).length === 0) {
       return NextResponse.json(
-        { error: 'Необходимо заполнить все обязательные поля' },
+        { error: 'Нет данных для обновления' },
         { status: 400 }
       )
     }
 
-    // Проверяем, существует ли пользователь
     const existingUser = await prisma.user.findUnique({
       where: { id: userId }
     })
@@ -42,38 +48,67 @@ export async function PUT(
       )
     }
 
-    // Проверяем, не занят ли email другим пользователем
-    const emailUser = await prisma.user.findUnique({
-      where: { email }
-    })
+    const { name, email, password, phone, role } = body as {
+      name?: string
+      email?: string
+      password?: string
+      phone?: string | null
+      role?: 'ADMIN' | 'USER'
+    }
 
-    if (emailUser && emailUser.id !== userId) {
+    const updateData: {
+      name?: string
+      email?: string
+      role?: 'ADMIN' | 'USER'
+      phone?: string | null
+      password?: string
+    } = {}
+
+    if (typeof name === 'string') {
+      updateData.name = name
+    }
+
+    if (typeof phone !== 'undefined') {
+      updateData.phone = phone || null
+    }
+
+    if (typeof role === 'string' && (role === 'ADMIN' || role === 'USER')) {
+      updateData.role = role
+    }
+
+    if (typeof email === 'string') {
+      if (!emailPattern.test(email)) {
+        return NextResponse.json(
+          { error: 'Некорректный формат email' },
+          { status: 400 }
+        )
+      }
+
+      const emailUser = await prisma.user.findUnique({
+        where: { email }
+      })
+
+      if (emailUser && emailUser.id !== userId) {
+        return NextResponse.json(
+          { error: 'Пользователь с таким email уже существует' },
+          { status: 400 }
+        )
+      }
+
+      updateData.email = email
+    }
+
+    if (typeof password === 'string' && password.length > 0) {
+      updateData.password = await bcrypt.hash(password, 12)
+    }
+
+    if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { error: 'Пользователь с таким email уже существует' },
+        { error: 'Нет данных для обновления' },
         { status: 400 }
       )
     }
 
-    // Подготавливаем данные для обновления
-    const updateData: {
-      name: string;
-      email: string;
-      role: 'ADMIN' | 'USER';
-      phone?: string | null;
-      password?: string;
-    } = {
-      name,
-      email,
-      phone: phone || null,
-      role: (role as 'ADMIN' | 'USER') || existingUser.role
-    }
-
-    // Обновляем пароль только если он предоставлен
-    if (password) {
-      updateData.password = await bcrypt.hash(password, 12)
-    }
-
-    // Обновляем пользователя
     const user = await prisma.user.update({
       where: { id: userId },
       data: updateData,
@@ -95,8 +130,6 @@ export async function PUT(
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
@@ -107,7 +140,14 @@ export async function DELETE(
 ) {
   try {
     const authUser = getAuthUser(request)
-    if (!authUser || authUser.role !== 'ADMIN') {
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Необходима аутентификация' },
+        { status: 401 }
+      )
+    }
+
+    if (authUser.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Доступ запрещен' },
         { status: 403 }
@@ -117,15 +157,13 @@ export async function DELETE(
     const { id } = await params
     const userId = parseInt(id)
 
-    // Нельзя удалить самого себя
     if (userId === authUser.id) {
       return NextResponse.json(
-        { error: 'Нельзя удалить самого себя' },
+        { error: 'нельзя удалить самого себя' },
         { status: 400 }
       )
     }
 
-    // Проверяем, существует ли пользователь
     const existingUser = await prisma.user.findUnique({
       where: { id: userId }
     })
@@ -137,7 +175,36 @@ export async function DELETE(
       )
     }
 
-    // Удаляем пользователя (каскадное удаление удалит всех его учеников)
+    const students = await prisma.student.findMany({
+      where: { userId },
+      select: { id: true }
+    })
+
+    const studentIds = students.map(({ id }) => id)
+
+    if (studentIds.length > 0) {
+      await prisma.payment.deleteMany({
+        where: { studentId: { in: studentIds } }
+      })
+
+      await prisma.lesson.deleteMany({
+        where: {
+          OR: [
+            { studentId: { in: studentIds } },
+            { teacherId: userId }
+          ]
+        }
+      })
+
+      await prisma.student.deleteMany({
+        where: { id: { in: studentIds } }
+      })
+    }
+
+    await prisma.lunchBreak.deleteMany({
+      where: { userId }
+    })
+
     await prisma.user.delete({
       where: { id: userId }
     })
@@ -149,7 +216,5 @@ export async function DELETE(
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }

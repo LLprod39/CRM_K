@@ -31,3 +31,10 @@ export interface RegisterData {
   name: string;
   role?: UserRole;
 }
+
+export interface AuthContextType {
+  user: AuthUser | null;
+  login: (data: LoginData) => Promise<boolean>;
+  logout: () => void;
+  isLoading: boolean;
+}

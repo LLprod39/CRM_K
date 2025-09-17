@@ -16,137 +16,136 @@ model User {
   email     String   @unique
   password  String
   name      String
-  phone     String?   // Номер телефона для уведомлений
+  phone     String? // Номер телефона для уведомлений
   role      UserRole @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Связь с учениками (только для учителей, не для админов)
-  students  Student[]
-  
+  students Student[]
+
   // Связь с занятиями (занятия, которые проводил этот учитель)
-  lessons   Lesson[]
-  
+  lessons Lesson[]
+
   // Связь с временем обеда
   lunchBreaks LunchBreak[]
-  
+
   // Связь с настройками уведомлений
   notificationSettings NotificationSettings?
-  
+
   // Связь с запланированными уведомлениями
   scheduledNotifications ScheduledNotification[]
-  
+
   @@map("users")
 }
 
 // Роли пользователей
 enum UserRole {
-  ADMIN  // Администратор - видит все данные
-  USER   // Обычный пользователь - видит только своих учеников
+  ADMIN // Администратор - видит все данные
+  USER // Обычный пользователь - видит только своих учеников
 }
 
 // Статусы платежей для занятий
 enum PaymentStatus {
-  PAID     // Оплачено - идет в предоплату ученика
-  UNPAID   // Не оплачено - запланировано не оплачено
-  PARTIAL  // Частично оплачено - оплачены только выбранные дни
+  PAID // Оплачено - идет в предоплату ученика
+  UNPAID // Не оплачено - запланировано не оплачено
+  PARTIAL // Частично оплачено - оплачены только выбранные дни
 }
 
 // Модель ученика
 model Student {
-  id          Int      @id @default(autoincrement())
-  fullName    String   // ФИО
-  phone       String   // Телефон родителей
-  age         Int      // Возраст
-  parentName  String   // ФИО родителя (обязательно)
-  diagnosis   String?  // Диагноз (опционально)
-  comment     String?  // Комментарий (опционально)
-  photoUrl    String?  // URL фото ученика (опционально)
-  userId      Int?     // ID пользователя-владельца (nullable для "нечейных" учеников)
-  isAssigned  Boolean  @default(false) // Назначен ли ученик учителю
-  balance     Float    @default(0) // Баланс ученика (предоплата - задолженность)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id         Int      @id @default(autoincrement())
+  fullName   String // ФИО
+  phone      String // Телефон родителей
+  age        Int // Возраст
+  parentName String // ФИО родителя (обязательно)
+  diagnosis  String? // Диагноз (опционально)
+  comment    String? // Комментарий (опционально)
+  photoUrl   String? // URL фото ученика (опционально)
+  userId     Int? // ID пользователя-владельца (nullable для "нечейных" учеников)
+  isAssigned Boolean  @default(false) // Назначен ли ученик учителю
+  balance    Float    @default(0) // Баланс ученика (предоплата - задолженность)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
   // Связь с пользователем (nullable)
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
   // Связь с занятиями
-  lessons     Lesson[]
-  
+  lessons Lesson[]
+
   // Связь с платежами
-  payments    Payment[]
-  
+  payments Payment[]
+
   // Связь с предложениями ИИ
   aiSuggestions AISuggestion[]
-  
+
   @@map("students")
 }
 
 // Модель занятия
 model Lesson {
   id            Int           @id @default(autoincrement())
-  date          DateTime      // Дата и время начала занятия
-  endTime       DateTime      // Дата и время окончания занятия
-  studentId     Int           // ID ученика
-  teacherId     Int           // ID учителя, который проводил занятие
-  cost          Float         // Стоимость занятия
+  date          DateTime // Дата и время начала занятия
+  endTime       DateTime // Дата и время окончания занятия
+  studentId     Int // ID ученика
+  teacherId     Int // ID учителя, который проводил занятие
+  cost          Float // Стоимость занятия
   isCompleted   Boolean       @default(false) // Проведено ли занятие
   isPaid        Boolean       @default(false) // Оплачено ли занятие (deprecated, используйте paymentStatus)
   paymentStatus PaymentStatus @default(UNPAID) // Статус платежа занятия
   isCancelled   Boolean       @default(false) // Отменено ли занятие
-  notes         String?       // Заметки к занятию
-  comment       String?       // Комментарий о поведении ребенка на занятии
-  lessonType    String         @default("individual") // Тип занятия: individual, group
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  
+  notes         String? // Заметки к занятию
+  comment       String? // Комментарий о поведении ребенка на занятии
+  lessonType    String        @default("individual") // Тип занятия: individual, group
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
   // Связь с учеником
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   // Связь с учителем
-  teacher     User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  
+  teacher User @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
   // Связь с платежами
-  payments    PaymentLesson[]
-  
+  payments PaymentLesson[]
+
   // Связь с запланированными уведомлениями
   scheduledNotifications ScheduledNotification[]
-  
+
   @@map("lessons")
 }
-
 
 // Модель платежа
 model Payment {
   id          Int      @id @default(autoincrement())
-  studentId   Int      // ID ученика
-  amount      Float    // Сумма платежа
+  studentId   Int // ID ученика
+  amount      Float // Сумма платежа
   date        DateTime // Дата платежа
-  description String?  // Описание платежа
+  description String? // Описание платежа
   type        String   @default("payment") // Тип платежа: payment, prepayment
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   // Связь с учеником
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   // Связь с уроками через промежуточную таблицу
-  lessons     PaymentLesson[]
-  
+  lessons PaymentLesson[]
+
   @@map("payments")
 }
 
 // Промежуточная таблица для связи платежей и уроков
 model PaymentLesson {
-  id        Int     @id @default(autoincrement())
-  paymentId Int     // ID платежа
-  lessonId  Int     // ID урока
-  
+  id        Int @id @default(autoincrement())
+  paymentId Int // ID платежа
+  lessonId  Int // ID урока
+
   // Связи
-  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  lesson    Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  lesson  Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
   @@unique([paymentId, lessonId])
   @@map("payment_lessons")
 }
@@ -154,34 +153,34 @@ model PaymentLesson {
 // Модель игрушек
 model Toy {
   id          Int      @id @default(autoincrement())
-  name        String   // Название игрушки
-  description String?  // Описание игрушки
-  category    String?  // Категория игрушки (развивающие, сенсорные, моторные и т.д.)
+  name        String // Название игрушки
+  description String? // Описание игрушки
+  category    String? // Категория игрушки (развивающие, сенсорные, моторные и т.д.)
   isAvailable Boolean  @default(true) // Доступна ли игрушка
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   @@map("toys")
 }
 
 // Модель предложений ИИ
 model AISuggestion {
-  id          Int      @id @default(autoincrement())
-  studentId   Int      // ID ученика
-  title       String   // Название занятия
-  duration    String   // Продолжительность
-  goals       String   // JSON массив целей
-  materials   String   // JSON массив материалов
-  structure   String   // JSON структура занятия
+  id              Int      @id @default(autoincrement())
+  studentId       Int // ID ученика
+  title           String // Название занятия
+  duration        String // Продолжительность
+  goals           String // JSON массив целей
+  materials       String // JSON массив материалов
+  structure       String // JSON структура занятия
   recommendations String // JSON массив рекомендаций
   expectedResults String // JSON массив ожидаемых результатов
-  notes       String?  // Дополнительные заметки
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  notes           String? // Дополнительные заметки
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
   // Связь с учеником
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   @@map("ai_suggestions")
 }
 
@@ -191,59 +190,155 @@ model LunchBreak {
   date      DateTime // Дата обеда (только дата, время не важно)
   startTime DateTime // Время начала обеда
   endTime   DateTime // Время окончания обеда
-  userId    Int      // ID пользователя (чтобы каждый пользователь мог иметь свое время обеда)
+  userId    Int // ID пользователя (чтобы каждый пользователь мог иметь свое время обеда)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Связь с пользователем
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([date, userId]) // Один обед в день на пользователя
   @@map("lunch_breaks")
 }
 
-
 // Модель настроек уведомлений
 model NotificationSettings {
-  id                    Int      @id @default(autoincrement())
-  userId                Int      // ID пользователя-владельца настроек
-  isEnabled             Boolean  @default(true) // Включены ли уведомления
-  reminderBeforeLessons Int      @default(60) // За сколько минут до занятия отправлять напоминание
-  dailySummaryTime      String?  // Время отправки ежедневной сводки (HH:mm)
-  isDailySummaryEnabled Boolean  @default(false) // Включена ли ежедневная сводка
-  isWeeklySummaryEnabled Boolean @default(false) // Включена ли еженедельная сводка
-  weeklySummaryDay      Int      @default(0) // День недели для еженедельной сводки (0=воскресенье)
-  weeklySummaryTime     String?  // Время отправки еженедельной сводки (HH:mm)
-  reminderTemplate      String?  // Шаблон сообщения для напоминания
-  summaryTemplate       String?  // Шаблон сообщения для сводки
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
+  id                     Int      @id @default(autoincrement())
+  userId                 Int // ID пользователя-владельца настроек
+  isEnabled              Boolean  @default(true) // Включены ли уведомления
+  reminderBeforeLessons  Int      @default(60) // За сколько минут до занятия отправлять напоминание
+  dailySummaryTime       String? // Время отправки ежедневной сводки (HH:mm)
+  isDailySummaryEnabled  Boolean  @default(false) // Включена ли ежедневная сводка
+  isWeeklySummaryEnabled Boolean  @default(false) // Включена ли еженедельная сводка
+  weeklySummaryDay       Int      @default(0) // День недели для еженедельной сводки (0=воскресенье)
+  weeklySummaryTime      String? // Время отправки еженедельной сводки (HH:mm)
+  reminderTemplate       String? // Шаблон сообщения для напоминания
+  summaryTemplate        String? // Шаблон сообщения для сводки
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
   // Связь с пользователем
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([userId]) // Одна настройка на пользователя
   @@map("notification_settings")
 }
 
 // Модель запланированных уведомлений
 model ScheduledNotification {
-  id                Int      @id @default(autoincrement())
-  userId            Int      // ID пользователя
-  lessonId          Int?     // ID занятия (если уведомление связано с занятием)
-  phoneNumber       String   // Номер телефона получателя
-  message           String   // Текст сообщения
-  scheduledTime     DateTime // Время отправки
-  isSent            Boolean  @default(false) // Отправлено ли уведомление
-  sentAt            DateTime? // Время фактической отправки
-  errorMessage      String?  // Сообщение об ошибке (если отправка не удалась)
-  notificationType  String   // Тип уведомления: lesson_reminder, daily_summary, weekly_summary
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  id               Int       @id @default(autoincrement())
+  userId           Int // ID пользователя
+  lessonId         Int? // ID занятия (если уведомление связано с занятием)
+  phoneNumber      String // Номер телефона получателя
+  message          String // Текст сообщения
+  scheduledTime    DateTime // Время отправки
+  isSent           Boolean   @default(false) // Отправлено ли уведомление
+  sentAt           DateTime? // Время фактической отправки
+  errorMessage     String? // Сообщение об ошибке (если отправка не удалась)
+  notificationType String // Тип уведомления: lesson_reminder, daily_summary, weekly_summary
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
   // Связи
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lesson            Lesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
   @@map("scheduled_notifications")
+}
+
+// Сущности для WhatsApp-экстрактора
+model ConversationDraft {
+  id             String   @id @default(cuid())
+  conversationId String   @unique
+  formType       String
+  draftData      Json
+  isComplete     Boolean  @default(false)
+  autoCommit     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  versions      DraftVersion[]
+  submissions   DraftSubmission[]
+  messages      ConversationMessage[]
+  extractorLogs ExtractorLog[]
+
+  @@map("conversation_drafts")
+}
+
+model DraftVersion {
+  id         Int      @id @default(autoincrement())
+  draftId    String
+  version    Int
+  patchData  Json
+  confidence Float
+  messageId  String?
+  createdAt  DateTime @default(now())
+
+  draft ConversationDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+
+  @@unique([draftId, version])
+  @@map("draft_versions")
+}
+
+model DraftSubmission {
+  id             String   @id @default(cuid())
+  draftId        String
+  submissionData Json
+  status         String   @default("pending")
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+
+  draft ConversationDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+
+  @@map("draft_submissions")
+}
+
+model ConversationMessage {
+  id          String   @id @default(cuid())
+  draftId     String
+  messageId   String
+  content     String
+  senderType  String
+  processedAt DateTime @default(now())
+
+  draft ConversationDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+
+  @@map("conversation_messages")
+}
+
+model ExtractorLog {
+  id             Int      @id @default(autoincrement())
+  draftId        String?
+  messageId      String?
+  operation      String
+  inputData      Json?
+  outputData     Json?
+  confidence     Float?
+  errorMessage   String?
+  processingTime Int?
+  createdAt      DateTime @default(now())
+
+  draft ConversationDraft? @relation(fields: [draftId], references: [id], onDelete: SetNull)
+
+  @@map("extractor_logs")
+}
+
+model ExtractorConfig {
+  id                         Int      @id @default(autoincrement())
+  extractorModel             String   @default("gemini-1.5-pro")
+  autoCommit                 Boolean  @default(false)
+  autoCommitMinConf          Float    @default(0.85)
+  fieldMinConf               Float    @default(0.75)
+  patchMaxAgeSec             Int      @default(3600)
+  schemaVersion              String   @default("1.0")
+  upsertDedupeWindowSec      Int      @default(300)
+  auditLogLevel              String   @default("info")
+  lessonBookingMinConf       Float    @default(0.8)
+  studentRegistrationMinConf Float    @default(0.9)
+  consultationMinConf        Float    @default(0.7)
+  googleGenaiApiKey          String?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  @@map("extractor_config")
 }
