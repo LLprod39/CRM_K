@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
       .replace(/{minutes}/g, '60')
       .replace(/{studentName}/g, 'Тестовый Ученик')
       .replace(/{time}/g, '14:00')
-      .replace(/{location}/g, 'Офис')
       .replace(/{teacherName}/g, 'Тестовый Преподаватель')
       .replace(/{date}/g, new Date().toLocaleDateString('ru-RU'))
       .replace(/{completedLessons}/g, '5')

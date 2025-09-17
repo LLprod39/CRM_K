@@ -57,8 +57,7 @@ const testData = {
       isPaid: false,
       isCancelled: false,
       notes: 'Индивидуальное занятие',
-      lessonType: 'individual',
-      location: 'office'
+      lessonType: 'individual'
     },
     group: {
       date: '2025-01-15T14:00:00Z',
@@ -68,8 +67,7 @@ const testData = {
       isPaid: false,
       isCancelled: false,
       notes: 'Групповое занятие',
-      lessonType: 'group',
-      location: 'office'
+      lessonType: 'group'
     },
     online: {
       date: '2025-01-15T16:00:00Z',
@@ -79,8 +77,7 @@ const testData = {
       isPaid: false,
       isCancelled: false,
       notes: 'Онлайн занятие',
-      lessonType: 'individual',
-      location: 'online'
+      lessonType: 'individual'
     }
   },
 
@@ -162,9 +159,10 @@ const createTestStudent = (type = 'student1', userId, overrides = {}) => ({
   ...overrides
 })
 
-const createTestLesson = (type = 'individual', studentId, overrides = {}) => ({
+const createTestLesson = (type = 'individual', studentId, teacherId = null, overrides = {}) => ({
   ...testData.lessons[type],
   studentId,
+  teacherId,
   ...overrides
 })
 

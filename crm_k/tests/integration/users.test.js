@@ -289,8 +289,7 @@ describe('Users Management API', () => {
           isPaid: false,
           isCancelled: false,
           notes: 'Test lesson',
-          lessonType: 'individual',
-          location: 'office'
+          lessonType: 'individual'
         }
       })
 
@@ -365,8 +364,7 @@ describe('Users Management API', () => {
           isPaid: true,
           isCancelled: false,
           notes: 'Test lesson',
-          lessonType: 'individual',
-          location: 'office'
+          lessonType: 'individual'
         }
       })
 

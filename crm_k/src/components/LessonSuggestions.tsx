@@ -48,7 +48,6 @@ interface Lesson {
   cost: number;
   notes?: string | null;
   lessonType?: string;
-  location?: string;
   isCompleted: boolean;
   isPaid: boolean;
   isCancelled: boolean;
@@ -654,7 +653,6 @@ export default function LessonSuggestions({ studentId }: LessonSuggestionsProps)
                             </span>
                           )}
                           {lesson.lessonType && <span>{lesson.lessonType}</span>}
-                          {lesson.location && <span>{lesson.location}</span>}
                         </div>
                         {lesson.notes && (
                           <p className="text-xs text-gray-500 mt-2">{lesson.notes}</p>

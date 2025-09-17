@@ -305,8 +305,7 @@ describe('Students API', () => {
           isPaid: false,
           isCancelled: false,
           notes: 'Test lesson',
-          lessonType: 'individual',
-          location: 'office'
+          lessonType: 'individual'
         }
       })
 

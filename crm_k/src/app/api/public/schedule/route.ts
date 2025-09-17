@@ -135,8 +135,7 @@ export async function GET(request: NextRequest) {
               teacherName: teacher.name,
               date: slotStart.toISOString(),
               endTime: slotEnd.toISOString(),
-              duration: 60, // 1 час
-              location: 'office' // По умолчанию в офисе
+              duration: 60 // 1 час
             })
           }
         }

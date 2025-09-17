@@ -70,7 +70,6 @@ ${selectedLesson ? `
 - Дата и время: ${selectedLesson.date.toLocaleString('ru-RU')}  
 - Продолжительность: ${selectedLesson.endTime ? `${Math.round((new Date(selectedLesson.endTime) - new Date(selectedLesson.date)) / 60000)} минут` : 'не указана'}  
 - Тип занятия: ${selectedLesson.lessonType || 'индивидуальное'}  
-- Место проведения: ${selectedLesson.location || 'офис'}  
 - Заметки: ${selectedLesson.notes || 'нет заметок'}  
 ` : ''}  
 

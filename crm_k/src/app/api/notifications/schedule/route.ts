@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
 Напоминаем, что через {minutes} минут у {studentName} занятие.
 
 📅 Время: {time}
-📍 Место: {location}
 👩‍🏫 Преподаватель: {teacherName}
 
 Ждём вас! 😊`;
@@ -75,7 +74,6 @@ export async function POST(request: NextRequest) {
       .replace(/{minutes}/g, settings.reminderBeforeLessons.toString())
       .replace(/{studentName}/g, lesson.student.fullName)
       .replace(/{time}/g, lessonTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }))
-      .replace(/{location}/g, lesson.location === 'office' ? 'Офис' : lesson.location === 'online' ? 'Онлайн' : 'На дому')
       .replace(/{teacherName}/g, lesson.teacher.name);
 
     // Создаем запланированное уведомление

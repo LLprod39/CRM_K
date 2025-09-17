@@ -56,7 +56,6 @@ const defaultReminderTemplate = `🎓 Напоминание о занятии
 Напоминаем, что через {minutes} минут у {studentName} занятие.
 
 📅 Время: {time}
-📍 Место: {location}
 👩‍🏫 Преподаватель: {teacherName}
 
 Ждём вас! 😊`;
@@ -467,7 +466,7 @@ export default function NotificationSettings() {
                   />
                   <div className="text-xs text-gray-600">
                     <strong>Доступные переменные:</strong> {'{minutes}'} - минуты до занятия, {'{studentName}'} - имя ученика, 
-                    {'{time}'} - время занятия, {'{location}'} - место проведения, {'{teacherName}'} - имя преподавателя
+                    {'{time}'} - время занятия, {'{teacherName}'} - имя преподавателя
                   </div>
                 </div>
               ) : (

@@ -447,7 +447,6 @@ CREATE TABLE lessons (
   notes TEXT,                      -- Заметки к уроку
   comment TEXT,                    -- Комментарий о поведении
   lessonType TEXT DEFAULT 'individual', -- Тип урока
-  location TEXT DEFAULT 'office',  -- Место проведения
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );

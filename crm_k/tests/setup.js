@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom'
 
 // Mock environment variables
-process.env.JWT_SECRET = 'test-secret-key'
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key'
 process.env.DATABASE_URL = 'file:./test.db'
 
 // Mock Next.js router
@@ -86,7 +86,6 @@ global.testUtils = {
     notes: 'Test lesson',
     comment: null,
     lessonType: 'individual',
-    location: 'office',
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

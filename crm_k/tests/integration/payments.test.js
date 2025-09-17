@@ -152,8 +152,7 @@ describe('Payments API', () => {
           isPaid: false,
           isCancelled: false,
           notes: 'Lesson 1',
-          lessonType: 'individual',
-          location: 'office'
+          lessonType: 'individual'
         }
       })
 
@@ -167,8 +166,7 @@ describe('Payments API', () => {
           isPaid: false,
           isCancelled: false,
           notes: 'Lesson 2',
-          lessonType: 'individual',
-          location: 'office'
+          lessonType: 'individual'
         }
       })
 

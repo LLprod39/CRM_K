@@ -174,8 +174,7 @@ describe('End-to-End Application Tests', () => {
           isPaid: false,
           isCancelled: false,
           notes: 'Completed lesson 1',
-          lessonType: 'individual',
-          location: 'office'
+          lessonType: 'individual'
         }
       })
 
@@ -189,8 +188,7 @@ describe('End-to-End Application Tests', () => {
           isPaid: false,
           isCancelled: false,
           notes: 'Completed lesson 2',
-          lessonType: 'individual',
-          location: 'office'
+          lessonType: 'individual'
         }
       })
 
@@ -287,8 +285,7 @@ describe('End-to-End Application Tests', () => {
         studentId: student.id,
         cost: 1500,
         notes: 'Consistency test lesson',
-        lessonType: 'individual',
-        location: 'office'
+        lessonType: 'individual'
       }
 
       const createLessonResponse = await fetch('http://localhost:3000/api/lessons', {

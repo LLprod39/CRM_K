@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
 Напоминаем, что через {minutes} минут у {studentName} занятие.
 
 📅 Время: {time}
-📍 Место: {location}
 👩‍🏫 Преподаватель: {teacherName}
 
 Ждём вас! 😊`,

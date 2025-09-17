@@ -98,7 +98,6 @@ model Lesson {
   notes         String?       // Заметки к занятию
   comment       String?       // Комментарий о поведении ребенка на занятии
   lessonType    String         @default("individual") // Тип занятия: individual, group
-  location      String         @default("office") // Место проведения: office, online, home
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   
