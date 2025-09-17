@@ -248,19 +248,23 @@ model ScheduledNotification {
 
 // Сущности для WhatsApp-экстрактора
 model ConversationDraft {
-  id             String   @id @default(cuid())
-  conversationId String   @unique
+  id             String    @id @default(cuid())
+  conversationId String    @unique
   formType       String
   draftData      Json
-  isComplete     Boolean  @default(false)
-  autoCommit     Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  isComplete     Boolean   @default(false)
+  autoCommit     Boolean   @default(false)
+  isCommitted    Boolean   @default(false)
+  committedAt    DateTime?
+  committedBy    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   versions      DraftVersion[]
   submissions   DraftSubmission[]
   messages      ConversationMessage[]
   extractorLogs ExtractorLog[]
+  notifications ExtractorNotification[]
 
   @@map("conversation_drafts")
 }
@@ -336,9 +340,42 @@ model ExtractorConfig {
   lessonBookingMinConf       Float    @default(0.8)
   studentRegistrationMinConf Float    @default(0.9)
   consultationMinConf        Float    @default(0.7)
+  systemPrompt               String   @default("")
+  userPrompt                 String   @default("")
+  generationTemperature      Float    @default(0.2)
+  maxOutputTokens            Int      @default(2048)
   googleGenaiApiKey          String?
   createdAt                  DateTime @default(now())
   updatedAt                  DateTime @updatedAt
 
   @@map("extractor_config")
+}
+
+// Модель уведомлений экстрактора для оператора
+model ExtractorNotification {
+  id               String    @id @default(cuid())
+  type             String    // Тип уведомления: low_confidence, missing_fields, validation_error, ready_for_review
+  status           String    @default("pending") // Статус: pending, acknowledged, resolved
+  message          String    // Текст уведомления
+  confidence       Float     @default(0) // Уверенность экстракции (0-1)
+  conversationId   String    // ID чата WhatsApp
+  draftId          String?   // ID черновика (если связан)
+  priority         String    @default("normal") // Приоритет: low, normal, high
+  metadata         Json?     // Дополнительные данные (missingFields, violations, etc.)
+  createdAt        DateTime  @default(now())
+  acknowledgedAt   DateTime? // Время подтверждения оператором
+  resolvedAt       DateTime? // Время решения
+  createdBy        String?   // ID пользователя, создавшего уведомление
+  acknowledgedBy   String?   // ID пользователя, подтвердившего уведомление
+  resolvedBy       String?   // ID пользователя, решившего уведомление
+  updatedAt        DateTime  @updatedAt
+
+  // Связь с черновиком
+  conversationDraft ConversationDraft? @relation(fields: [draftId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("extractor_notifications")
 }

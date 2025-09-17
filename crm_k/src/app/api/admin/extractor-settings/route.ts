@@ -27,6 +27,10 @@ export async function GET(request: NextRequest) {
     lessonBookingMinConf: config.lessonBookingMinConf,
     studentRegistrationMinConf: config.studentRegistrationMinConf,
     consultationMinConf: config.consultationMinConf,
+    systemPrompt: config.systemPrompt,
+    userPrompt: config.userPrompt,
+    generationTemperature: config.generationTemperature,
+    maxOutputTokens: config.maxOutputTokens,
     googleGenaiApiKey: config.googleGenaiApiKey,
     updatedAt: config.updatedAt,
   })
@@ -58,6 +62,10 @@ export async function POST(request: NextRequest) {
     lessonBookingMinConf: getNumber(payload.lessonBookingMinConf),
     studentRegistrationMinConf: getNumber(payload.studentRegistrationMinConf),
     consultationMinConf: getNumber(payload.consultationMinConf),
+    systemPrompt: getString(payload.systemPrompt),
+    userPrompt: getString(payload.userPrompt),
+    generationTemperature: getNumber(payload.generationTemperature),
+    maxOutputTokens: getInteger(payload.maxOutputTokens),
     googleGenaiApiKey:
       payload.googleGenaiApiKey === null
         ? null
@@ -78,6 +86,10 @@ export async function POST(request: NextRequest) {
     lessonBookingMinConf: updated.lessonBookingMinConf,
     studentRegistrationMinConf: updated.studentRegistrationMinConf,
     consultationMinConf: updated.consultationMinConf,
+    systemPrompt: updated.systemPrompt,
+    userPrompt: updated.userPrompt,
+    generationTemperature: updated.generationTemperature,
+    maxOutputTokens: updated.maxOutputTokens,
     googleGenaiApiKey: updated.googleGenaiApiKey,
     updatedAt: updated.updatedAt,
   })
@@ -89,6 +101,8 @@ type NumericFieldKey =
   | 'lessonBookingMinConf'
   | 'studentRegistrationMinConf'
   | 'consultationMinConf'
+  | 'generationTemperature'
+  | 'maxOutputTokens'
   | 'patchMaxAgeSec'
   | 'upsertDedupeWindowSec'
 
@@ -99,6 +113,8 @@ function validatePayload(payload: Record<string, unknown>): string | null {
     { key: 'lessonBookingMinConf', min: 0, max: 1 },
     { key: 'studentRegistrationMinConf', min: 0, max: 1 },
     { key: 'consultationMinConf', min: 0, max: 1 },
+    { key: 'generationTemperature', min: 0, max: 2 },
+    { key: 'maxOutputTokens', min: 1 },
     { key: 'patchMaxAgeSec', min: 0 },
     { key: 'upsertDedupeWindowSec', min: 0 },
   ]

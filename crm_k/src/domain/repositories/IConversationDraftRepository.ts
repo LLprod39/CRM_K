@@ -37,9 +37,12 @@ export interface CreateVersionParams {
 
 export interface UpdateDraftParams {
   draftId: string
-  draftData: Record<string, unknown>
+  draftData?: Record<string, unknown>
   isComplete?: boolean
   autoCommit?: boolean
+  isCommitted?: boolean
+  committedAt?: Date
+  committedBy?: string
 }
 
 export interface CreateSubmissionParams {
@@ -52,7 +55,7 @@ export interface CreateSubmissionParams {
 export interface CreateLogParams {
   draftId?: string
   messageId?: string
-  operation: 'receive' | 'extract' | 'validate' | 'commit'
+  operation: 'receive' | 'extract' | 'extract_generate' | 'validate' | 'commit'
   inputData?: unknown
   outputData?: unknown
   confidence?: number
@@ -63,6 +66,7 @@ export interface CreateLogParams {
 export interface IConversationDraftRepository {
   getOrCreateDraft(params: DraftUpsertParams): Promise<ConversationDraftWithRelations>
   getDraftByConversation(conversationId: string): Promise<ConversationDraftWithRelations | null>
+  getDraftById(draftId: string): Promise<ConversationDraftWithRelations | null>
   getDraftContext(draftId: string): Promise<DraftContext | null>
   recordMessage(params: RecordMessageParams): Promise<ConversationMessage>
   createVersion(params: CreateVersionParams): Promise<DraftVersion>

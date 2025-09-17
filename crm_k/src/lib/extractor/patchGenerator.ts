@@ -17,6 +17,10 @@ interface PatchGeneratorParams {
   model?: string
   fieldMinConf?: number
   overallMinConf?: number
+  systemPrompt?: string
+  userPromptPreamble?: string
+  temperature?: number
+  maxOutputTokens?: number
 }
 
 const OPERATIONS_KEY = 'operations'
@@ -32,14 +36,45 @@ export async function generatePatchWithLLM(params: PatchGeneratorParams): Promis
 
   const prompt = buildPrompt(params)
 
-  try {
-    const result = await genAI.models.generateContent({
-      model,
-      contents: [{
-        role: 'user',
-        parts: [{ text: prompt }],
-      }],
+  const contents: Array<Record<string, unknown>> = []
+
+  if (params.userPromptPreamble && params.userPromptPreamble.trim().length > 0) {
+    contents.push({
+      role: 'user',
+      parts: [{ text: params.userPromptPreamble.trim() }],
     })
+  }
+
+  contents.push({
+    role: 'user',
+    parts: [{ text: prompt }],
+  })
+
+  const request: Record<string, unknown> = {
+    model,
+    contents,
+  }
+
+  if (params.systemPrompt && params.systemPrompt.trim().length > 0) {
+    request['systemInstruction'] = {
+      role: 'system',
+      parts: [{ text: params.systemPrompt.trim() }],
+    }
+  }
+
+  const generationConfig: Record<string, unknown> = {}
+  if (typeof params.temperature === 'number') {
+    generationConfig['temperature'] = params.temperature
+  }
+  if (typeof params.maxOutputTokens === 'number') {
+    generationConfig['maxOutputTokens'] = Math.max(1, Math.floor(params.maxOutputTokens))
+  }
+  if (Object.keys(generationConfig).length > 0) {
+    request['generationConfig'] = generationConfig
+  }
+
+  try {
+    const result = await genAI.models.generateContent(request as any)
 
     const rawText = (result.text || '').trim()
     if (!rawText) {

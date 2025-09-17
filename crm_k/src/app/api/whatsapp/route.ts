@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client, LocalAuth } from 'whatsapp-web.js';
+import { Client, LocalAuth, type Message } from 'whatsapp-web.js';
 import QRCode from 'qrcode';
+import { prisma } from '@/lib/db';
+import { ConversationDraftRepository } from '@/infrastructure/repositories/ConversationDraftRepository';
+import { ExtractorConfigRepository } from '@/infrastructure/repositories/ExtractorConfigRepository';
+import { ExtractorService } from '@/domain/services/ExtractorService';
+import type { FormType } from '@/domain/entities';
+import { broadcastWhatsAppUpdate } from '@/lib/whatsappEvents';
 
 let whatsappClient: Client | null = null;
 let qrCodeData: string | null = null;
 let isClientReady = false;
+
+const conversationDraftRepository = new ConversationDraftRepository(prisma);
+const extractorConfigRepository = new ExtractorConfigRepository(prisma);
+const extractorService = new ExtractorService(conversationDraftRepository, extractorConfigRepository);
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -123,10 +133,20 @@ async function initializeWhatsApp() {
     isClientReady = true;
   });
 
-  whatsappClient.on('message', (message) => {
-    console.log('New message received:', message.body);
-    // Здесь можно добавить логику для уведомлений
-    // Например, отправить event через WebSocket или Server-Sent Events
+    whatsappClient.on('message', (message) => {
+    const conversationId = getConversationId(message)
+    if (conversationId) {
+      broadcastWhatsAppUpdate({
+        type: 'new_message',
+        chatId: conversationId,
+        messageId: message.id._serialized,
+        fromMe: message.fromMe,
+      })
+    }
+
+    processIncomingMessage(message).catch((error) => {
+      console.error('Failed to process incoming WhatsApp message:', error)
+    })
   });
 
   whatsappClient.on('disconnected', () => {
@@ -300,6 +320,92 @@ function formatDisplayNumber(number: string): string {
   
   // Для других номеров просто добавляем +
   return cleanNumber.startsWith('+') ? cleanNumber : '+' + cleanNumber;
+}
+
+async function processIncomingMessage(message: Message) {
+  try {
+    const conversationId = getConversationId(message)
+    if (!conversationId) {
+      return
+    }
+
+    const content = message.body?.trim() ?? ''
+    if (content.length === 0) {
+      return
+    }
+
+    let formType: FormType = 'lesson_booking'
+    let autoCommitFlag = false
+
+    try {
+      const existingDraft = await conversationDraftRepository.getDraftByConversation(conversationId)
+      if (existingDraft?.formType === 'lesson_booking' || existingDraft?.formType === 'student_registration' || existingDraft?.formType === 'consultation') {
+        formType = existingDraft.formType as FormType
+      }
+      autoCommitFlag = existingDraft?.autoCommit ?? false
+    } catch (error) {
+      console.error('Failed to load conversation draft:', error)
+    }
+
+    try {
+      const result = await extractorService.processMessage({
+        conversationId,
+        formType,
+        messageId: message.id._serialized,
+        content,
+        senderType: message.fromMe ? 'bot' : 'user',
+        autoCommit: autoCommitFlag,
+        metadata: {
+          whatsapp: {
+            from: message.from,
+            to: message.to,
+            id: message.id._serialized,
+            type: message.type,
+            timestamp: message.timestamp,
+            fromMe: message.fromMe,
+          },
+        },
+      })
+
+      broadcastWhatsAppUpdate({
+        type: 'extractor_update',
+        chatId: conversationId,
+        data: {
+          draft: {
+            id: result.draft.id,
+            formType,
+            autoCommit: autoCommitFlag,
+            isComplete: result.isComplete,
+            draftData: result.draft.draftData,
+            updatedAt: result.draft.updatedAt,
+          },
+          changedFields: result.changedFields,
+          missingFields: result.missingFields,
+          violations: result.violations,
+          reasons: result.reasons,
+          overallConfidence: result.overallConfidence,
+          fieldConfidences: result.fieldConfidences,
+        },
+      })
+    } catch (error) {
+      console.error('Extractor processing error:', error)
+      broadcastWhatsAppUpdate({
+        type: 'extractor_error',
+        chatId: conversationId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
+  } catch (error) {
+    console.error('Unhandled WhatsApp message processing error:', error)
+  }
+}
+
+function getConversationId(message: Message): string | null {
+  const id = message.fromMe ? message.to : message.from
+  if (!id) {
+    return null
+  }
+  return id
 }
 
 async function getContacts() {

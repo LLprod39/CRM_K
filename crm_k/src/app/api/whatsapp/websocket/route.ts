@@ -1,41 +1,44 @@
-import { NextRequest } from 'next/server';
+import { NextRequest } from 'next/server'
+import { registerWhatsAppClient, unregisterWhatsAppClient } from '@/lib/whatsappEvents'
 
-// Простая реализация Server-Sent Events для обновлений в реальном времени
+const encoder = new TextEncoder()
+
+// SSE endpoint
 export async function GET(request: NextRequest) {
-  const encoder = new TextEncoder();
-  
-  const stream = new ReadableStream({
+  const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      // Отправляем начальное сообщение
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'connected', message: 'Connected to WhatsApp updates' })}\n\n`));
-      
-      // Симулируем периодические обновления
-      const interval = setInterval(() => {
+      registerWhatsAppClient(controller)
+
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'connected', message: 'Connected to WhatsApp updates' })}
+
+`))
+
+      const heartbeat = setInterval(() => {
         try {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-            type: 'heartbeat', 
-            timestamp: new Date().toISOString() 
-          })}\n\n`));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'heartbeat', timestamp: new Date().toISOString() })}
+
+`))
         } catch (error) {
-          clearInterval(interval);
+          clearInterval(heartbeat)
+          unregisterWhatsAppClient(controller)
         }
-      }, 30000); // Каждые 30 секунд
-      
-      // Очистка при закрытии соединения
+      }, 30000)
+
       request.signal.addEventListener('abort', () => {
-        clearInterval(interval);
-        controller.close();
-      });
+        clearInterval(heartbeat)
+        unregisterWhatsAppClient(controller)
+        controller.close()
+      })
     }
-  });
+  })
 
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Headers': 'Cache-Control',
     },
-  });
+  })
 }

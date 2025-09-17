@@ -4,9 +4,11 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/textarea';
+import type { FormType } from '@/domain/entities';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useWhatsAppUpdates } from '@/hooks/useWhatsAppUpdates';
+import ExtractorNotifications from './ExtractorNotifications';
 import { 
   Loader2, 
   MessageSquare, 
@@ -29,7 +31,8 @@ import {
   CheckCheck,
   RefreshCw,
   Plus,
-  Users
+  Users,
+  Bell
 } from 'lucide-react';
 
 interface WhatsAppStatus {
@@ -88,6 +91,8 @@ export default function WhatsAppPage() {
   const [chatStats, setChatStats] = useState<{totalChats: number, activeChats: number} | null>(null);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [pendingNotificationsCount, setPendingNotificationsCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   // Текущий выбранный чат вычисляем из списка чатов, чтобы получать обновления
@@ -239,6 +244,24 @@ export default function WhatsAppPage() {
     }
   }, [status.ready]);
 
+  // Функция для загрузки количества уведомлений
+  const loadNotificationsCount = useCallback(async () => {
+    try {
+      const response = await fetch('/api/extractor/notifications?status=pending&limit=1');
+      const data = await response.json();
+      if (data.success) {
+        // Получаем общее количество через отдельный запрос
+        const countResponse = await fetch('/api/extractor/notifications?status=pending');
+        const countData = await countResponse.json();
+        if (countData.success) {
+          setPendingNotificationsCount(countData.notifications.length);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading notifications count:', error);
+    }
+  }, []);
+
   // Подключение к обновлениям в реальном времени
   const { isConnected } = useWhatsAppUpdates(useCallback((update) => {
     console.log('WhatsApp update received:', update);
@@ -251,8 +274,14 @@ export default function WhatsAppPage() {
     } else if (update.type === 'chat_update') {
       // Обновляем список чатов
       loadChats();
+    } else if (update.type === 'extractor_notification') {
+      // Обновляем количество уведомлений
+      loadNotificationsCount();
+    } else if (update.type === 'notification_status_updated') {
+      // Обновляем количество уведомлений при изменении статуса
+      loadNotificationsCount();
     }
-  }, [selectedChat?.id, loadChatMessages, loadChats]));
+  }, [selectedChat?.id, loadChatMessages, loadChats, loadNotificationsCount]));
 
   // Effects
   useEffect(() => {
@@ -265,15 +294,17 @@ export default function WhatsAppPage() {
   useEffect(() => {
     if (status.ready) {
       loadChats();
+      loadNotificationsCount();
       // Автоматически обновляем чаты каждые 30 секунд
       const interval = setInterval(() => {
         if (status.ready) {
           loadChats();
+          loadNotificationsCount();
         }
       }, 30000);
       return () => clearInterval(interval);
     }
-  }, [status.ready, loadChats]);
+  }, [status.ready, loadChats, loadNotificationsCount]);
 
   useEffect(() => {
     scrollToBottom();
@@ -652,6 +683,20 @@ export default function WhatsAppPage() {
           <div className="flex items-center space-x-3">
             <Button 
               variant="outline" 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className={`flex items-center ${showNotifications ? 'bg-blue-50 text-blue-700' : ''}`}
+              title="Показать уведомления экстрактора"
+            >
+              <Bell className="w-4 h-4 mr-2" />
+              Уведомления
+              {pendingNotificationsCount > 0 && (
+                <Badge className="ml-2 bg-red-500 text-white text-xs">
+                  {pendingNotificationsCount}
+                </Badge>
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
               onClick={loadChats} 
               disabled={isRefreshing}
               className="flex items-center"
@@ -675,6 +720,20 @@ export default function WhatsAppPage() {
           </div>
         </div>
       </div>
+
+      {/* Уведомления экстрактора */}
+      {showNotifications && (
+        <div className="mb-6">
+          <ExtractorNotifications 
+            conversationId={selectedChat?.id}
+            onNotificationAction={(notificationId, action) => {
+              console.log('Notification action:', notificationId, action);
+              // Обновляем количество уведомлений после действия
+              loadNotificationsCount();
+            }}
+          />
+        </div>
+      )}
 
       {/* Основной интерфейс чата */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" style={{ height: '70vh' }}>

@@ -30,6 +30,16 @@ const DEFAULTS = {
   lessonBookingMinConf: resolveNumber(process.env.LESSON_BOOKING_MIN_CONF, 0.8),
   studentRegistrationMinConf: resolveNumber(process.env.STUDENT_REGISTRATION_MIN_CONF, 0.9),
   consultationMinConf: resolveNumber(process.env.CONSULTATION_MIN_CONF, 0.7),
+  systemPrompt: process.env.EXTRACTOR_SYSTEM_PROMPT || '',
+  userPrompt: process.env.EXTRACTOR_USER_PROMPT || '',
+  generationTemperature: (() => {
+    const value = resolveNumber(process.env.EXTRACTOR_TEMPERATURE, 0.2)
+    return Math.min(Math.max(value, 0), 2)
+  })(),
+  maxOutputTokens: (() => {
+    const value = resolveNumber(process.env.EXTRACTOR_MAX_OUTPUT_TOKENS, 2048)
+    return Math.max(1, Math.floor(value))
+  })(),
   googleGenaiApiKey: process.env.GOOGLE_GENAI_API_KEY || null,
 } as const
 
@@ -56,6 +66,10 @@ export class ExtractorConfigRepository implements IExtractorConfigRepository {
         lessonBookingMinConf: DEFAULTS.lessonBookingMinConf,
         studentRegistrationMinConf: DEFAULTS.studentRegistrationMinConf,
         consultationMinConf: DEFAULTS.consultationMinConf,
+        systemPrompt: DEFAULTS.systemPrompt,
+        userPrompt: DEFAULTS.userPrompt,
+        generationTemperature: DEFAULTS.generationTemperature,
+        maxOutputTokens: Math.max(1, Math.floor(DEFAULTS.maxOutputTokens)),
         googleGenaiApiKey: DEFAULTS.googleGenaiApiKey,
       },
     })
@@ -85,6 +99,13 @@ export class ExtractorConfigRepository implements IExtractorConfigRepository {
         studentRegistrationMinConf:
           data.studentRegistrationMinConf ?? config.studentRegistrationMinConf,
         consultationMinConf: data.consultationMinConf ?? config.consultationMinConf,
+        systemPrompt: data.systemPrompt ?? config.systemPrompt,
+        userPrompt: data.userPrompt ?? config.userPrompt,
+        generationTemperature: data.generationTemperature ?? config.generationTemperature,
+        maxOutputTokens:
+          data.maxOutputTokens !== undefined
+            ? Math.max(1, Math.floor(data.maxOutputTokens))
+            : config.maxOutputTokens,
         googleGenaiApiKey:
           data.googleGenaiApiKey !== undefined
             ? data.googleGenaiApiKey

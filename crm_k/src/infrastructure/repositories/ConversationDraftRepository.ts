@@ -72,6 +72,15 @@ export class ConversationDraftRepository implements IConversationDraftRepository
     return record ? this.mapRecord(record) : null
   }
 
+  async getDraftById(draftId: string): Promise<ConversationDraftWithRelations | null> {
+    const record = await this.prisma.conversationDraft.findUnique({
+      where: { id: draftId },
+      include: draftInclude,
+    })
+
+    return record ? this.mapRecord(record) : null
+  }
+
   async getDraftContext(draftId: string): Promise<DraftContext | null> {
     const record = await this.prisma.conversationDraft.findUnique({
       where: { id: draftId },
@@ -138,9 +147,12 @@ export class ConversationDraftRepository implements IConversationDraftRepository
     return this.prisma.conversationDraft.update({
       where: { id: params.draftId },
       data: {
-        draftData: params.draftData as unknown as Prisma.JsonObject,
+        ...(params.draftData !== undefined ? { draftData: params.draftData as unknown as Prisma.JsonObject } : {}),
         ...(params.isComplete !== undefined ? { isComplete: params.isComplete } : {}),
         ...(params.autoCommit !== undefined ? { autoCommit: params.autoCommit } : {}),
+        ...(params.isCommitted !== undefined ? { isCommitted: params.isCommitted } : {}),
+        ...(params.committedAt !== undefined ? { committedAt: params.committedAt } : {}),
+        ...(params.committedBy !== undefined ? { committedBy: params.committedBy } : {}),
       },
     })
   }

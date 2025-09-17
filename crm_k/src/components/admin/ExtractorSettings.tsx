@@ -18,6 +18,10 @@ type ExtractorSettingsState = {
   lessonBookingMinConf: number
   studentRegistrationMinConf: number
   consultationMinConf: number
+  systemPrompt: string
+  userPrompt: string
+  generationTemperature: number
+  maxOutputTokens: number
   googleGenaiApiKey: string
 }
 
@@ -33,6 +37,10 @@ const DEFAULT_STATE: ExtractorSettingsState = {
   lessonBookingMinConf: 0.8,
   studentRegistrationMinConf: 0.9,
   consultationMinConf: 0.7,
+  systemPrompt: '',
+  userPrompt: '',
+  generationTemperature: 0.2,
+  maxOutputTokens: 2048,
   googleGenaiApiKey: '',
 }
 
@@ -63,6 +71,10 @@ export default function ExtractorSettings({ className }: { className?: string })
         ...current,
         ...data,
         googleGenaiApiKey: data.googleGenaiApiKey ?? '',
+        systemPrompt: data.systemPrompt ?? '',
+        userPrompt: data.userPrompt ?? '',
+        generationTemperature: typeof data.generationTemperature === 'number' ? data.generationTemperature : current.generationTemperature,
+        maxOutputTokens: typeof data.maxOutputTokens === 'number' ? data.maxOutputTokens : current.maxOutputTokens,
       }))
     } catch (err) {
       console.error('Extractor settings load error', err)
@@ -90,6 +102,20 @@ export default function ExtractorSettings({ className }: { className?: string })
 
     const numeric = Number(raw)
 
+    if (Number.isFinite(numeric)) {
+      handleChange(key, numeric as ExtractorSettingsState[typeof key])
+    }
+  }
+
+  const handleIntegerChange = (key: keyof ExtractorSettingsState) => (event: ChangeEvent<HTMLInputElement>) => {
+    const raw = event.target.value
+
+    if (raw === '') {
+      handleChange(key, 0 as ExtractorSettingsState[typeof key])
+      return
+    }
+
+    const numeric = Number.parseInt(raw, 10)
     if (Number.isFinite(numeric)) {
       handleChange(key, numeric as ExtractorSettingsState[typeof key])
     }
@@ -127,6 +153,10 @@ export default function ExtractorSettings({ className }: { className?: string })
         ...current,
         ...updated,
         googleGenaiApiKey: updated.googleGenaiApiKey ?? '',
+        systemPrompt: updated.systemPrompt ?? current.systemPrompt,
+        userPrompt: updated.userPrompt ?? current.userPrompt,
+        generationTemperature: typeof updated.generationTemperature === 'number' ? updated.generationTemperature : current.generationTemperature,
+        maxOutputTokens: typeof updated.maxOutputTokens === 'number' ? updated.maxOutputTokens : current.maxOutputTokens,
       }))
       setSaveStatus('success')
     } catch (err) {
@@ -196,6 +226,45 @@ export default function ExtractorSettings({ className }: { className?: string })
                   {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-sm font-medium text-gray-700">System prompt</label>
+              <textarea
+                value={state.systemPrompt}
+                onChange={(event) => handleChange('systemPrompt', event.target.value)}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                rows={3}
+                placeholder="Высокоуровневые инструкции для модели"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-sm font-medium text-gray-700">User prompt preamble</label>
+              <textarea
+                value={state.userPrompt}
+                onChange={(event) => handleChange('userPrompt', event.target.value)}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                rows={4}
+                placeholder="Добавляется перед автоматически сгенерированным описанием диалога"
+              />
+            </div>
+            <NumberInput
+              label="Temperature"
+              value={state.generationTemperature}
+              step={0.05}
+              min={0}
+              max={2}
+              onChange={handleNumberChange('generationTemperature')}
+            />
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Max output tokens</label>
+              <input
+                type="number"
+                value={state.maxOutputTokens}
+                min={1}
+                step={128}
+                onChange={handleIntegerChange('maxOutputTokens')}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              />
             </div>
           </div>
         </section>

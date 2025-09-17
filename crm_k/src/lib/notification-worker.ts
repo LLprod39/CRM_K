@@ -111,6 +111,9 @@ export class NotificationWorkerService {
         }
       });
 
+      // Также обрабатываем уведомления экстрактора
+      await this.processExtractorNotifications();
+
       if (pendingNotifications.length === 0) {
         console.log('Нет уведомлений для отправки');
         return;
@@ -252,6 +255,117 @@ export class NotificationWorkerService {
           errors: [error instanceof Error ? error.message : 'Unknown error']
         }
       };
+    }
+  }
+
+  /**
+   * Обработка уведомлений экстрактора
+   */
+  private async processExtractorNotifications(): Promise<void> {
+    try {
+      console.log(`[${new Date().toISOString()}] Обработка уведомлений экстрактора...`);
+      
+      // Получаем уведомления экстрактора, которые требуют внимания
+      const extractorNotifications = await prisma.extractorNotification.findMany({
+        where: {
+          status: 'pending',
+          createdAt: {
+            // Уведомления старше 5 минут считаем просроченными
+            lte: new Date(Date.now() - 5 * 60 * 1000)
+          }
+        },
+        include: {
+          conversationDraft: {
+            include: {
+              conversationMessages: {
+                orderBy: { createdAt: 'desc' },
+                take: 3
+              }
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'asc'
+        },
+        take: 10 // Обрабатываем максимум 10 уведомлений за раз
+      });
+
+      if (extractorNotifications.length === 0) {
+        console.log('Нет уведомлений экстрактора для обработки');
+        return;
+      }
+
+      console.log(`Найдено ${extractorNotifications.length} уведомлений экстрактора для обработки`);
+
+      for (const notification of extractorNotifications) {
+        try {
+          // Определяем приоритет уведомления
+          let shouldNotify = false;
+          let notificationMessage = '';
+
+          switch (notification.type) {
+            case 'low_confidence':
+              shouldNotify = true;
+              notificationMessage = `⚠️ Низкая уверенность экстракции (${Math.round(notification.confidence * 100)}%) в чате ${notification.conversationId}`;
+              break;
+            case 'validation_error':
+              shouldNotify = true;
+              notificationMessage = `❌ Ошибка валидации данных в чате ${notification.conversationId}`;
+              break;
+            case 'missing_fields':
+              shouldNotify = true;
+              notificationMessage = `📝 Отсутствуют обязательные поля в чате ${notification.conversationId}`;
+              break;
+            case 'ready_for_review':
+              // Уведомляем только если данные готовы к подтверждению
+              if (notification.conversationDraft?.isComplete) {
+                shouldNotify = true;
+                notificationMessage = `✅ Данные готовы к подтверждению в чате ${notification.conversationId}`;
+              }
+              break;
+          }
+
+          if (shouldNotify) {
+            // Здесь можно добавить отправку уведомления оператору
+            // Например, через email, push-уведомление или внутреннюю систему уведомлений
+            console.log(`📢 Уведомление оператору: ${notificationMessage}`);
+            
+            // Помечаем уведомление как обработанное
+            await prisma.extractorNotification.update({
+              where: { id: notification.id },
+              data: {
+                status: 'acknowledged',
+                acknowledgedAt: new Date(),
+                metadata: {
+                  ...notification.metadata as any,
+                  workerProcessed: true,
+                  processedAt: new Date().toISOString()
+                }
+              }
+            });
+
+            console.log(`✅ Уведомление ${notification.id} обработано`);
+          }
+        } catch (error) {
+          console.error(`❌ Ошибка обработки уведомления ${notification.id}:`, error);
+          
+          // Помечаем уведомление как имеющее ошибку
+          await prisma.extractorNotification.update({
+            where: { id: notification.id },
+            data: {
+              metadata: {
+                ...notification.metadata as any,
+                workerError: error instanceof Error ? error.message : 'Unknown error',
+                errorAt: new Date().toISOString()
+              }
+            }
+          });
+        }
+      }
+
+      console.log(`[${new Date().toISOString()}] Обработка уведомлений экстрактора завершена`);
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Ошибка в обработке уведомлений экстрактора:`, error);
     }
   }
 }

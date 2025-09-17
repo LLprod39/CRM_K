@@ -47,6 +47,10 @@ export interface ExtractorConfig {
   lessonBookingMinConf: number
   studentRegistrationMinConf: number
   consultationMinConf: number
+  systemPrompt: string
+  userPrompt: string
+  generationTemperature: number
+  maxOutputTokens: number
   googleGenaiApiKey?: string | null
   createdAt: Date
   updatedAt: Date
@@ -64,5 +68,9 @@ export interface UpsertExtractorConfigInput {
   lessonBookingMinConf?: number
   studentRegistrationMinConf?: number
   consultationMinConf?: number
+  systemPrompt?: string
+  userPrompt?: string
+  generationTemperature?: number
+  maxOutputTokens?: number
   googleGenaiApiKey?: string | null
 }
